@@ -1,9 +1,10 @@
 /**
  * Static build for the Physics-pg public site (Cloudflare Pages).
  *
- * The source of truth is GAS_Files/index.html — ONE combined file with five
- * views. Apps Script renders it server-side (doGet + template scriptlets);
- * this script pre-renders the four public views for a static host:
+ * The source of truth is GAS_Files/index.html — ONE combined template with
+ * five views and the portal SPA, selected server-side by the `page` scriptlet
+ * branch. Apps Script renders it (doGet + template scriptlets); this script
+ * pre-renders the four public views for a static host:
  *
  *   dist/index.html           home
  *   dist/about/index.html     about
@@ -12,13 +13,13 @@
  *   dist/login/index.html     meta-refresh handoff → live Apps Script portal
  *
  * Transformations applied to every page:
- *   - <?!= include('…') ?> inlined (styles / common)
- *   - scriptlets replaced with static JSON (brand, initialPageJson)
+ *   - template scriptlets rendered with page = <view> (tools/pg-template.js);
+ *     brand gets execUrl so portal links resolve to the live deployment
  *   - PUBLIC_PAGES drops "register" (register/login live on the portal)
  *   - href="?page=X" rewritten: in-site views → /about/ etc.;
  *     register/login → the live GAS /exec URL (KMSS-style portal links)
- *   - demo mocks replaced with a google.script.run → JSONP bridge that talks
- *     to the live deployment (announcements + contact enquiry only; any other
+ *   - a google.script.run → JSONP bridge injected that talks to the live
+ *     deployment (announcements + contact enquiry only; any other
  *     call rejects with "runs on the official portal")
  *
  * Assets: images/Phy_Complex.png and PG_Journey_Infographic.png are copied.
@@ -26,6 +27,7 @@
  */
 const fs = require("fs");
 const path = require("path");
+const { renderTemplate } = require("./pg-template");
 
 const ROOT = path.resolve(__dirname, "..");
 const GAS_DIR = path.join(ROOT, "GAS_Files");
@@ -36,6 +38,7 @@ const GAS_EXEC =
   "https://script.google.com/macros/s/AKfycbwx761QoVvu1MxMMPTctO0ILKNJXY44dpaq-eM3KtWPbIYAOV8LaxCvAj9zzn_3e2y05g/exec";
 
 const BRAND = {
+  execUrl: GAS_EXEC,
   schoolName: "Department of Physics Postgraduate Journey",
   subtitle: "University of Abuja",
   footerText: "\u00a9 2026 Capacity Building and Support. All rights reserved.",
@@ -146,38 +149,32 @@ function readGas(name) {
 }
 
 function buildView(view) {
-  let html = readGas("index");
-
-  // 1. inline <?!= include('x') ?> (styles / common)
-  html = html.replace(/<\?!= include\('([a-zA-Z0-9_-]+)'\) \?>/g, (m, inc) => {
-    const file = path.join(GAS_DIR, inc + ".html");
-    if (!fs.existsSync(file)) throw new Error("Missing include: " + inc);
-    return "\n" + fs.readFileSync(file, "utf8") + "\n";
+  // 1. render the template with this view as the `page` context
+  let html = renderTemplate(readGas("index"), {
+    page: view,
+    brandJson: JSON.stringify(BRAND),
+    initialPageJson: JSON.stringify(view),
+    initialViewJson: JSON.stringify(""),
+    embedJson: JSON.stringify(false),
   });
 
-  // 2. template scriptlets → static JSON
-  html = html.replace("<\?!= brandJson ?>", JSON.stringify(BRAND));
-  html = html.replace("<\?!= initialPageJson ?>", JSON.stringify(view));
-  html = html.replace("<\?!= initialViewJson ?>", JSON.stringify(""));
-  html = html.replace("<\?!= embedJson ?>", JSON.stringify(false));
-
-  // 3. the register view is portal-only here: keep the interceptor from
+  // 2. the register view is portal-only here: keep the interceptor from
   //    swallowing portal links (?page=register / ?page=login fall through)
   html = html.replace(
     /var PUBLIC_PAGES = \[[^\]]*\];/,
     "var PUBLIC_PAGES = ['home', 'about', 'programmes', 'contact'];"
   );
 
-  // 4. real links: in-site views → paths, register/login → live portal
+  // 3. real links: in-site views → paths, register/login → live portal
   Object.keys(HREFS).forEach((p) => {
     html = html.split('href="?page=' + p + '"').join('href="' + HREFS[p] + '"');
   });
 
-  // 5. JSONP bridge instead of demo mocks
+  // 4. JSONP bridge instead of demo mocks
   html = html.replace(/<body>/, () => "<body>\n" + SHIM);
 
-  const leftover = html.match(/<\?!=[^>]{0,60}/g);
-  if (leftover) throw new Error("Unreplaced scriptlet(s) in view " + view + ": " + leftover.join(", "));
+  const leftover = html.match(/<\?/g);
+  if (leftover) throw new Error("Unreplaced scriptlet(s) in view " + view);
   if (html.indexOf('PUBLIC_PAGES = [\'home\', \'about\', \'programmes\', \'contact\']') === -1) {
     throw new Error("PUBLIC_PAGES rewrite failed for view " + view);
   }

@@ -1,14 +1,15 @@
 /**
  * Local preview server for the Department of Physics Postgraduate Journey (GAS).
  *
- * The public site is ONE combined file with five views:
- *   GAS_Files/index.html   → ?page=home|about|programmes|register|contact
- * plus the portal SPA and the shared includes:
- *   GAS_Files/{login,styles,common}.html
+ * The Apps Script project is TWO files in GAS_Files/:
+ *   Code.gs        server (mocked below — the deployed sheet API is not used)
+ *   index.html     one combined template: the public site
+ *                  (?page=home|about|programmes|register|contact) AND the
+ *                  portal SPA (?page=login), selected server-side by the
+ *                  `page` scriptlet branch
  *
  * Serves any page with:
- *  - <?!= include('x') ?> inlined (styles / common)
- *  - the <?!= ... ?> template scriptlets replaced by static JSON
+ *  - the template scriptlets rendered exactly like doGet (tools/pg-template.js)
  *  - a mocked google.script.run backed by in-memory demo data
  *    (same accounts as SeedData.md, password PhysicsPG2026!)
  *  - /images/* served from images/ (hero background) and the repo root
@@ -19,17 +20,15 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { renderTemplate } = require("./pg-template");
 
 const GAS_DIR = path.resolve(__dirname, "..", "GAS_Files");
 const IMG_DIR = path.resolve(__dirname, "..", "images");
 const port = Number(process.env.PORT || process.argv[2] || 8081);
 
-/** ?page= name (or path) → file name without extension. Whitelisted.
- *  All public pages live in the single combined "index" file. */
-const PAGES = {
-  "": "index", home: "index", about: "index", programmes: "index",
-  register: "index", contact: "index", login: "login",
-};
+/** ?page= name (or path) → allowed keys. Whitelisted. All views render the
+ *  single combined index.html with that page name as the `page` context. */
+const PAGES = ["", "home", "about", "programmes", "register", "contact", "login"];
 
 const BRAND = {
   schoolName: "Department of Physics Postgraduate Journey",
@@ -817,25 +816,20 @@ function readGas(name) {
   return fs.readFileSync(path.join(GAS_DIR, name + ".html"), "utf8");
 }
 
-function buildPage(file, pageName) {
-  const cacheKey = file + "::" + (pageName || "");
-  if (pageCache.has(cacheKey)) return pageCache.get(cacheKey);
-  let html = readGas(file);
-  // inline <?!= include('x') ?> (styles / common)
-  html = html.replace(/<\?!= include\('([a-zA-Z0-9_-]+)'\) \?>/g, (m, inc) => {
-    try { return "\n" + readGas(inc) + "\n"; } catch (e) { return "<!-- missing include: " + inc + " -->"; }
+function buildPage(pageName) {
+  if (pageCache.has(pageName)) return pageCache.get(pageName);
+  let html = renderTemplate(readGas("index"), {
+    page: pageName,
+    brandJson: JSON.stringify(BRAND),
+    // mirrors doGet: the index view switcher must not point at the portal
+    initialPageJson: JSON.stringify(pageName === "login" ? "home" : pageName),
+    initialViewJson: JSON.stringify(""),
+    embedJson: JSON.stringify(false),
   });
-  // template scriptlets
-  html = html.replace("<\?!= brandJson ?>", JSON.stringify(BRAND));
-  html = html.replace("<\?!= initialViewJson ?>", JSON.stringify(""));
-  html = html.replace("<\?!= embedJson ?>", JSON.stringify(false));
-  const view = pageName && pageName !== "login" ? pageName : "home";
-  html = html.replace("<\?!= initialPageJson ?>", JSON.stringify(view));
-  const leftover = html.match(/<\?!=[^>]{0,60}/g);
-  if (leftover) console.warn("warning: unreplaced scriptlet(s) in " + file + ":", leftover.join(", "));
+  if (html.match(/<\?/g)) console.warn("warning: unreplaced scriptlet(s) in index.html");
   // inject the mocks right after <body> so every page script can use them
   html = html.replace(/<body>/, function () { return "<body>\n" + MOCK_JS + "\n" + MOCK_API_JS; });
-  pageCache.set(cacheKey, html);
+  pageCache.set(pageName, html);
   return html;
 }
 
@@ -865,9 +859,9 @@ http
     // page name from ?page= or path (/about, /register, /login, …)
     const seg = urlPath.replace(/^\/+|\/+$/g, "").replace(/\.html$/i, "");
     const key = String(query.get("page") || seg || "").toLowerCase();
-    if (Object.prototype.hasOwnProperty.call(PAGES, key)) {
+    if (PAGES.indexOf(key) !== -1) {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(buildPage(PAGES[key], key === "" ? "home" : key));
+      return res.end(buildPage(key || "home"));
     }
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Not found. Pages: / (home), /?page=about|programmes|register|contact|login");

@@ -7,7 +7,7 @@ with its own mechanism:
 |--------|------------|----------------|
 | **GitHub** `cbs-workspace/Physics-pg` | source of truth (code + docs) | you `git push` |
 | **Cloudflare Pages** `physics-pg` | built site from `dist/` | **automatic** on every push to `main` |
-| **Apps Script portal** `/exec` | 5 pasted files + Spreadsheet | manual paste + *New version* |
+| **Apps Script portal** `/exec` | 2 pasted files + Spreadsheet | manual paste + *New version* |
 
 Live URLs — site: `https://physics-pg.pages.dev` · portal:
 `https://script.google.com/macros/s/AKfycbwx761QoVvu1MxMMPTctO0ILKNJXY44dpaq-eM3KtWPbIYAOV8LaxCvAj9zzn_3e2y05g/exec`
@@ -15,9 +15,9 @@ Live URLs — site: `https://physics-pg.pages.dev` · portal:
 
 ## 1. Everyday site change (GitHub → Cloudflare, fully automatic)
 
-Sources: all views live in `GAS_Files/index.html` (home/about/programmes/
-contact/register); `styles.html`/`common.html` are includes; `tools/build-pg.js`
-renders the static site into `dist/`.
+Sources: all views and the portal SPA live in the single `GAS_Files/index.html`
+template (the `page` scriptlet picks the branch); `tools/build-pg.js` renders
+the static site into `dist/`.
 
 1. **Edit** the relevant file(s) under `Physics-pg/`.
    (Fresh clone on a new machine: `git clone https://github.com/cbs-workspace/Physics-pg.git`.)
@@ -89,8 +89,8 @@ The static site never hosts portal logic; when portal code in `GAS_Files/`
 changes:
 
 1. Paste the changed file(s) into the Apps Script editor (`Code.gs` = server
-   logic; `index`/`login`/`styles`/`common` = portal UI). First-time setup is
-   in the README (Steps 3–4).
+   logic; `index` = all portal + public-site UI — there are only these two files).
+   First-time setup is in the README (Steps 3–4).
 2. **Deploy → Manage deployments → ✎ Edit → Version: *New version* → Deploy.**
    This keeps the same `/exec` URL the site links to — **never** create a new
    deployment (a new URL would break every link, including the static site's

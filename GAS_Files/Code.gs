@@ -66,7 +66,7 @@ var CFG = {
 var HEADERS = {
   Users: ['id', 'regNumber', 'email', 'passwordHash', 'salt', 'role', 'fullName', 'firstLogin', 'active', 'status', 'createdAt'],
   Students: ['id', 'regNumber', 'surname', 'firstName', 'otherNames', 'gender', 'phoneNumber', 'email', 'faculty', 'department', 'programme', 'specialisation', 'passportFileId', 'passportUrl', 'mainSupervisorId', 'coSupervisorId', 'currentStage', 'yearOfAdmission', 'createdAt', 'updatedAt'],
-  Staff: ['id', 'fullName', 'email', 'rank', 'specialisation', 'active', 'createdAt'],
+  Staff: ['id', 'fullName', 'email', 'rank', 'specialisation', 'active', 'createdAt', 'role'],
   Submissions: ['id', 'regNumber', 'type', 'driveFileUrls', 'status', 'inspectorComments', 'supervisorNotes', 'createdBy', 'createdAt', 'updatedAt'],
   Announcements: ['id', 'title', 'body', 'active', 'createdBy', 'createdAt'],
   Config: ['key', 'value', 'updatedAt'],
@@ -256,20 +256,26 @@ function updateRowByField_(name, keyField, keyValue, patch) {
     if (!target) return false;
     var sheet = getSheet_(name), headers = sheetHeaders_(name), keyCol = headers.indexOf(keyField);
     if (keyCol < 0) throw new Error('Column "' + keyField + '" is missing from ' + name + '.');
-    var cols = [];
-    headers.forEach(function (h, ci) { if (Object.prototype.hasOwnProperty.call(patch, h)) cols.push(ci); });
-    var run = null, runs = [];
-    cols.forEach(function (ci) {
-      if (run && ci === run.end + 1) run.end = ci; else { run = { start: ci, end: ci }; runs.push(run); }
-    });
-    runs.forEach(function (r) {
-      var vals = [];
-      for (var ci = r.start; ci <= r.end; ci++) { var v = patch[headers[ci]]; vals.push(v === null || v === undefined ? '' : cellSafe_(v)); }
-      sheet.getRange(target._row, r.start + 1, 1, vals.length).setValues([vals]);
-    });
+    writeRowPatch_(sheet, headers, target._row, patch);
     invalidateTable_(name);
     return true;
   }, 30000);
+}
+/** Write a {field: value} patch into ONE physical sheet row (by row number),
+ *  coalescing adjacent columns into single setValues calls. */
+function writeRowPatch_(sheet, headers, rowNum, patch) {
+  var cols = [];
+  headers.forEach(function (h, ci) { if (Object.prototype.hasOwnProperty.call(patch, h)) cols.push(ci); });
+  var run = null, runs = [];
+  cols.forEach(function (ci) {
+    if (run && ci === run.end + 1) run.end = ci; else { run = { start: ci, end: ci }; runs.push(run); }
+  });
+  runs.forEach(function (r) {
+    var vals = [];
+    for (var ci = r.start; ci <= r.end; ci++) { var v = patch[headers[ci]]; vals.push(v === null || v === undefined ? '' : cellSafe_(v)); }
+    sheet.getRange(rowNum, r.start + 1, 1, vals.length).setValues([vals]);
+  });
+  return cols.length;
 }
 function updateRow_(name, id, patch) { return updateRowByField_(name, 'id', id, patch); }
 function stripRow_(obj) { var c = {}; Object.keys(obj).forEach(function (k) { if (k !== '_row') c[k] = obj[k]; }); return c; }
@@ -780,56 +786,361 @@ function api_removeStudent_locked_(token, regNumber) {
 }
 function api_removeStudent() { var a = arguments; return withScriptLock_(function () { return api_removeStudent_locked_.apply(null, a); }, 30000); }
 
-/**
- * Bulk staff import — run from the Apps Script editor, e.g.:
- *   importStaffRows([{ staffId: 'ACA1335', fullName: 'Dr. Abel U. Osagie', email: '…@uniabuja.edu.ng', rank: 'Dr.', specialisation: '', role: 'PG_Coordinator' }, …]);
- * role defaults to 'Staff'. Creates the Staff directory row plus a Users login
- * (password CFG.DEFAULT_PASSWORD, firstLogin → forces a change at sign-in). No email is sent.
- * Skips (and reports) rows whose staff ID / email already exists.
- */
-function importStaffRows(rows) {
-  if (!rows || !rows.length) throw new Error("Pass an array: [{staffId, fullName, email, rank, specialisation, role}].");
-  var summary = { imported: [], skipped: [] };
-  rows.forEach(function (r) {
-    r = r || {};
-    var id = String(r.staffId || '').trim().toUpperCase();
-    var name = String(r.fullName || '').trim();
-    var email = String(r.email || '').trim();
-    var role = CFG.ROLES.indexOf(r.role) !== -1 ? r.role : 'Staff';
-    if (!validateStaffId_(id)) { summary.skipped.push({ id: id || name || '(blank)', reason: 'Bad staff ID (ACA + 3 or 4 digits)' }); return; }
-    if (name.length < 2) { summary.skipped.push({ id: id, reason: 'Missing name' }); return; }
-    if (!validateEmail_(email)) { summary.skipped.push({ id: id, reason: 'Invalid email' }); return; }
-    if (findWhere_('Users', function (u) { return String(u.regNumber) === id; })) { summary.skipped.push({ id: id, reason: 'Staff ID already has a login' }); return; }
-    if (findWhere_('Users', function (u) { return String(u.email || '').toLowerCase() === email.toLowerCase(); })) { summary.skipped.push({ id: id, reason: 'Email already has a login' }); return; }
-    if (findWhere_('Staff', function (s) { return String(s.email || '').toLowerCase() === email.toLowerCase() && toBool_(s.active); })) { summary.skipped.push({ id: id, reason: 'Already in staff directory' }); return; }
-    var salt = makeSalt_();
-    var now = nowIso_();
-    appendRow_('Staff', {
-      fullName: name,
-      email: email,
-      rank: String(r.rank || '').trim(),
-      specialisation: String(r.specialisation || '').trim(),
-      active: true,
-      createdAt: now
-    });
-    appendRow_('Users', {
-      regNumber: id,
-      email: email,
-      passwordHash: hashPassword_(CFG.DEFAULT_PASSWORD, salt),
-      salt: salt,
-      role: role,
-      fullName: name,
-      firstLogin: true,
-      active: true,
-      status: 'Approved',
-      createdAt: now
-    });
-    summary.imported.push({ staffId: id, role: role, name: name });
+/* ---- Sheet-driven staff import — the Staff tab is the source of truth ----
+ * Paste the roster (e.g. an exported staff list) into the Staff tab and run
+ * importStaff() from the Apps Script editor. Column headers are matched
+ * fuzzily and renamed to the canonical Staff fields; roles are normalised;
+ * ACA staff get portal logins seeded with CFG.DEFAULT_PASSWORD (firstLogin →
+ * forces a change at sign-in). No email is sent. */
+
+var STAFF_HEADER_ALIASES = {
+  id: ['id', 'staff id', 'staff code', 'staff no', 'staff number', 'aca no', 'aca number'],
+  fullName: ['name', 'full name', 'staff name', 'fullname', 'name of staff'],
+  email: ['email', 'email address', 'e mail', 'mail', 'official email'],
+  rank: ['rank', 'title', 'position', 'designation', 'grade'],
+  specialisation: ['specialisation', 'specialization', 'speciality', 'specialty', 'research area', 'area of specialisation', 'area of specialization'],
+  role: ['role', 'portal role', 'user role', 'access role'],
+  active: ['active', 'is active', 'status', 'enabled'],
+  createdAt: ['created at', 'created', 'date created', 'date added', 'date joined', 'joined']
+};
+var STAFF_ROLE_ALIASES = {
+  'pg coordinator': 'PG_Coordinator', 'coordinator': 'PG_Coordinator',
+  'hod': 'HoD', 'head of department': 'HoD', 'head department': 'HoD',
+  'submission inspector': 'Submission_Inspector', 'compliance inspector': 'Submission_Inspector',
+  'compliance': 'Submission_Inspector', 'inspector': 'Submission_Inspector',
+  'staff': 'Staff', 'lecturer': 'Staff', 'supervisor': 'Staff', 'academic': 'Staff',
+  'student': 'Student'
+};
+/** Lowercase + strip punctuation: "e-mail ", "Full_Name" → "e mail" / "full name". */
+function normHeader_(v) {
+  return String(v === undefined || v === null ? '' : v).toLowerCase()
+    .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+/** Header-matching key: normHeader_ without spaces, so "createdAt", "created at"
+ *  and "Created-At" all collapse to "createdat" and hit the same alias. */
+function normKey_(v) { return normHeader_(v).replace(/ /g, ''); }
+/** Map a free-text role note ("PG Coordinator", "Compliance Inspector", "HoD")
+ *  onto CFG.ROLES; null when the value is not a role at all (e.g. "Dr.", a
+ *  specialisation, a phone number). Exact alias table first, then substrings. */
+function normalizeRole_(v) {
+  var n = normHeader_(v);
+  if (!n) return null;
+  if (STAFF_ROLE_ALIASES[n]) return STAFF_ROLE_ALIASES[n];
+  if (n.indexOf('coordinator') !== -1) return 'PG_Coordinator';
+  if (n.indexOf('head of dep') !== -1 || n.indexOf('head dept') !== -1 || n === 'hod') return 'HoD';
+  if (n.indexOf('inspector') !== -1) return 'Submission_Inspector';
+  if (n.indexOf('academic') !== -1 || n.indexOf('lecturer') !== -1 || n.indexOf('supervisor') !== -1) return 'Staff';
+  return null;
+}
+/** Derive a Staff.rank from the person's name when the tab has no rank column:
+ *  "Prof. A.D.A Buba" → Professor; "Dr. …" → Dr.; "Mr./Mrs./Ms./Engr. …" kept. */
+function staffRankFromName_(name) {
+  var n = String(name || '').trim();
+  if (/^(professor|prof)\.?\b/i.test(n)) return 'Professor';
+  if (/^dr\.?\b/i.test(n)) return 'Dr.';
+  if (/^engr\.?\b/i.test(n)) return 'Engr.';
+  var m = /^(mr|mrs|ms|miss)\.?\b/i.exec(n);
+  if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() + '.';
+  return '';
+}
+/** Parse an "active" cell: true/false/'yes'/'no'/'inactive'…; null = blank
+ *  (the importer treats blank as ACTIVE — a freshly pasted roster is live). */
+function staffActiveValue_(v) {
+  if (v === '' || v === null || v === undefined) return null;
+  if (v === true || v === false) return v;
+  if (typeof v === 'number') return v !== 0;
+  var n = normHeader_(v);
+  if (n === 'false' || n === '0' || n === 'no' || n === 'inactive' || n === 'disabled') return false;
+  if (n === 'true' || n === '1' || n === 'yes' || n === 'active' || n === 'enabled') return true;
+  return null;
+}
+function colLetter_(i) { return String.fromCharCode(65 + Math.max(0, Math.min(25, i))); }
+
+/** Match the Staff tab's header row (and, by values, its role column) onto the
+ *  canonical Staff fields. Non-destructive: renames happen later in importStaff.
+ *  Returns { map, warnings, demoteCi? } — demoteCi is a header cell to blank
+ *  because its column lost the "role" name to a value-detected role column. */
+function detectStaffColumns_(headersRaw, values) {
+  var canon = ['id', 'fullName', 'email', 'rank', 'specialisation', 'role', 'active', 'createdAt'];
+  var map = {}, used = {}, warnings = [], demoteCi;
+  if (headersRaw.some(function (c) { return validateStaffId_(String(c || '').trim().toUpperCase()); })) {
+    throw new Error('The Staff tab\u2019s FIRST ROW looks like data (an ACA staff ID), not headers. ' +
+      'Insert a header row on top — e.g. id, fullName, email, role — so the column names survive the paste, then re-run importStaff().');
+  }
+  var aliasNorm = {};
+  canon.forEach(function (f) { aliasNorm[f] = (STAFF_HEADER_ALIASES[f] || []).map(normKey_); });
+  headersRaw.forEach(function (h, ci) {
+    var nk = normKey_(h);
+    if (!nk) return;
+    for (var i = 0; i < canon.length; i++) {
+      var f = canon[i];
+      if (map[f] === undefined && aliasNorm[f].indexOf(nk) !== -1) { map[f] = ci; used[ci] = f; return; }
+    }
   });
-  Logger.log('importStaffRows → imported: ' + summary.imported.length + ', skipped: ' + summary.skipped.length);
-  summary.imported.forEach(function (x) { Logger.log('  + ' + x.staffId + '  ' + x.role + '  ' + x.name); });
-  summary.skipped.forEach(function (x) { Logger.log('  - ' + x.id + '  skipped: ' + x.reason); });
+  // Positional fallback (A=id, B=fullName, C=email) — only into EMPTY-header columns.
+  [['id', 0], ['fullName', 1], ['email', 2]].forEach(function (pair) {
+    var f = pair[0], ci = pair[1];
+    if (map[f] !== undefined || used[ci] || ci >= headersRaw.length) return;
+    if (String(headersRaw[ci] || '').trim() !== '') return;
+    map[f] = ci; used[ci] = f;
+    warnings.push('Unnamed column ' + colLetter_(ci) + ' treated as ' + f + '.');
+  });
+  // Role column by values (>=75% of non-empty cells map to a known role). Runs when
+  // there is NO role header, or when the role column exists but is EMPTY - a pasted
+  // role note that landed in a free-text column (e.g. specialisation) then wins.
+  var roleHeaderCi = map.role, headerRoleEmpty = true;
+  if (roleHeaderCi !== undefined) {
+    for (var r = 1; r < values.length; r++) {
+      var rv = values[r][roleHeaderCi];
+      if (rv !== '' && rv !== null && rv !== undefined) { headerRoleEmpty = false; break; }
+    }
+  }
+  if (headerRoleEmpty) {
+    var best = -1, bestCi = -1;
+    for (var ci = 0; ci < headersRaw.length; ci++) {
+      if (used[ci] && used[ci] !== 'rank' && used[ci] !== 'specialisation') continue;
+      var nonEmpty = 0, roleish = 0;
+      for (var r = 1; r < values.length; r++) {
+        var v = values[r][ci];
+        if (v === '' || v === null || v === undefined) continue;
+        nonEmpty++;
+        if (normalizeRole_(v)) roleish++;
+      }
+      if (nonEmpty && roleish / nonEmpty >= 0.75 && roleish / nonEmpty > best) { best = roleish / nonEmpty; bestCi = ci; }
+    }
+    if (bestCi !== -1) {
+      var was = used[bestCi];
+      if (was) { delete map[was]; warnings.push('Column ' + colLetter_(bestCi) + ' contains roles \u2014 used as the role column instead of "' + was + '".'); }
+      else warnings.push('Column ' + colLetter_(bestCi) + ' (' + (String(headersRaw[bestCi] || '').trim() || 'blank header') + ') treated as role.');
+      if (roleHeaderCi !== undefined && roleHeaderCi !== bestCi) demoteCi = roleHeaderCi;   // old empty role column loses its header
+      map.role = bestCi; used[bestCi] = 'role';
+    }
+  }
+  // A "rank" column that actually holds phone numbers (pasted phone column landing
+  // on rank) → unmap it; rank is then derived from each name.
+  if (map.rank !== undefined) {
+    var nonEmpty = 0, phoneish = 0;
+    for (var r = 1; r < values.length; r++) {
+      var cell = values[r][map.rank];
+      if (cell === '' || cell === null || cell === undefined) continue;
+      nonEmpty++;
+      var digits = String(cell).replace(/[^0-9]/g, '');
+      if (digits.length >= 7 && digits.length <= 15 && String(cell).indexOf('@') === -1) phoneish++;
+    }
+    if (nonEmpty && phoneish / nonEmpty >= 0.75) {
+      var rankCi = map.rank;
+      delete map.rank;
+      warnings.push('Column ' + colLetter_(rankCi) + ' holds phone numbers \u2014 not stored; rank is derived from names.');
+    }
+  }
+  headersRaw.forEach(function (h, ci) {
+    if (!used[ci]) warnings.push('Column ' + colLetter_(ci) + ' (' + (String(h || '').trim() || 'blank header') + ') is not stored \u2014 no matching Staff field.');
+  });
+  return { map: map, warnings: warnings, demoteCi: demoteCi };
+}
+
+/**
+ * SHEET-DRIVEN STAFF IMPORT — the Staff tab is the source of truth. Run from
+ * the Apps Script editor (no arguments): importStaff()
+ *
+ * 1. Matches the tab's headers fuzzily onto the Staff fields (id, fullName,
+ *    email, rank, specialisation, role, active, createdAt) and renames the
+ *    matched cells to those canonical names — so a straight paste of an
+ *    exported roster (Id | name | email | Phone | role-note) just works.
+ * 2. Normalises each row: rank derived from the name when missing, active
+ *    blank → TRUE, role notes ("PG Coordinator", "HoD", "Compliance
+ *    Inspector") mapped onto CFG.ROLES.
+ * 3. Reconciles Users logins for every ACA staff ID: creates missing logins
+ *    seeded with CFG.DEFAULT_PASSWORD (firstLogin forces a password change,
+ *    no email is sent), syncs fullName/email/role, reactivates, and finally
+ *    deactivates ACA logins that the Staff tab no longer backs (PG_Coordinator
+ *    / HoD accounts are NEVER deactivated — a warning is raised instead).
+ *
+ * Idempotent: re-running against an unchanged tab makes no writes.
+ */
+function importStaff() {
+  return withScriptLock_(function () { return importStaff_locked_(); }, 60000);
+}
+function importStaff_locked_() {
+  var now = nowIso_();
+  var sheet = getSheet_('Staff');
+  var values = sheet.getDataRange().getValues();
+  var headersRaw = (values[0] || []).map(function (h) { return String(h); });
+  var summary = {
+    ok: true, rows: 0, staffRowsCreated: 0, staffRowsUpdated: 0,
+    loginsCreated: 0, loginsSynced: 0, loginsReactivated: 0, loginsDeactivated: 0,
+    skipped: [], warnings: []
+  };
+  var hasData = values.length >= 2 && values.slice(1).some(function (r) {
+    return r.join('').toString().replace(/\s/g, '') !== '';
+  });
+  if (!hasData) {
+    summary.warnings.push('The Staff tab has no data rows \u2014 nothing imported.');
+    logImportSummary_(summary);
+    return summary;
+  }
+
+  var det = detectStaffColumns_(headersRaw, values);   // throws if row 1 is data
+  var map = det.map;
+  summary.warnings = det.warnings;
+
+  // 1. Rename matched header cells to the canonical field names.
+  Object.keys(map).forEach(function (f) {
+    var ci = map[f];
+    if (String(sheet.getRange(1, ci + 1).getValue()) !== f) sheet.getRange(1, ci + 1).setValue(f);
+  });
+  if (det.demoteCi !== undefined && String(sheet.getRange(1, det.demoteCi + 1).getValue()) !== '') {
+    sheet.getRange(1, det.demoteCi + 1).setValue('');   // vacated role header; sheetHeaders_ recycles the column
+  }
+  invalidateTable_('Staff');
+  var headers = sheetHeaders_('Staff');   // appends any missing canonical columns (incl. role)
+  var rows = readTable_('Staff');
+  summary.rows = rows.length;
+
+  var roleColFound = map.role !== undefined;
+  if (!roleColFound) summary.warnings.push('No role column found \u2014 every row defaults to role "Staff".');
+  var warnedOnce = {};
+  var warnOnce = function (msg) { if (!warnedOnce[msg]) { warnedOnce[msg] = 1; summary.warnings.push(msg); } };
+  // Field accessor reads ONLY mapped columns — an unmapped canonical field (e.g. a
+  // "rank" column that turned out to hold phone numbers) contributes nothing.
+  var presentAca = {};
+
+  // 2. Normalise + upsert every roster row in place (by physical row number).
+  rows.forEach(function (row) {
+    var fld = function (f) {
+      if (map[f] === undefined) return '';
+      var v = row[f];
+      return String(v === undefined || v === null ? '' : v).trim();
+    };
+    var rawId = fld('id');
+    var id = rawId.toUpperCase();
+    var name = fld('fullName');
+    var email = fld('email');
+    var role = roleColFound ? (normalizeRole_(fld('role')) || 'Staff') : 'Staff';
+    if (roleColFound && fld('role') && !normalizeRole_(fld('role'))) {
+      warnOnce('Unrecognised role "' + fld('role') + '" (row ' + row._row + ') \u2014 defaults to Staff.');
+    }
+    var activeVal = staffActiveValue_(map.active === undefined ? '' : row.active);
+    var active = activeVal === null ? true : activeVal;
+    var idIsAca = validateStaffId_(id);
+    if (idIsAca) presentAca[id] = active;   // even for rows skipped below (never deactivate on a bad name)
+
+    if (name.length < 2) { summary.skipped.push({ row: row._row, id: id || '(blank)', reason: 'Missing name' }); return; }
+    if (id && !idIsAca && !/^Stf\d+$/.test(id)) {
+      summary.skipped.push({ row: row._row, id: id, reason: 'Bad staff ID (expected ACA + 3\u20134 digits, or Stf##)' });
+      return;
+    }
+    var hadId = rawId !== '';
+    if (!hadId) {
+      id = nextId_('Staff');
+      summary.warnings.push('Row ' + row._row + ' (' + name + ') has no staff ID \u2014 assigned ' + id + '; portal logins need an ACA ID.');
+    }
+
+    var want = {
+      id: id,
+      fullName: name,
+      email: email,
+      rank: fld('rank') || staffRankFromName_(name),
+      specialisation: fld('specialisation'),
+      active: active,
+      createdAt: fld('createdAt') || now,
+      role: role
+    };
+    var patch = {};
+    Object.keys(want).forEach(function (f) {
+      var cur = row[f];
+      var same = f === 'active'
+        ? !(cur === '' || cur === undefined || cur === null) && toBool_(cur) === active
+        : String(cur === undefined || cur === null ? '' : cur).trim() === String(want[f]);
+      if (!same) patch[f] = want[f];
+    });
+    if (Object.keys(patch).length) {
+      writeRowPatch_(sheet, headers, row._row, patch);
+      invalidateTable_('Staff');
+      if (patch.id && !hadId) summary.staffRowsCreated++; else summary.staffRowsUpdated++;
+    }
+    if (idIsAca) {
+      row.__importId = id;
+      row.__importName = name;
+      row.__importEmail = email;
+      row.__importRole = role;
+    }
+  });
+
+  // 3. Reconcile portal logins for every valid ACA roster row.
+  rows.forEach(function (row) {
+    var id = row.__importId;
+    if (!id) return;
+    var name = row.__importName, email = row.__importEmail, role = row.__importRole;
+    var u = findWhere_('Users', function (x) { return String(x.regNumber) === id; });
+    if (!u) {
+      if (!validateEmail_(email)) { summary.skipped.push({ id: id, reason: 'No login created \u2014 missing/invalid email' }); return; }
+      if (findWhere_('Users', function (x) { return String(x.email || '').toLowerCase() === email.toLowerCase(); })) {
+        summary.warnings.push('No login for ' + id + ' \u2014 email ' + email + ' already belongs to another account.');
+        return;
+      }
+      var salt = makeSalt_();
+      appendRow_('Users', {
+        regNumber: id, email: email,
+        passwordHash: hashPassword_(CFG.DEFAULT_PASSWORD, salt), salt: salt,
+        role: role, fullName: name, firstLogin: true, active: true, status: 'Approved', createdAt: now
+      });
+      summary.loginsCreated++;
+      return;
+    }
+    var up = {};
+    if (String(u.fullName || '').trim() !== name) up.fullName = name;
+    if (validateEmail_(email) &&
+        String(u.email || '').toLowerCase() !== email.toLowerCase() &&
+        !findWhere_('Users', function (x) { return x !== u && String(x.email || '').toLowerCase() === email.toLowerCase(); })) {
+      up.email = email;
+    }
+    var protectedRole = u.role === 'PG_Coordinator' || u.role === 'HoD';
+    var targetRole = (protectedRole && role === 'Staff') ? String(u.role) : role;
+    if (targetRole !== String(u.role || '')) up.role = targetRole;
+    else if (protectedRole && role === 'Staff') {
+      warnOnce('Login ' + id + ' keeps its ' + u.role + ' role (the roster row has no role note).');
+    }
+    if (String(u.status || '') !== 'Approved') up.status = 'Approved';
+    if (!toBool_(u.active)) up.active = true;
+    if (Object.keys(up).length) {
+      updateRow_('Users', u.id, up);
+      summary.loginsSynced++;
+      if (up.active === true) summary.loginsReactivated++;
+    }
+  });
+
+  // 4. Deactivate ACA logins the Staff tab no longer backs (missing or inactive row).
+  if (Object.keys(presentAca).length) {
+    filterWhere_('Users', function (u) { return validateStaffId_(String(u.regNumber || '').trim()); }).forEach(function (u) {
+      var key = String(u.regNumber).trim();
+      if (presentAca[key] === true) return;
+      var r = String(u.role || '');
+      if (r === 'PG_Coordinator' || r === 'HoD') {
+        warnOnce('Login ' + key + ' (' + r + ') is ' + (presentAca[key] === false ? 'inactive in the Staff tab' : 'missing from the Staff tab') +
+          ' but was NOT deactivated (protected role \u2014 review it manually).');
+        return;
+      }
+      if (toBool_(u.active)) { updateRow_('Users', u.id, { active: false }); summary.loginsDeactivated++; }
+    });
+  } else {
+    summary.warnings.push('No valid ACA rows found in the Staff tab \u2014 login deactivation skipped (re-run after fixing the roster).');
+  }
+
+  logImportSummary_(summary);
   return summary;
+}
+function logImportSummary_(s) {
+  Logger.log('importStaff \u2192 rows: ' + s.rows +
+    ' | staff rows created/updated: ' + s.staffRowsCreated + '/' + s.staffRowsUpdated +
+    ' | logins created/synced/reactivated/deactivated: ' + s.loginsCreated + '/' + s.loginsSynced + '/' + s.loginsReactivated + '/' + s.loginsDeactivated);
+  s.warnings.forEach(function (w) { Logger.log('  ! ' + w); });
+  s.skipped.forEach(function (x) { Logger.log('  - skipped: ' + JSON.stringify(x)); });
+  try {
+    logAudit_('system', 'import', 'IMPORT_STAFF', 'Staff',
+      'rows=' + s.rows + ', staff created/updated=' + s.staffRowsCreated + '/' + s.staffRowsUpdated +
+      ', logins created/synced/deactivated=' + s.loginsCreated + '/' + s.loginsSynced + '/' + s.loginsDeactivated);
+  } catch (e) {}
 }
 
 /* =========================== 8. SUPERVISOR ASSIGNMENT =========================== */
@@ -1202,8 +1513,11 @@ function doGet(e) {
   var view = /^[A-Za-z0-9_-]{0,40}$/.test(String(p.view || '')) ? String(p.view || '') : '';
   var embed = p.embed === '1' || p.embed === 'true';
   var name = publicPageName_(p);
-  var tpl = template_(name);
-  tpl.brandJson = safeJson_(brand_());
+  var tpl = template_();
+  tpl.page = name;   // single index.html branches its markup/script on this
+  var brand = brand_();
+  brand.execUrl = ScriptApp.getService().getUrl();   // absolute ?page= links (shared interceptor)
+  tpl.brandJson = safeJson_(brand);
   tpl.initialViewJson = safeJson_(view);
   tpl.embedJson = safeJson_(embed);
   tpl.initialPageJson = safeJson_(name === 'login' ? 'home' : name);   // index.html view switcher
@@ -1229,17 +1543,17 @@ function publicPageName_(p) {
   return allowed[page] ? (page || 'home') : 'home';
 }
 
-/** Resolve an HTML file case-insensitively; fail with actionable message.
- *  All public pages (home/about/programmes/register/contact) live in ONE file:
- *  "index". Only the portal has its own file: "login". */
-function template_(name) {
-  var base = String(name || 'home');
-  var file = base === 'login' ? 'login' : 'index';
-  var candidates = [file, file.charAt(0).toUpperCase() + file.slice(1), file + '.html'];
+/** ONE combined template. GAS_Files/index.html holds the head + styles, the
+ *  login view and the public-site views (branched on the `page` binding) and
+ *  one shared common block — there are no include() files, so scriptlets only
+ *  ever evaluate in a file GAS can see. Resolve case-insensitively; fail with
+ *  an actionable message. */
+function template_() {
+  var candidates = ['index', 'Index', 'index.html'];
   for (var i = 0; i < candidates.length; i++) {
     try { return HtmlService.createTemplateFromFile(candidates[i]); } catch (err) {}
   }
-  var fb = { msg: 'No HTML file found for "' + file + '". In the Apps Script editor: File → New → HTML file, name it exactly "' + file + '", then paste PG_Portal/GAS_Files/' + file + '.html.' };
+  var fb = { msg: 'No HTML file found for "index". In the Apps Script editor: File → New → HTML file, name it exactly "index", then paste PG_Portal/GAS_Files/index.html.' };
   return {
     evaluate: function () {
       return HtmlService.createHtmlOutput(
@@ -1248,28 +1562,6 @@ function template_(name) {
       ).setTitle('Postgraduate Journey — Setup');
     }
   };
-}
-
-/** GAS include pattern: <?!= include('styles') ?> etc.
- *  Included files must be evaluated as TEMPLATES with the same bindings the
- *  parent page gets. createHtmlOutputFromFile().getContent() does NOT run
- *  scriptlets, so common.html's `var BRAND = <?!= brandJson ?>` used to land
- *  in the page verbatim → JS syntax error → every helper in common.html
- *  (esc, call, themeFabHtml, MUSIC…) is undefined and the login page dies
- *  with "ReferenceError: themeFabHtml is not defined".
- *  KMSS avoids this class of bug by having zero includes (single index.html);
- *  this is the 5-file equivalent of that rule: scriptlets only ever evaluate. */
-function include(filename) {
-  var t = null;
-  try { t = HtmlService.createTemplateFromFile(filename); } catch (err) { t = null; }
-  if (!t) {
-    return '<div style="font-family:sans-serif;padding:40px;max-width:560px;margin:auto">' +
-      '<h2 style="color:#14532d">Setup needed</h2><p>No HTML file named "' + escHtml_(filename) + '". ' +
-      'In the Apps Script editor: File → New → HTML file, name it exactly "' + escHtml_(filename) + '", ' +
-      'then paste Physics-pg/GAS_Files/' + escHtml_(filename) + '.html.</p></div>';
-  }
-  t.brandJson = safeJson_(brand_());
-  return t.evaluate().getContent();
 }
 
 function publicAnnouncementsJsonp_(p) {

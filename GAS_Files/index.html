@@ -5,9 +5,359 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Department of Physics Postgraduate Journey — University of Abuja</title>
-  <?!= include('styles') ?>
+  <style>
+    /* University of Abuja colours — green & white (dark green dominant) */
+    :root {
+      --g-50: #f0f9f3; --g-100: #dcf0e4; --g-200: #b9e0c9; --g-300: #88caa4;
+      --g-400: #4fa97a; --g-500: #2d8a5c; --g-600: #1d6e45; --g-700: #14532d;
+      --g-800: #0f4023; --g-900: #0a2f19; --g-950: #061f10;
+
+      /* ---- Light theme (default) ---- */
+      --bg: #eef6f0;
+      --surface: #ffffff;
+      --surface-2: #f4faf6;
+      --border: #cfe3d7;
+      --border-soft: #e2f0e7;
+      --text: #0d2718;
+      --text-strong: #061a0e;
+      --text-muted: #4d6558;
+      --primary: #14532d;
+      --primary-hover: #0f4023;
+      --primary-strong: #14532d;
+      --primary-contrast: #ffffff;
+      --primary-soft: #dcf0e4;
+      --primary-soft-text: #0f4023;
+      --focus-ring: rgba(20, 83, 45, .16);
+      --sidebar-bg: #0a2f19;
+      --sidebar-border: rgba(255, 255, 255, .09);
+      --sidebar-text: #d8ece0;
+      --sidebar-text-muted: #9dbfae;
+      --sidebar-brand: #8fd9b0;
+      --sidebar-hover: rgba(255, 255, 255, .08);
+      --sidebar-active-bg: #1d6e45;
+      --field-bg: #ffffff;
+      --thead-bg: #f0f7f2;
+      --shadow: 0 1px 2px rgba(10, 47, 25, .07), 0 10px 28px rgba(10, 47, 25, .07);
+      --overlay: rgba(4, 20, 10, .45);
+      --warn: #a3540a; --warn-soft: #fdf0c2; --warn-border: #f3d789;
+      --danger: #b91c1c; --danger-soft: #fde3e3; --danger-border: #f5b5b5;
+      --info: #1d4ed8; --info-soft: #dbeafe; --info-border: #a9c6f7;
+      --ok: #14532d; --ok-soft: #dcf0e4; --ok-border: #a9d9bd;
+      color-scheme: light;
+    }
+    [data-theme="dark"] {
+      /* ---- Creme theme (warm, light) — the alternate toggle is a soft creme
+         palette; sidebar/hero keep deep-green accents, nothing near-black. ---- */
+      --bg: #f6f0e3;
+      --surface: #fffdf6;
+      --surface-2: #f1e9d8;
+      --border: #e0d5bd;
+      --border-soft: #ece3d0;
+      --text: #3b3527;
+      --text-strong: #221d10;
+      --text-muted: #7c7360;
+      --primary: #1d6e45;
+      --primary-hover: #14532d;
+      --primary-strong: #14532d;
+      --primary-contrast: #ffffff;
+      --primary-soft: #e2efe4;
+      --primary-soft-text: #0f4023;
+      --focus-ring: rgba(20, 83, 45, .18);
+      --sidebar-bg: #14532d;
+      --sidebar-border: rgba(255, 255, 255, .14);
+      --sidebar-text: #e9f4ec;
+      --sidebar-text-muted: #b6d3c0;
+      --sidebar-brand: #cdeed7;
+      --sidebar-hover: rgba(255, 255, 255, .10);
+      --sidebar-active-bg: #0f4023;
+      --field-bg: #fffdf8;
+      --thead-bg: #f1e9d8;
+      --shadow: 0 1px 2px rgba(97, 76, 36, .08), 0 10px 28px rgba(97, 76, 36, .09);
+      --overlay: rgba(56, 44, 18, .42);
+      --warn: #92400e; --warn-soft: #fceeda; --warn-border: #eccfa4;
+      --danger: #b91c1c; --danger-soft: #fde3e3; --danger-border: #f2b8b8;
+      --info: #1d4ed8; --info-soft: #e0e9fd; --info-border: #b6cbf7;
+      --ok: #14532d; --ok-soft: #e2efe4; --ok-border: #b2d8bf;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); font-size: 14px; transition: background .2s, color .2s; }
+    a { color: var(--primary-strong); text-decoration: none; } a:hover { text-decoration: underline; }
+    button { font: inherit; cursor: pointer; } input, select, textarea { font: inherit; }
+    .layout { display: flex; min-height: 100vh; min-height: 100dvh; }
+    .sidebar { width: 256px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--sidebar-border); }
+    .sidebar-brand img { width: 44px; height: 44px; border-radius: 999px; background: #fff; object-fit: contain; padding: 2px; }
+    .logo-fallback { width: 44px; height: 44px; border-radius: 999px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .sidebar-brand .name { color: var(--sidebar-brand); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; font-size: 12px; line-height: 1.3; }
+    .sidebar-brand .sub { color: var(--sidebar-text-muted); font-size: 11px; }
+    .nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav button { text-align: left; background: transparent; border: 0; color: var(--sidebar-text); padding: 9px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; }
+    .nav button:hover { background: var(--sidebar-hover); }
+    .nav button.active { background: var(--sidebar-active-bg); color: #fff; }
+    .sidebar-foot { border-top: 1px solid var(--sidebar-border); padding: 14px 20px; color: var(--sidebar-text-muted); font-size: 12px; }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; }
+    .topbar .who { font-weight: 600; color: var(--text-strong); } .topbar .mail { color: var(--text-muted); font-size: 12px; }
+    .tb-actions { display: flex; gap: 8px; }
+    .content { flex: 1; padding: 24px; } .content-inner { max-width: 1200px; margin: 0 auto; }
+    .footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .footer img { height: 30px; width: auto; object-fit: contain; background: #fff; border-radius: 4px; padding: 2px 4px; } .footer .text { color: var(--text-muted); font-size: 12px; }
+    .footer.dark { border-color: var(--border-soft); } .footer.dark .text { color: var(--text-muted); }
+    h2, h3, h4 { color: var(--text-strong); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); } .card + .card { margin-top: 20px; }
+    .grid { display: grid; gap: 16px; }
+    .grid.cols-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .grid.cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .grid.cols-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    @media (max-width: 900px) { .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; } }
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    .field { margin-bottom: 14px; }
+    input[type=text], input[type=email], input[type=password], input[type=date], input[type=number], input[type=tel], select, textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--field-bg); color: var(--text); outline: none; }
+    input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: .75; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+    textarea { min-height: 80px; resize: vertical; }
+    input[type=file] { padding: 6px; width: 100%; }
+    input[type=file]::file-selector-button { font: inherit; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 6px; padding: 4px 10px; margin-right: 10px; cursor: pointer; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 8px; padding: 9px 14px; font-weight: 600; font-size: 14px; }
+    .btn-primary { background: var(--primary); color: var(--primary-contrast); } .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: var(--surface); border-color: var(--border); color: var(--text); } .btn-outline:hover { background: var(--surface-2); }
+    .btn-danger { background: var(--surface); border-color: var(--danger-border); color: var(--danger); } .btn-danger:hover { background: var(--danger-soft); }
+    .btn-sm { padding: 5px 10px; font-size: 13px; } .btn-block { width: 100%; justify-content: center; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .theme-btn { min-width: 36px; justify-content: center; font-size: 16px; padding: 5px 10px; }
+    .theme-fab { position: absolute; top: 16px; right: 16px; z-index: 10; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 999px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: var(--shadow); }
+    .theme-fab:hover { background: var(--surface-2); }
+    /* background music */
+    .music-controls { position: fixed; right: calc(18px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 55; display: none; align-items: center; gap: 8px; background: var(--sidebar-bg); border: 1px solid var(--sidebar-border); border-radius: 999px; padding: 6px 10px; box-shadow: var(--shadow); }
+    .music-controls.show { display: inline-flex; }
+    .music-btn { display: inline-flex; align-items: center; gap: 9px; background: transparent; color: #fff; border: 0; border-radius: 999px; padding: 6px 10px; font-weight: 600; font-size: 13px; }
+    .music-btn .label { letter-spacing: .02em; }
+    .music-vol { width: 92px; height: 30px; margin: 0; padding: 0 6px; background: transparent; color: #fff; border: 1px solid var(--sidebar-border); border-radius: 999px; cursor: pointer; }
+    .music-vol::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: rgba(255,255,255,.35); }
+    .music-vol::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin-top: -5px; border: none; border-radius: 50%; background: var(--g-300); cursor: pointer; }
+    .music-vol::-moz-range-track { height: 4px; border-radius: 999px; background: rgba(255,255,255,.35); }
+    .music-vol::-moz-range-thumb { width: 14px; height: 14px; border: none; border-radius: 50%; background: var(--g-300); cursor: pointer; }
+    .music-vol:focus-visible { outline: 2px solid var(--g-300); outline-offset: 2px; }
+    .music-btn .eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; }
+    .music-btn .eq i { width: 3px; border-radius: 999px; background: var(--g-300); animation: eqbar 1s ease-in-out infinite; }
+    .music-btn .eq i:nth-child(1) { height: 6px; animation-delay: 0s; }
+    .music-btn .eq i:nth-child(2) { height: 14px; animation-delay: .13s; }
+    .music-btn .eq i:nth-child(3) { height: 9px; animation-delay: .26s; }
+    .music-btn .eq i:nth-child(4) { height: 16px; animation-delay: .39s; }
+    .music-btn .eq i:nth-child(5) { height: 7px; animation-delay: .52s; }
+    .music-btn.muted .eq i { animation: none; height: 6px; opacity: .55; background: var(--sidebar-text-muted); }
+    @keyframes eqbar { 0%, 100% { transform: scaleY(.45); } 50% { transform: scaleY(1); } }
+    @media (max-width: 480px) {
+      .music-controls { right: calc(12px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); }
+      .music-btn { padding: 8px 12px; }
+      .music-btn .label { display: none; }
+      .music-vol { width: 76px; height: 30px; }
+    }
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+    .toolbar .field { margin-bottom: 0; } .spacer { flex: 1; }
+    .muted { color: var(--text-muted); } .small { font-size: 12px; } .row { display: flex; align-items: center; gap: 10px; }
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border-soft); }
+    .badge.ok { background: var(--ok-soft); color: var(--ok); border-color: var(--ok-border); } .badge.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn-border); }
+    .badge.bad { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); } .badge.info { background: var(--info-soft); color: var(--info); border-color: var(--info-border); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead th { text-align: left; background: var(--thead-bg); color: var(--text-muted); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); color: var(--text); } tbody tr:hover { background: var(--surface-2); }
+    tbody tr:last-child td { border-bottom: 0; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .alert.error { background: var(--danger-soft); border: 1px solid var(--danger-border); color: var(--danger); }
+    .alert.success { background: var(--ok-soft); border: 1px solid var(--ok-border); color: var(--ok); }
+    .empty { padding: 40px 16px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border); border-radius: 12px; background: var(--surface); }
+    .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; }
+    .tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 9px 14px; color: var(--text-muted); font-weight: 600; }
+    .tabs button.active { color: var(--primary-strong); border-bottom-color: var(--primary); }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); }
+    .stat .label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .stat .value { font-size: 28px; font-weight: 700; margin-top: 6px; color: var(--text-strong); }
+    .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; min-height: 100dvh; background: var(--bg); padding: 20px; position: relative; }
+    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px; width: 100%; max-width: 420px; box-shadow: var(--shadow); }
+    .login-card .logo-row { text-align: center; margin-bottom: 24px; }
+    .login-card .logo-row img { height: 56px; margin-bottom: 12px; }
+    .login-card h2 { margin: 0 0 4px; font-size: 20px; } .login-card .kicker { color: var(--text-muted); font-size: 13px; }
+    .login-card .field { margin-bottom: 16px; }
+    .login-card .btn { margin-top: 8px; }
+    .hero { text-align: center; padding: 60px 20px; }
+    .hero h2 { font-size: 28px; margin: 0 0 8px; color: var(--text-strong); }
+    .hero p { color: var(--text-muted); font-size: 16px; margin: 0 0 28px; }
+    .hero .cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 32px; }
+    .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; }
+    .feature .icon { font-size: 28px; margin-bottom: 12px; }
+    .feature h4 { margin: 0 0 6px; font-size: 15px; } .feature p { margin: 0; color: var(--text-muted); font-size: 13px; }
+    .stage-bar { background: var(--border); border-radius: 8px; overflow: hidden; height: 32px; display: flex; align-items: center; }
+    .stage-fill { background: var(--primary); color: var(--primary-contrast); height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; white-space: nowrap; padding: 0 12px; min-width: fit-content; }
+    .stage-list { margin-top: 12px; max-height: 280px; overflow-y: auto; }
+    .stage-item { padding: 5px 10px; border-left: 3px solid var(--border); margin: 3px 0; font-size: 13px; color: var(--text-muted); }
+    .stage-item.done { border-left-color: var(--primary); color: var(--primary-strong); }
+    .stage-item.current { border-left-color: var(--primary-strong); background: var(--primary-soft); color: var(--primary-soft-text); font-weight: 600; }
+    .profile-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-soft); }
+    .profile-photo-lg { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-soft); }
+    .photo-placeholder { width: 80px; height: 80px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--text-muted); }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .page-loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); gap: 10px; }
+    .nav-toggle { display: none; background: none; border: 0; font-size: 22px; padding: 4px 8px; margin-right: 8px; color: var(--text); }
+    .sidebar-backdrop { display: none; }
+    .modal-overlay { position: fixed; inset: 0; background: var(--overlay); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 480px; width: 100%; box-shadow: var(--shadow); }
+    @media (max-width: 860px) {
+      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 400; transform: translateX(-100%); transition: transform .2s; }
+      body.nav-open .sidebar { transform: translateX(0); }
+      .sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 399; opacity: 0; pointer-events: none; transition: opacity .2s; }
+      body.nav-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
+      .nav-toggle { display: block; }
+      .topbar { padding: 12px 16px; }
+      .content { padding: 16px; }
+    }
+    @media (max-width: 480px) {
+      input, select, textarea { font-size: 16px; }
+      .login-card { padding: 24px; }
+      .tb-actions .btn { font-size: 12px; }
+    }
+
+    /* ================= PUBLIC SITE (landing pages) ================= */
+    .public-topbar { position: sticky; top: 0; z-index: 300; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .pt-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 10px 20px; }
+    .p-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
+    .p-brand:hover { text-decoration: none; }
+    .p-brand img { width: 40px; height: 40px; border-radius: 999px; background: #fff; object-fit: contain; padding: 2px; border: 1px solid var(--border); }
+    .p-brand .name { color: var(--primary-strong); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; line-height: 1.25; }
+    .p-brand .sub { color: var(--text-muted); font-size: 11px; }
+    .p-tabs { display: flex; gap: 2px; flex: 1; justify-content: center; flex-wrap: wrap; }
+    .p-tabs a { color: var(--text-muted); font-weight: 600; font-size: 14px; padding: 8px 12px; border-radius: 8px; text-decoration: none; white-space: nowrap; }
+    .p-tabs a:hover { background: var(--surface-2); color: var(--text-strong); text-decoration: none; }
+    .p-tabs a.active { background: var(--primary-soft); color: var(--primary-soft-text); }
+    .p-actions { display: flex; gap: 8px; align-items: center; }
+    .p-actions .theme-btn { min-width: 36px; }
+    @media (max-width: 900px) {
+      .pt-inner { flex-wrap: wrap; padding: 10px 14px; }
+      .p-tabs { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; }
+      .p-brand .sub { display: none; }
+    }
+    .pub-main { max-width: 1100px; margin: 0 auto; padding: 26px 20px 8px; }
+    .pub-hero {
+      border-radius: 16px; color: #fff; text-align: center; padding: 64px 28px; margin-bottom: 30px;
+      position: relative; overflow: hidden;
+      background-color: var(--sidebar-bg);
+      background-image: linear-gradient(135deg, rgba(6, 31, 16, .90), rgba(13, 61, 39, .78)), var(--hero-img, none);
+      background-size: cover; background-position: center 45%;
+    }
+    .pub-hero h1 { margin: 0 0 10px; font-size: 32px; color: #fff; }
+    .pub-hero .kicker { color: var(--g-200); margin-bottom: 8px; }
+    .pub-hero p { margin: 0 auto 26px; max-width: 640px; color: rgba(255, 255, 255, .88); font-size: 16px; line-height: 1.6; }
+    .pub-hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .pub-hero .btn-outline-light { background: transparent; border: 1px solid rgba(255, 255, 255, .55); color: #fff; }
+    .pub-hero .btn-outline-light:hover { background: rgba(255, 255, 255, .14); }
+    @media (max-width: 480px) { .pub-hero { padding: 44px 18px; } .pub-hero h1 { font-size: 25px; } }
+    .pub-section { margin: 34px 0; }
+    .pub-section > h2 { margin: 0 0 6px; font-size: 22px; }
+    .pub-section > p.lead { margin: 0 0 18px; color: var(--text-muted); font-size: 15px; line-height: 1.6; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .info-card h4 { margin: 0 0 8px; font-size: 16px; }
+    .info-card .card-icon { font-size: 22px; margin-bottom: 8px; }
+    .info-card p { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+    .ann-item { padding: 13px 0; border-bottom: 1px solid var(--border-soft); }
+    .ann-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .ann-item .ann-title { font-weight: 700; color: var(--text-strong); }
+    .ann-item .ann-body { color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-top: 3px; white-space: pre-wrap; }
+    .ann-item .when { color: var(--text-muted); font-size: 11.5px; margin-top: 4px; }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; align-items: start; }
+    @media (max-width: 800px) { .contact-grid { grid-template-columns: 1fr; } }
+    .reg-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+    @media (max-width: 900px) { .reg-grid { grid-template-columns: 1fr; } }
+    .status-result { margin-top: 14px; }
+    ul.tick { margin: 8px 0 0; padding-left: 20px; } ul.tick li { margin: 5px 0; color: var(--text-muted); line-height: 1.55; }
+    .prog-card .prog-level { color: var(--primary-soft-text); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+    .prog-card h4 { margin: 4px 0 8px; }
+    .back-link { display: inline-block; margin-bottom: 14px; font-size: 13px; }
+
+    /* ---- journey (Home) ---- */
+    .journey-img { display: block; width: 100%; max-width: 980px; height: auto; margin: 0 auto; border-radius: 10px; }
+    .phase-card { border-top: 4px solid var(--primary); }
+    .phase-card .phase-no { color: var(--primary-soft-text); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+    .phase-card h4 { margin: 4px 0 6px; font-size: 15px; }
+    .phase-card p { margin: 0 0 8px; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+    .phase-card .steps { color: var(--text-muted); font-size: 12px; }
+    .gate-badge { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-border); }
+
+    /* ---- caveat + referral notice ---- */
+    .caveat-card { border-left: 4px solid var(--primary); }
+    .caveat-card h4 { margin: 0 0 8px; font-size: 15px; }
+    .caveat-card p { margin: 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.65; }
+    .caveat-card p + p { margin-top: 8px; }
+    .footer-note { max-width: 1100px; margin: 26px auto 0; padding: 0 20px; text-align: center; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+
+    /* ---- mobile: stack the inline multi-column form rows ---- */
+    .row-cols { display: grid; gap: 12px; grid-template-columns: repeat(var(--cols, 3), 1fr); }
+    @media (max-width: 640px) {
+      .row-cols { grid-template-columns: 1fr; }
+      .pub-main { padding: 20px 14px 8px; }
+      .pub-section { margin: 26px 0; }
+      .pub-section > h2 { font-size: 19px; }
+      .pub-hero { border-radius: 12px; }
+      .footer-note { padding: 0 14px; }
+    }
+
+    /* ---- floating quick-access rail (mirrors the KMSS landing-page rail) ---- */
+    .fab-rail { position: fixed; right: calc(14px + env(safe-area-inset-right)); top: 50%; z-index: 540; display: flex; flex-direction: column; gap: 10px; opacity: 0; transform: translateY(-50%) translateX(28px); transition: opacity .45s ease, transform .45s ease; }
+    .fab-rail.ready { opacity: 1; transform: translateY(-50%) translateX(0); }
+    .fab { position: relative; width: 46px; height: 46px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; color: #fff; box-shadow: 0 8px 18px rgba(6, 31, 16, .28); transition: transform .2s ease, box-shadow .2s ease; text-decoration: none; }
+    .fab:hover { transform: translateY(-2px) scale(1.06); box-shadow: 0 12px 24px rgba(6, 31, 16, .36); text-decoration: none; }
+    .fab svg { width: 21px; height: 21px; }
+    .fab .fab-label { position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a2f19; color: #fff; padding: 6px 11px; border-radius: 8px; font-size: 12px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity .2s; }
+    .fab:hover .fab-label, .fab:focus-visible .fab-label { opacity: 1; }
+    .fab-contact { background: var(--g-600); }
+    .fab-apply { background: #b45309; }
+    .fab-portal { background: var(--g-800); }
+    .fab-top { background: var(--g-950); }
+
+    /* ---- top scroll-progress bar ---- */
+    .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; width: 100%; transform: scaleX(0); transform-origin: 0 50%; background: linear-gradient(90deg, var(--g-600), var(--g-300)); z-index: 600; pointer-events: none; }
+
+    /* ---- scroll-reveal + hover lift + hero fade ---- */
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity .55s ease, transform .55s ease; }
+    .reveal.is-visible { opacity: 1; transform: none; }
+    .card { transition: transform .2s ease, box-shadow .2s ease; }
+    .card-grid > .card:hover, .info-card:hover, .phase-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    @keyframes heroIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+    .pub-hero { animation: heroIn .6s ease both; }
+
+    @media (max-width: 640px) {
+      .fab-rail { right: calc(8px + env(safe-area-inset-right)); gap: 8px; }
+      .fab { width: 42px; height: 42px; }
+      .fab svg { width: 19px; height: 19px; }
+      .fab .fab-label { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .fab-rail { opacity: 1; transform: translateY(-50%); transition: none; }
+      .fab:hover { transform: none; }
+      .card-grid > .card:hover, .info-card:hover, .phase-card:hover { transform: none; }
+      .pub-hero { animation: none; }
+    }
+</style>
+<script>
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('kms-pg-theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 </head>
 <body>
+<? if (page === 'login') { ?>
+  <div id="app"></div>
+  <div id="print-area"></div>
+<? } else { ?>
   <header class="public-topbar">
     <div class="pt-inner">
       <a class="p-brand" href="?page=home">
@@ -398,14 +748,953 @@
     <img src="https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ" alt="CBS">
     <span class="text">&copy; 2026 Capacity Building and Support. All rights reserved.</span>
   </footer>
+<? } ?>
+  <!-- background music (public pages + login) -->
+  <audio id="bg-music" preload="auto"></audio>
+  <div class="music-controls" id="music-controls">
+    <button class="music-btn" id="music-btn" type="button" aria-label="Toggle background music" aria-pressed="false">
+      <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="label">Music</span>
+    </button>
+    <input type="range" id="music-vol" class="music-vol" min="0" max="1" step="0.05" value="0.3" aria-label="Background music volume">
+  </div>
+  <script>
+    var BRAND = <?!= brandJson ?>;
+    BRAND = BRAND || {};
+    if (!BRAND.logoUrl) BRAND.logoUrl = 'https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl';
+    if (!BRAND.cbsLogoUrl) BRAND.cbsLogoUrl = 'https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ';
+    if (BRAND.heroBgUrl) document.documentElement.style.setProperty('--hero-img', 'url("' + BRAND.heroBgUrl + '")');
+    if (BRAND.journeyImgUrl) {
+      var ji = document.querySelector('.journey-img');
+      if (ji) ji.src = BRAND.journeyImgUrl;
+    }
 
-  <?!= include('common') ?>
+    /* ================= SHARED HELPERS ================= */
+    function esc(v) { return String(v === undefined || v === null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+    function call(fn) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return new Promise(function (resolve, reject) {
+        var r = google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(function (e) { reject(new Error(e && e.message ? e.message : String(e))); });
+        r[fn].apply(r, args);
+      });
+    }
+    function readFileInput(input) {
+      return new Promise(function (resolve, reject) {
+        var file = input.files[0];
+        if (!file) { reject(new Error('Please choose a file.')); return; }
+        if (file.size > 1024 * 1024) { reject(new Error('File must be under 1 MB.')); return; }
+        if (['image/jpeg', 'image/png'].indexOf(file.type) === -1) { reject(new Error('Only JPG or PNG allowed.')); return; }
+        var reader = new FileReader();
+        reader.onload = function () { resolve({ name: file.name, mimeType: file.type, dataUrl: reader.result }); };
+        reader.onerror = function () { reject(new Error('Could not read file.')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* ================= THEME (light / dark) ================= */
+    function currentTheme() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+    function themeIcon() { return currentTheme() === 'dark' ? '&#9788;' : '&#9790;'; }
+    function toggleTheme() {
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('kms-pg-theme', next); } catch (e) {}
+      refreshThemeIcons();
+    }
+    function refreshThemeIcons() {
+      var btns = document.querySelectorAll('[data-theme-icon]');
+      for (var i = 0; i < btns.length; i++) btns[i].innerHTML = themeIcon();
+    }
+    function themeFabHtml() {
+      return '<button type="button" class="theme-fab" data-action="toggle-theme" data-theme-icon title="Toggle light/dark theme" aria-label="Toggle theme">' + themeIcon() + '</button>';
+    }
+    document.addEventListener('click', function (e) {
+      var el = e.target && e.target.closest ? e.target.closest('[data-action="toggle-theme"]') : null;
+      if (el) toggleTheme();
+    });
+    document.addEventListener('DOMContentLoaded', refreshThemeIcons);
+    if (document.readyState !== 'loading') refreshThemeIcons();
+
+    /* ========== PUBLIC PAGES: floating rail, scroll progress, reveal ==========
+       Injected here once so every public page gets the same quick-access rail
+       and animations (the SPA login page is skipped). */
+    (function publicUi() {
+      if (!document.querySelector('.public-topbar')) return;   // public pages only
+      var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      var icons = {
+        contact: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 3z"/><path d="M8 9h8M8 12h5"/></svg>',
+        register: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"/><path d="M8 8l4-4 4 4"/><path d="M5 16v3h14v-3"/></svg>',
+        portal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+        top: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6"/><path d="M6 12l6-6 6 6"/></svg>'
+      };
+      var rail = document.createElement('nav');
+      rail.className = 'fab-rail';
+      rail.setAttribute('aria-label', 'Quick actions');
+      rail.innerHTML =
+        '<a class="fab fab-contact" href="?page=contact" aria-label="Contact the department">' + icons.contact + '<span class="fab-label">Contact</span></a>' +
+        '<a class="fab fab-apply" href="?page=register" aria-label="Register as a new student">' + icons.register + '<span class="fab-label">Register</span></a>' +
+        '<a class="fab fab-portal" href="?page=login" aria-label="Open the student and staff portal">' + icons.portal + '<span class="fab-label">Portal</span></a>' +
+        '<button class="fab fab-top" type="button" id="fab-top" aria-label="Back to top">' + icons.top + '<span class="fab-label">Top</span></button>';
+      document.body.appendChild(rail);
+      var bar = document.createElement('div');
+      bar.className = 'scroll-progress';
+      bar.id = 'scroll-progress';
+      document.body.appendChild(bar);
+      rail.querySelector('#fab-top').addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+      });
+      function onScroll() {
+        var doc = document.documentElement;
+        var max = doc.scrollHeight - window.innerHeight;
+        var y = window.pageYOffset || doc.scrollTop || 0;
+        bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, y / max) : 0) + ')';
+        rail.classList.toggle('ready', y > 120);
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      // reveal on scroll (headings, leads, cards); no-ops with reduced motion
+      var items = [];
+      function add(el) { if (el && items.indexOf(el) === -1) items.push(el); }
+      [].slice.call(document.querySelectorAll('main .pub-section > h2, main .pub-section > p.lead, main .card, .card-grid > *')).forEach(function (el) { add(el); });
+      if (reduced || !('IntersectionObserver' in window)) return;
+      items.forEach(function (el, i) {
+        el.classList.add('reveal');
+        el.style.transitionDelay = (Math.min(i % 4, 3) * 70) + 'ms';
+      });
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) { en.target.classList.add('is-visible'); io.unobserve(en.target); }
+        });
+      }, { rootMargin: '0px 0px -6% 0px', threshold: 0.05 });
+      items.forEach(function (el) { io.observe(el); });
+    })();
+
+    /* ================= BACKGROUND MUSIC =================
+       Playlist served from the live static host (files identical to
+       PG_Portal/audio/music*.mp3). Starts on first user interaction;
+       pause/mute + volume remembered. Controls hide (and music pauses)
+       once signed in. */
+    var MUSIC = (function music() {
+      var audio = document.getElementById('bg-music');
+      var btn = document.getElementById('music-btn');
+      var controls = document.getElementById('music-controls');
+      var vol = document.getElementById('music-vol');
+      var MUTE_KEY = 'kms_pg_music_muted';
+      var VOL_KEY = 'kms_pg_music_volume';
+      var HOST = 'https://kingsmetroschools.vercel.app/';
+      var TRACKS = [HOST + 'music1.mp3', HOST + 'music2.mp3', HOST + 'music3.mp3'];
+      var DEFAULT_VOL = 0.3;
+      var idx = 0, started = false, consecutiveErrors = 0;
+      if (!audio || !btn) return { sync: function () {} };
+      function show() { if (controls) controls.classList.add('show'); }
+      function hide() { if (controls) controls.classList.remove('show'); }
+      function reflect() {
+        btn.classList.toggle('muted', audio.muted || audio.paused);
+        btn.setAttribute('aria-pressed', String(!audio.muted && !audio.paused));
+      }
+      function rawPlay() {
+        var p = audio.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+      function play() {
+        audio.muted = false;
+        rawPlay();
+        reflect();
+      }
+      function pause() {
+        audio.pause();
+        audio.muted = true;
+        reflect();
+      }
+      function applyVolume(v) {
+        v = Number(v);
+        if (isNaN(v)) return;
+        v = Math.min(1, Math.max(0, v));
+        audio.volume = v;
+        if (vol && vol.value !== String(v)) vol.value = String(v);
+      }
+      function loadTrack(i) {
+        idx = ((i % TRACKS.length) + TRACKS.length) % TRACKS.length;
+        audio.src = TRACKS[idx];
+      }
+      function advance() {
+        loadTrack(idx + 1);
+        if (started && !audio.muted) rawPlay();
+      }
+      var savedVolRaw = null;
+      try { savedVolRaw = localStorage.getItem(VOL_KEY); } catch (e) {}
+      var savedVol = savedVolRaw === null ? DEFAULT_VOL : Number(savedVolRaw);
+      applyVolume(isNaN(savedVol) ? DEFAULT_VOL : savedVol);
+      if (vol) {
+        vol.addEventListener('input', function () {
+          applyVolume(vol.value);
+          try { localStorage.setItem(VOL_KEY, vol.value); } catch (err) {}
+          if (started && audio.paused && !audio.muted) rawPlay();
+        });
+      }
+      function firstStart() {
+        if (started) return; started = true;
+        var muted = null;
+        try { muted = localStorage.getItem(MUTE_KEY); } catch (err) {}
+        if (muted === '1') { audio.muted = true; reflect(); return; }
+        if (controls && controls.classList.contains('show')) play();
+      }
+      audio.addEventListener('ended', advance);
+      audio.addEventListener('playing', function () { consecutiveErrors = 0; });
+      audio.addEventListener('error', function () {
+        if (consecutiveErrors >= TRACKS.length) { hide(); return; }
+        consecutiveErrors++;
+        advance();
+      });
+      loadTrack(0);
+      reflect();
+      ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(function (ev) {
+        document.addEventListener(ev, firstStart, { passive: true });
+      });
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        started = true;
+        if (audio.paused || audio.muted) { play(); try { localStorage.setItem(MUTE_KEY, '0'); } catch (err) {} }
+        else { pause(); try { localStorage.setItem(MUTE_KEY, '1'); } catch (err) {} }
+      });
+      return {
+        /** Show controls on public pages; pause + hide once signed in. */
+        sync: function (signedIn) {
+          if (signedIn) { hide(); if (!audio.paused) pause(); }
+          else show();
+        }
+      };
+    })();
+    MUSIC.sync(false);
+
+    /* ================= SHARED NAV + FORM GUARD (public site + portal) ======
+       Inside Apps Script the document URL is the internal iframe URL
+       (…-script.googleusercontent.com/userCodeAppPanel). With <base target="_top">
+       a RELATIVE ?page= link or a native form submit navigates the TOP window to
+       that internal URL — the "userCodeAppPanel?statusRegNumber=…" bug students
+       reported. So every ?page= link is handled here: public views switch in
+       place; everything else goes to the absolute web-app URL (BRAND.execUrl);
+       and native form submits are blocked outright. */
+    var PUBLIC_PAGES = ['home', 'about', 'programmes', 'register', 'contact'];
+    function pageUrl(query) {
+      var base = (BRAND && BRAND.execUrl) || (window.location.origin + window.location.pathname);
+      return base + (base.indexOf('?') === -1 ? '?' : '&') + query;
+    }
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a) return;
+      var m = String(a.getAttribute('href') || '').match(/[?&]page=([a-z]+)/);
+      if (!m) return;
+      var page = m[1];
+      if (PUBLIC_PAGES.indexOf(page) !== -1 && typeof showView === 'function') {
+        e.preventDefault();
+        showView(page, true);
+        window.scrollTo(0, 0);
+        return;
+      }
+      e.preventDefault();
+      window.location.href = pageUrl('page=' + page);
+    });
+    document.addEventListener('submit', function (e) {
+      e.preventDefault();   // forms are always handled by JS — never navigate natively
+    });
+  </script>
+<? if (page === 'login') { ?>
+  <script>
+    var INITIAL_VIEW = <?!= initialViewJson ?>;
+    var EMBED = <?!= embedJson ?>;
+
+    window.addEventListener('error', function (e) {
+      var el = document.getElementById('app');
+      if (el && !el.innerHTML) el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--danger)"><h2>Something went wrong</h2><p>' + (e.message || 'Unknown error') + '</p></div>';
+    });
+
+    /* ================= STATE ================= */
+    var state = {
+      token: sessionStorage.getItem('pgs_token') || '',
+      user: null,
+      boot: false,
+      view: 'login',
+      error: '',
+      notice: '',
+      busy: false,
+      dashboard: null,
+      coordinator: null,
+      hod: null,
+      staff: null,
+      submissions: null,
+      inspector: null,
+      reg: { step: 'form' },
+      pwChange: { flash: '' },
+      photoPreview: ''
+    };
+
+    var JOURNEY_STAGES = [
+      '1 - Admission', '2 - Lecture Attendance', '3 - Supervisor Allocation',
+      '4 - Proposal Submission', '5 - Proposal Defence Form', '6 - Proposal Defence',
+      '7 - Progression Clearance', '8 - Progress Report', '9 - Compliance Inspection',
+      '10 - Plagiarism Check', '11 - External Defence', '12 - Examiners Comments',
+      '13 - Final Compliance', '14 - Signed Copies', '15 - Completion'
+    ];
+    var PROGRAMMES = ['MPhil', 'MSc', 'PhD'];
+    var SPECIALISATIONS = ['Experimental Solid-State Physics', 'Theoretical Solid-State Physics', 'Nuclear Physics', 'Solar Physics', 'Applied Geophysics'];
+    var SUBMISSION_TYPES = ['Research Plan Form', 'Seminar Presentation', 'Research Proposal', 'Progress Report', 'Final Thesis/Dissertation'];
+    var ROLE_LABELS = { Student: 'Student', PG_Coordinator: 'PG Coordinator', HoD: 'Head of Department', Staff: 'Staff', Submission_Inspector: 'Submission Inspector' };
+
+    /* ================= RPC ================= */
+    function authed(fn) {
+      var args = [state.token].concat(Array.prototype.slice.call(arguments, 1));
+      return call.apply(null, [fn].concat(args));
+    }
+
+    /* ================= HELPERS ================= */
+
+    function setError(err) { state.error = err && err.message ? err.message : String(err); state.busy = false; render(); }
+    function setNotice(msg) { state.notice = msg; state.busy = false; }
+    function clearMsgs() { state.error = ''; state.notice = ''; }
+    function act(promise, notice, reload) {
+      state.busy = true; clearMsgs(); render();
+      promise.then(function () {
+        state.busy = false; setNotice(notice || 'Done.');
+        if (reload) reload(); else render();
+      }).catch(setError);
+    }
+    function optionsHtml(list, valueFn, selected, labelFn) {
+      return list.map(function (item) {
+        var val = valueFn ? valueFn(item) : item;
+        var label = labelFn ? labelFn(item) : item;
+        return '<option value="' + esc(val) + '"' + (String(val) === String(selected) ? ' selected' : '') + '>' + esc(label) + '</option>';
+      }).join('');
+    }
+    function collect(form) {
+      var data = {};
+      form.querySelectorAll('[name]').forEach(function (el) { if (el.type !== 'file') data[el.getAttribute('name')] = el.value; });
+      return data;
+    }
+    function statusBadge(s) {
+      var cls = 'badge';
+      if (s === 'Approved') cls += ' ok';
+      else if (s === 'Rejected') cls += ' bad';
+      else if (s === 'Pending' || s === 'Changes Requested' || s === 'Draft') cls += ' warn';
+      else if (s === 'Submitted' || s === 'Under Review') cls += ' info';
+      return '<span class="' + cls + '">' + esc(s) + '</span>';
+    }
+
+    /* ================= NAV ================= */
+    var NAV = [
+      { key: 'dashboard', label: 'Dashboard', roles: ['Student'] },
+      { key: 'submissions', label: 'My Submissions', roles: ['Student'] },
+      { key: 'coordinator', label: 'Coordinator', roles: ['PG_Coordinator'] },
+      { key: 'hod', label: 'HoD Overview', roles: ['HoD'] },
+      { key: 'staffdash', label: 'My Students', roles: ['Staff'] },
+      { key: 'inspector', label: 'Review Queue', roles: ['Submission_Inspector'] }
+    ];
+    function roleAllowed(key) {
+      var item = NAV.filter(function (n) { return n.key === key; })[0];
+      if (!item) return true;
+      return !state.user || item.roles.indexOf(state.user.role) !== -1;
+    }
+    function navigate(view) {
+      clearMsgs();
+      state.view = view;
+      loadView(view);
+    }
+    function loadView(view) {
+      if (view === 'dashboard' && state.user && state.user.role === 'Student') {
+        state.busy = true; render();
+        authed('api_getStudentDashboard').then(function (d) { state.dashboard = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'submissions' && state.user && state.user.role === 'Student') {
+        state.busy = true; render();
+        authed('api_listSubmissions').then(function (d) { state.submissions = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'coordinator' && state.user && state.user.role === 'PG_Coordinator') {
+        state.busy = true; render();
+        authed('api_getCoordinatorDashboard').then(function (d) { state.coordinator = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'hod' && state.user && state.user.role === 'HoD') {
+        state.busy = true; render();
+        authed('api_getHoDStats').then(function (d) { state.hod = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'staffdash' && state.user && state.user.role === 'Staff') {
+        state.busy = true; render();
+        authed('api_getStaffDashboard').then(function (d) { state.staff = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'inspector' && state.user && state.user.role === 'Submission_Inspector') {
+        state.busy = true; render();
+        authed('api_listSubmissions').then(function (d) { state.inspector = d; state.busy = false; render(); }).catch(setError);
+      } else {
+        render();
+      }
+    }
+
+    /* ================= LOGIN ================= */
+    function doLogin(form) {
+      var d = collect(form);
+      state.busy = true; clearMsgs(); render();
+      call('api_login', d.regNumber, d.password).then(function (r) {
+        state.token = r.token; state.user = r.user;
+        sessionStorage.setItem('pgs_token', r.token);
+        state.busy = false;
+        if (r.user.firstLogin) { state.view = 'pwchange'; render(); return; }
+        var target = INITIAL_VIEW && roleAllowed(INITIAL_VIEW) ? INITIAL_VIEW : defaultView_();
+        navigate(target);
+      }).catch(setError);
+    }
+    function defaultView_() {
+      if (state.user.role === 'Student') return 'dashboard';
+      if (state.user.role === 'PG_Coordinator') return 'coordinator';
+      if (state.user.role === 'HoD') return 'hod';
+      if (state.user.role === 'Staff') return 'staffdash';
+      if (state.user.role === 'Submission_Inspector') return 'inspector';
+      return 'dashboard';
+    }
+    function doLogout() {
+      authed('api_logout').catch(function () {});
+      state.token = ''; state.user = null; state.view = 'login';
+      sessionStorage.removeItem('pgs_token');
+      render();
+    }
+
+    /* ================= PASSWORD CHANGE ================= */
+    function doChangePassword(form) {
+      var d = collect(form);
+      if (d.newPassword !== d.confirmPassword) { state.pwChange.flash = 'New passwords do not match.'; render(); return; }
+      state.busy = true; clearMsgs(); render();
+      authed('api_changePassword', d.oldPassword, d.newPassword).then(function () {
+        state.busy = false; setNotice('Password changed. Please sign in again.');
+        state.token = ''; state.user = null; state.view = 'login';
+        sessionStorage.removeItem('pgs_token');
+        render();
+      }).catch(function (e) { state.busy = false; state.pwChange.flash = e.message; render(); });
+    }
+
+    /* ================= PHOTO UPDATE ================= */
+    function doUpdatePhoto(form) {
+      var input = form.querySelector('[name=newPhoto]');
+      state.busy = true; clearMsgs(); render();
+      readFileInput(input).then(function (file) {
+        return authed('api_updateProfilePhoto', file);
+      }).then(function (r) {
+        state.busy = false; setNotice('Profile photo updated.');
+        if (state.dashboard) state.dashboard.student.passportUrl = r.url;
+        render();
+      }).catch(setError);
+    }
+
+    /* ================= RENDER ================= */
+    function render() {
+      document.body.classList.toggle('embed', !!EMBED);
+      if (typeof MUSIC !== 'undefined' && MUSIC.sync) MUSIC.sync(!!state.user);
+      var app = document.getElementById('app');
+      if (!state.user) { app.innerHTML = state.view === 'pwchange' ? pwChangeHtml() : loginHtml(); return; }
+      if (state.view === 'pwchange') { app.innerHTML = pwChangeHtml(); return; }
+      app.innerHTML = shellHtml();
+      document.getElementById('ci').innerHTML = contentHtml();
+    }
+
+    function shellHtml() {
+      var navHtml = NAV.filter(function (n) { return roleAllowed(n.key); }).map(function (n) {
+        return '<button data-nav="' + n.key + '" class="' + (state.view === n.key ? 'active' : '') + '">' + esc(n.label) + '</button>';
+      }).join('');
+      return '<div class="layout">' +
+        '<aside class="sidebar">' +
+          '<div class="sidebar-brand">' +
+            '<img src="' + esc(BRAND.logoUrl) + '" onerror="this.outerHTML=\'<div class=&quot;logo-fallback&quot;>PG</div>\'" alt="">' +
+            '<div><div class="name">' + esc(BRAND.schoolName || 'Postgraduate Journey') + '</div><div class="sub">' + esc(BRAND.subtitle || 'University of Abuja') + '</div></div>' +
+          '</div>' +
+          '<nav class="nav">' + navHtml + '</nav>' +
+          '<div class="sidebar-foot">v1.0 &middot; Apps Script</div>' +
+        '</aside>' +
+        '<div class="sidebar-backdrop" data-action="close-nav"></div>' +
+        '<div class="main">' +
+          '<div class="topbar">' +
+            '<div class="row">' +
+              '<button class="nav-toggle" data-action="toggle-nav">&#9776;</button>' +
+              '<div><div class="who">' + esc(state.user.fullName) + '</div><div class="mail">' + esc(ROLE_LABELS[state.user.role] || state.user.role) + ' &middot; ' + esc(state.user.regNumber) + '</div></div>' +
+            '</div>' +
+            '<div class="tb-actions">' +
+              '<button class="btn btn-outline btn-sm theme-btn" data-action="toggle-theme" data-theme-icon title="Toggle light/dark theme" aria-label="Toggle theme">' + themeIcon() + '</button>' +
+              '<button class="btn btn-outline btn-sm" data-action="pwchange">Change password</button>' +
+              '<button class="btn btn-outline btn-sm" data-action="signout">Sign out</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="content"><div class="content-inner" id="ci"></div></div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function headerHtml() {
+      var out = '';
+      if (state.error) out += '<div class="alert error">' + esc(state.error) + '</div>';
+      if (state.notice) out += '<div class="alert success">' + esc(state.notice) + '</div>';
+      return out;
+    }
+
+    function footerHtml(dark) {
+      return '<footer class="footer' + (dark ? ' dark' : '') + '">' +
+        (BRAND.cbsLogoUrl ? '<img src="' + esc(BRAND.cbsLogoUrl) + '" alt="CBS">' : '') +
+        '<span class="text">' + esc(BRAND.footerText || '© 2026 Capacity Building and Support. All rights reserved.') + '</span>' +
+      '</footer>';
+    }
+
+    function contentHtml() {
+      var out = headerHtml();
+      if (state.busy) { out += '<div class="page-loading"><span class="spinner"></span> Loading…</div>'; }
+      else if (state.view === 'dashboard') out += viewStudentDashboard();
+      else if (state.view === 'submissions') out += viewSubmissions();
+      else if (state.view === 'coordinator') out += viewCoordinator();
+      else if (state.view === 'hod') out += viewHoD();
+      else if (state.view === 'staffdash') out += viewStaff();
+      else if (state.view === 'inspector') out += viewInspector();
+      else out += viewStudentDashboard();
+      out += footerHtml(false);
+      return out;
+    }
+
+    /* ---- Landing / Login ---- */
+    function loginHtml() {
+      return '<div class="login-wrap">' + themeFabHtml() + '<div class="login-card">' +
+        '<div class="logo-row"><img src="' + esc(BRAND.logoUrl) + '" alt="Logo"><h2>Department of Physics Postgraduate Journey</h2><div class="kicker">' + esc(BRAND.subtitle || 'University of Abuja') + '</div></div>' +
+        headerHtml() +
+        '<form id="login-form">' +
+          '<div class="field"><label>Registration Number / Staff ID</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531 or ACA1335"></div>' +
+          '<div class="field"><label>Password</label><input type="password" name="password" required></div>' +
+          '<button class="btn btn-primary btn-block" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? '<span class="spinner"></span>' : 'Sign In') + '</button>' +
+        '</form>' +
+        '<p class="small muted" style="text-align:center;margin-top:16px">New student? <a href="?page=register">Register here</a></p>' +
+        '<p class="small muted" style="text-align:center;margin-top:8px"><a href="?page=home">&larr; Back to public site</a></p>' +
+        footerHtml(true) +
+      '</div></div>';
+    }
+
+    /* ---- Change Password ---- */
+    function pwChangeHtml() {
+      return '<div class="login-wrap">' + themeFabHtml() + '<div class="login-card">' +
+        '<h2>Change Password</h2><p class="kicker">You must change your password before proceeding.</p>' +
+        (state.pwChange.flash ? '<div class="alert error">' + esc(state.pwChange.flash) + '</div>' : '') +
+        '<form id="pw-form">' +
+          '<div class="field"><label>Old Password</label><input type="password" name="oldPassword" required></div>' +
+          '<div class="field"><label>New Password</label><input type="password" name="newPassword" required minlength="8"></div>' +
+          '<div class="field"><label>Confirm New Password</label><input type="password" name="confirmPassword" required minlength="8"></div>' +
+          '<button class="btn btn-primary btn-block" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? '<span class="spinner"></span>' : 'Change Password') + '</button>' +
+        '</form>' +
+      '</div></div>';
+    }
+
+    /* ---- Student Dashboard ---- */
+    function viewStudentDashboard() {
+      if (!state.dashboard) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var s = state.dashboard.student;
+      var stageIdx = JOURNEY_STAGES.indexOf(s.currentStage);
+      var pct = ((stageIdx + 1) / JOURNEY_STAGES.length * 100).toFixed(0);
+      var out = '<h2 style="margin:0 0 20px">Student Dashboard</h2>';
+
+      // Profile + photo
+      out += '<div class="card"><div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">' +
+        '<div style="text-align:center">' +
+          (s.passportUrl ? '<img src="' + esc(s.passportUrl) + '" class="profile-photo-lg" alt="">' : '<div class="photo-placeholder" style="width:100px;height:100px;font-size:36px">?</div>') +
+          '<form id="photo-form" style="margin-top:12px"><input type="file" name="newPhoto" accept="image/jpeg,image/png" style="margin-bottom:8px"><button class="btn btn-outline btn-sm" type="submit">Update Photo</button></form>' +
+        '</div>' +
+        '<div style="flex:1;min-width:200px">' +
+          '<h3 style="margin:0 0 8px">' + esc(s.firstName + ' ' + s.otherNames + ' ' + s.surname) + '</h3>' +
+          '<p class="muted small" style="margin:0 0 12px">' + esc(s.regNumber) + ' &middot; ' + esc(s.programme) + ' &middot; ' + esc(s.specialisation) + '</p>' +
+          '<div class="grid cols-2" style="gap:12px">' +
+            '<div><label>Faculty</label><p style="margin:0">' + esc(s.faculty) + '</p></div>' +
+            '<div><label>Department</label><p style="margin:0">' + esc(s.department) + '</p></div>' +
+            '<div><label>Phone</label><p style="margin:0">' + esc(s.phoneNumber) + '</p></div>' +
+            '<div><label>Year of Admission</label><p style="margin:0">' + esc(s.yearOfAdmission) + '</p></div>' +
+          '</div>' +
+        '</div>' +
+      '</div></div>';
+
+      // Supervisors
+      out += '<div class="grid cols-2">';
+      out += '<div class="card"><h4 style="margin:0 0 12px">Main Supervisor</h4>';
+      if (s.mainSupervisor) {
+        out += '<p style="margin:0"><strong>' + esc(s.mainSupervisor.fullName) + '</strong></p><p class="muted small" style="margin:4px 0 0">' + esc(s.mainSupervisor.rank || '') + '</p>' +
+          (s.mainSupervisor.email ? '<p class="small" style="margin:4px 0 0"><a href="mailto:' + esc(s.mainSupervisor.email) + '">' + esc(s.mainSupervisor.email) + '</a></p>' : '');
+      } else { out += '<p class="muted">Not yet assigned.</p>'; }
+      out += '</div>';
+      out += '<div class="card"><h4 style="margin:0 0 12px">Co-Supervisor</h4>';
+      if (s.coSupervisor) {
+        out += '<p style="margin:0"><strong>' + esc(s.coSupervisor.fullName) + '</strong></p><p class="muted small" style="margin:4px 0 0">' + esc(s.coSupervisor.rank || '') + '</p>' +
+          (s.coSupervisor.email ? '<p class="small" style="margin:4px 0 0"><a href="mailto:' + esc(s.coSupervisor.email) + '">' + esc(s.coSupervisor.email) + '</a></p>' : '');
+      } else { out += '<p class="muted">Not yet assigned.</p>'; }
+      out += '</div></div>';
+
+      // Journey stage
+      out += '<div class="card"><h4 style="margin:0 0 12px">PG Journey — Stage ' + (stageIdx + 1) + ' of 15</h4>' +
+        '<div class="stage-bar"><div class="stage-fill" style="width:' + pct + '%">' + esc(s.currentStage) + '</div></div>' +
+        '<div class="stage-list">' +
+        JOURNEY_STAGES.map(function (st, i) {
+          var cls = i < stageIdx ? 'done' : i === stageIdx ? 'current' : '';
+          return '<div class="stage-item ' + cls + '">' + esc(st) + '</div>';
+        }).join('') +
+        '</div></div>';
+
+      // Announcements
+      out += '<div class="card"><h4 style="margin:0 0 12px">Announcements</h4>';
+      if (!state.dashboard.announcements.length) out += '<p class="muted">No announcements yet.</p>';
+      else state.dashboard.announcements.forEach(function (a) {
+        out += '<div style="padding:10px 0;border-bottom:1px solid var(--border-soft)"><strong>' + esc(a.title) + '</strong><br><span class="small muted">' + esc(a.createdAt) + '</span><br>' + esc(a.body) + '</div>';
+      });
+      out += '</div>';
+
+      // Templates
+      out += '<div class="card"><h4 style="margin:0 0 12px">Download Templates</h4><div class="row" style="flex-wrap:wrap">';
+      for (var key in state.dashboard.templates) {
+        out += '<a class="btn btn-outline btn-sm" href="https://drive.google.com/uc?export=download&id=' + esc(state.dashboard.templates[key]) + '" target="_blank">' + esc(key) + '</a>';
+      }
+      out += '</div></div>';
+
+      // New submission
+      out += '<div class="card"><h4 style="margin:0 0 12px">New Submission</h4>' +
+        '<form id="sub-form">' +
+          '<div class="field"><label>Type</label><select name="type" required>' + optionsHtml(SUBMISSION_TYPES, null, '') + '</select></div>' +
+          '<div class="field"><label>Drive File URL</label><input type="url" name="driveFileUrls" required placeholder="https://drive.google.com/..."></div>' +
+          '<button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button>' +
+        '</form></div>';
+
+      return out;
+    }
+
+    /* ---- Student Submissions ---- */
+    function viewSubmissions() {
+      if (!state.submissions) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var out = '<h2 style="margin:0 0 20px">My Submissions</h2>';
+      if (!state.submissions.length) return out + '<div class="empty">No submissions yet.</div>';
+      out += '<div class="table-wrap"><table><thead><tr><th>Type</th><th>Status</th><th>Date</th><th>Inspector Comments</th><th>Supervisor Notes</th></tr></thead><tbody>';
+      state.submissions.forEach(function (s) {
+        out += '<tr><td>' + esc(s.type) + '</td><td>' + statusBadge(s.status) + '</td><td class="small">' + esc(s.createdAt) + '</td><td class="small">' + esc(s.inspectorComments || '—') + '</td><td class="small">' + esc(s.supervisorNotes || '—') + '</td></tr>';
+      });
+      out += '</tbody></table></div>';
+      return out;
+    }
+
+    /* ---- Coordinator Dashboard ---- */
+    function viewCoordinator() {
+      if (!state.coordinator) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var c = state.coordinator;
+      var out = '<h2 style="margin:0 0 20px">PG Coordinator Dashboard</h2>';
+
+      // Stats
+      out += '<div class="grid cols-3" style="margin-bottom:20px">' +
+        '<div class="stat"><div class="label">Total Students</div><div class="value">' + c.students.length + '</div></div>' +
+        '<div class="stat"><div class="label">Pending Approval</div><div class="value" style="color:var(--warn)">' + c.pending.length + '</div></div>' +
+        '<div class="stat"><div class="label">Active Staff</div><div class="value">' + c.staff.length + '</div></div>' +
+      '</div>';
+
+      // Pending approvals
+      out += '<div class="card"><h4 style="margin:0 0 12px">Pending Approvals</h4>';
+      if (!c.pending.length) out += '<p class="muted">No pending registrations.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Reg Number</th><th>Name</th><th>Programme</th><th>Email</th><th>Action</th></tr></thead><tbody>';
+        c.pending.forEach(function (p) {
+          out += '<tr><td>' + esc(p.regNumber) + '</td><td>' + esc(p.fullName) + '</td><td>' + esc(p.programme) + '</td><td>' + esc(p.email) + '</td>' +
+            '<td><button class="btn btn-primary btn-sm" data-action="approve" data-id="' + esc(p.regNumber) + '">Approve</button> ' +
+            '<button class="btn btn-danger btn-sm" data-action="reject" data-id="' + esc(p.regNumber) + '">Reject</button></td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+
+      // All students
+      out += '<div class="card"><h4 style="margin:0 0 12px">All Students</h4>';
+      if (!c.students.length) out += '<p class="muted">No students.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Reg</th><th>Name</th><th>Programme</th><th>Main Supervisor</th><th>Co-Supervisor</th><th>Stage</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        c.students.forEach(function (s) {
+          out += '<tr><td>' + esc(s.regNumber) + '</td><td>' + esc(s.fullName) + '</td><td>' + esc(s.programme) + '</td>' +
+            '<td>' + esc(s.mainSupervisor || '—') + '</td><td>' + esc(s.coSupervisor || '—') + '</td>' +
+            '<td class="small">' + esc(s.currentStage) + '</td><td>' + statusBadge(s.status) + '</td>' +
+            '<td><button class="btn btn-outline btn-sm" data-action="assign-super" data-id="' + esc(s.regNumber) + '">Assign</button> ' +
+            '<button class="btn btn-danger btn-sm" data-action="remove-student" data-id="' + esc(s.regNumber) + '">Remove</button></td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+
+      // Add student directly
+      out += '<div class="card"><h4 style="margin:0 0 12px">Add Student</h4>' +
+        '<form id="addstudent-form"><div class="row-cols" style="--cols:3">' +
+        '<div class="field"><label>Reg Number</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531"></div>' +
+        '<div class="field"><label>First Name</label><input type="text" name="firstName" required></div>' +
+        '<div class="field"><label>Surname</label><input type="text" name="surname" required></div>' +
+        '<div class="field"><label>Other Names</label><input type="text" name="otherNames"></div>' +
+        '<div class="field"><label>Gender</label><select name="gender" required><option value="">—</option><option>Male</option><option>Female</option></select></div>' +
+        '<div class="field"><label>Phone</label><input type="text" name="phoneNumber" required placeholder="08012345678"></div>' +
+        '<div class="field"><label>Email</label><input type="email" name="email" required></div>' +
+        '<div class="field"><label>Programme</label><select name="programme" required>' + optionsHtml(PROGRAMMES, null, '') + '</select></div>' +
+        '<div class="field"><label>Specialisation</label><select name="specialisation" required>' + optionsHtml(SPECIALISATIONS, null, '') + '</select></div>' +
+        '<div class="field"><label>Year of Admission</label><input type="number" name="yearOfAdmission" min="1950" max="2100" value="' + new Date().getFullYear() + '"></div>' +
+        '</div><button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>Add Student</button>' +
+        '<p class="small muted" style="margin:8px 0 0">The student is approved immediately; sign-in details are emailed (initial password must be changed at first login).</p>' +
+        '</form></div>';
+
+      // Staff management
+      out += '<div class="card"><h4 style="margin:0 0 12px">Staff List (Supervisors)</h4>';
+      if (!c.staff.length) out += '<p class="muted">No staff added yet. Use the form below.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Rank</th><th>Specialisation</th><th>Email</th><th>Action</th></tr></thead><tbody>';
+        c.staff.forEach(function (s) {
+          out += '<tr><td>' + esc(s.fullName) + '</td><td>' + esc(s.rank) + '</td><td>' + esc(s.specialisation) + '</td><td>' + esc(s.email) + '</td>' +
+            '<td><button class="btn btn-danger btn-sm" data-action="remove-staff" data-id="' + esc(s.id) + '">Remove</button></td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '<h4 style="margin:16px 0 8px">Add Staff Member</h4>' +
+        '<form id="staff-form"><div class="row-cols" style="--cols:4">' +
+        '<div class="field"><label>Full Name</label><input type="text" name="fullName" required></div>' +
+        '<div class="field"><label>Rank</label><input type="text" name="rank" placeholder="Professor / Lecturer II"></div>' +
+        '<div class="field"><label>Specialisation</label><input type="text" name="specialisation"></div>' +
+        '<div class="field"><label>Email</label><input type="email" name="email"></div>' +
+        '</div><button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>Add Staff</button></form>';
+      out += '</div>';
+
+      // Announcements
+      out += '<div class="card"><h4 style="margin:0 0 12px">Post Announcement</h4>' +
+        '<form id="ann-form">' +
+          '<div class="field"><label>Title</label><input type="text" name="title" required></div>' +
+          '<div class="field"><label>Body</label><textarea name="body" required></textarea></div>' +
+          '<button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>Post</button>' +
+        '</form></div>';
+
+      // Export
+      out += '<div class="card"><h4 style="margin:0 0 12px">Export Data</h4>' +
+        '<button class="btn btn-outline" data-action="export-csv">Download CSV</button></div>';
+
+      return out;
+    }
+
+    /* ---- HoD Dashboard ---- */
+    function viewHoD() {
+      if (!state.hod) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var h = state.hod;
+      var out = '<h2 style="margin:0 0 4px">Head of Department</h2><p class="muted" style="margin:0 0 20px">Read-only oversight</p>';
+
+      out += '<div class="grid cols-4" style="margin-bottom:20px">' +
+        '<div class="stat"><div class="label">Total Students</div><div class="value">' + h.totalStudents + '</div></div>' +
+        '<div class="stat"><div class="label">Approved</div><div class="value" style="color:var(--primary-strong)">' + (h.byUserStatus.Approved || 0) + '</div></div>' +
+        '<div class="stat"><div class="label">Pending</div><div class="value" style="color:var(--warn)">' + (h.byUserStatus.Pending || 0) + '</div></div>' +
+        '<div class="stat"><div class="label">Total Submissions</div><div class="value">' + h.submissions.length + '</div></div>' +
+      '</div>';
+
+      out += '<div class="grid cols-2"><div class="card"><h4 style="margin:0 0 12px">Students by Programme</h4>';
+      for (var p in h.byProgramme) out += '<p style="margin:4px 0">' + esc(p) + ': <strong>' + h.byProgramme[p] + '</strong></p>';
+      out += '</div><div class="card"><h4 style="margin:0 0 12px">Submissions by Status</h4>';
+      for (var s in h.bySubmissionStatus) out += '<p style="margin:4px 0">' + esc(s) + ': <strong>' + h.bySubmissionStatus[s] + '</strong></p>';
+      out += '</div></div>';
+
+      out += '<div class="card"><h4 style="margin:0 0 12px">All Submissions</h4>';
+      if (!h.submissions.length) out += '<p class="muted">No submissions.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>ID</th><th>Student</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+        h.submissions.forEach(function (sub) {
+          out += '<tr><td class="small">' + esc(sub.id) + '</td><td>' + esc(sub.studentName) + ' (' + esc(sub.regNumber) + ')</td><td>' + esc(sub.type) + '</td><td>' + statusBadge(sub.status) + '</td><td class="small">' + esc(sub.createdAt) + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+      return out;
+    }
+
+    /* ---- Staff Dashboard ---- */
+    function viewStaff() {
+      if (!state.staff) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var st = state.staff;
+      var out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>';
+
+      out += '<div class="card"><h4 style="margin:0 0 12px">My Supervised Students</h4>';
+      if (!st.students.length) out += '<p class="muted">No students assigned to you yet.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Photo</th><th>Reg</th><th>Name</th><th>Programme</th><th>Specialisation</th><th>Stage</th></tr></thead><tbody>';
+        st.students.forEach(function (s) {
+          out += '<tr>' +
+            '<td>' + (s.passportUrl ? '<img src="' + esc(s.passportUrl) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover">' : '<div class="photo-placeholder" style="width:36px;height:36px;font-size:14px">?</div>') + '</td>' +
+            '<td>' + esc(s.regNumber) + '</td><td>' + esc(s.fullName) + '</td><td>' + esc(s.programme) + '</td><td>' + esc(s.specialisation) + '</td><td class="small">' + esc(s.currentStage) + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+
+      out += '<div class="card"><h4 style="margin:0 0 12px">Submissions from My Students</h4>';
+      if (!st.submissions.length) out += '<p class="muted">No submissions yet.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>ID</th><th>Student</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+        st.submissions.forEach(function (sub) {
+          out += '<tr><td class="small">' + esc(sub.id) + '</td><td>' + esc(sub.studentName) + '</td><td>' + esc(sub.type) + '</td><td>' + statusBadge(sub.status) + '</td>' +
+            '<td><button class="btn btn-outline btn-sm" data-action="add-note" data-id="' + esc(sub.id) + '">Add Note</button></td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+      return out;
+    }
+
+    /* ---- Inspector Dashboard ---- */
+    function viewInspector() {
+      if (!state.inspector) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var out = '<h2 style="margin:0 0 20px">Submission Inspector — Review Queue</h2>';
+      if (!state.inspector.length) return out + '<div class="empty">Queue is empty. No submissions awaiting review.</div>';
+      state.inspector.forEach(function (sub) {
+        out += '<div class="card" style="margin-bottom:16px">' +
+          '<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+            '<div><strong>' + esc(sub.type) + '</strong> <span class="muted small">&middot; ' + esc(sub.id) + '</span><br>' +
+            '<span class="small">' + esc(sub.studentName) + ' (' + esc(sub.regNumber) + ') ' + (sub.programme ? '&middot; ' + esc(sub.programme) : '') + '</span></div>' +
+            '<div>' + statusBadge(sub.status) + '</div>' +
+          '</div>' +
+          (sub.driveFileUrls ? '<p style="margin:8px 0"><a href="' + esc(sub.driveFileUrls) + '" target="_blank">View Document</a></p>' : '') +
+          '<div class="field" style="margin:12px 0 8px"><label>Comments</label><textarea id="cmt-' + esc(sub.id) + '" rows="2" placeholder="Required for Reject / Request Changes">' + esc(sub.inspectorComments || '') + '</textarea></div>' +
+          '<div class="row">' +
+            '<button class="btn btn-primary btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="Approved">Approve</button>' +
+            '<button class="btn btn-danger btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="Rejected">Reject</button>' +
+            '<button class="btn btn-outline btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="Changes Requested">Request Changes</button>' +
+            '<button class="btn btn-outline btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="Under Review">Under Review</button>' +
+          '</div>' +
+        '</div>';
+      });
+      return out;
+    }
+
+    /* ================= EVENT DELEGATION ================= */
+    document.addEventListener('click', function (e) {
+      var nav = e.target.closest('[data-nav]');
+      if (nav) { document.body.classList.remove('nav-open'); navigate(nav.getAttribute('data-nav')); return; }
+      var el = e.target.closest('[data-action]');
+      if (!el) return;
+      var a = el.getAttribute('data-action'), id = el.getAttribute('data-id');
+      switch (a) {
+        case 'signout': doLogout(); break;
+        case 'toggle-nav': document.body.classList.toggle('nav-open'); break;
+        case 'close-nav': document.body.classList.remove('nav-open'); break;
+        case 'pwchange': state.view = 'pwchange'; clearMsgs(); render(); break;
+        case 'approve':
+          if (confirm('Approve this student?')) act(authed('api_approveStudent', id), 'Student approved.', function () { loadView('coordinator'); });
+          break;
+        case 'reject':
+          var reason = prompt('Reason for rejection (optional):');
+          if (reason === null) break;
+          act(authed('api_rejectStudent', id, reason), 'Student rejected.', function () { loadView('coordinator'); });
+          break;
+        case 'assign-super':
+          openAssignModal(id);
+          break;
+        case 'assign-save':
+          var main = document.getElementById('assign-main').value;
+          var co = document.getElementById('assign-co').value;
+          act(authed('api_assignSupervisors', id, main, co), 'Supervisors assigned.', function () { closeModal(); loadView('coordinator'); });
+          break;
+        case 'remove-staff':
+          var stfList = (state.coordinator && state.coordinator.staff) || [];
+          var stf = null;
+          for (var si = 0; si < stfList.length; si++) if (String(stfList[si].id) === String(id)) { stf = stfList[si]; break; }
+          var stfName = stf ? stf.fullName : id;
+          if (confirm('Remove ' + stfName + ' from staff?\n\nStudents assigned to them will be unassigned, and their portal login (if matched by email) will be deactivated.')) {
+            act(authed('api_removeStaff', id), 'Staff removed.', function () { loadView('coordinator'); });
+          }
+          break;
+        case 'remove-student':
+          if (confirm('Permanently remove student ' + id + ' and all their submissions?\n\nThis cannot be undone.')) {
+            act(authed('api_removeStudent', id), 'Student removed.', function () { loadView('coordinator'); });
+          }
+          break;
+        case 'close-modal': closeModal(); break;
+        case 'add-note':
+          var note = prompt('Enter supervisory note:');
+          if (note) act(authed('api_addSupervisoryNote', id, note), 'Note added.', function () { loadView('staffdash'); });
+          break;
+        case 'sub-status':
+          var status = el.getAttribute('data-status');
+          var cmt = document.getElementById('cmt-' + id);
+          var comments = cmt ? cmt.value : '';
+          if ((status === 'Rejected' || status === 'Changes Requested') && !comments.trim()) { alert('Comments are required for Reject / Request Changes.'); break; }
+          if (confirm('Change status to ' + status + '?')) act(authed('api_updateSubmissionStatus', id, status, comments), 'Status updated.', function () { loadView('inspector'); });
+          break;
+        case 'export-csv':
+          authed('api_exportData').then(function (csv) {
+            var blob = new Blob([csv], { type: 'text/csv' });
+            var url = URL.createObjectURL(blob);
+            var a2 = document.createElement('a'); a2.href = url; a2.download = 'pg_portal_export.csv'; a2.click();
+            URL.revokeObjectURL(url);
+          }).catch(setError);
+          break;
+      }
+    });
+
+    document.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var form = e.target;
+      if (form.id === 'login-form') doLogin(form);
+      else if (form.id === 'pw-form') doChangePassword(form);
+      else if (form.id === 'photo-form') doUpdatePhoto(form);
+      else if (form.id === 'sub-form') {
+        var d = collect(form);
+        act(authed('api_createSubmission', d), 'Submission created.', function () { loadView('dashboard'); });
+      }
+      else if (form.id === 'staff-form') {
+        var sd = collect(form);
+        act(authed('api_saveStaff', sd), 'Staff added.', function () { loadView('coordinator'); });
+      }
+      else if (form.id === 'addstudent-form') {
+        var ns = collect(form);
+        act(authed('api_addStudent', ns), 'Student added. Sign-in details emailed.', function () { loadView('coordinator'); });
+      }
+      else if (form.id === 'ann-form') {
+        var ad = collect(form);
+        act(authed('api_addAnnouncement', ad.title, ad.body), 'Announcement posted.', function () { loadView('coordinator'); });
+      }
+      else if (form.id === 'assign-form') {
+        var assignId = form.getAttribute('data-id');
+        var main = form.querySelector('[name=mainSupervisorId]').value;
+        var co = form.querySelector('[name=coSupervisorId]').value;
+        act(authed('api_assignSupervisors', assignId, main, co), 'Supervisors assigned.', function () { closeModal(); loadView('coordinator'); });
+      }
+    });
+
+    function openAssignModal(regNumber) {
+      if (!state.coordinator) return;
+      var modal = document.createElement('div');
+      modal.id = 'modal';
+      modal.className = 'modal-overlay';
+      var staffOpts = '<option value="">— None —</option>' + state.coordinator.staff.map(function (s) {
+        return '<option value="' + esc(s.id) + '">' + esc(s.fullName) + (s.rank ? ' (' + esc(s.rank) + ')' : '') + '</option>';
+      }).join('');
+      modal.innerHTML = '<div class="modal-card">' +
+        '<h3 style="margin:0 0 16px">Assign Supervisors — ' + esc(regNumber) + '</h3>' +
+        '<form id="assign-form" data-id="' + esc(regNumber) + '">' +
+          '<div class="field"><label>Main Supervisor</label><select name="mainSupervisorId">' + staffOpts + '</select></div>' +
+          '<div class="field"><label>Co-Supervisor</label><select name="coSupervisorId">' + staffOpts + '</select></div>' +
+          '<div class="row"><button class="btn btn-primary" type="submit">Save</button><button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></div>' +
+        '</form></div>';
+      document.body.appendChild(modal);
+    }
+    function closeModal() { var m = document.getElementById('modal'); if (m) m.remove(); }
+
+    /* ================= BOOT ================= */
+    function start() {
+      if (state.token) {
+        state.busy = true; render();
+        call('api_me', state.token).then(function (u) {
+          state.user = u; state.busy = false;
+          if (u.firstLogin) { state.view = 'pwchange'; render(); return; }
+          var target = INITIAL_VIEW && roleAllowed(INITIAL_VIEW) ? INITIAL_VIEW : defaultView_();
+          navigate(target);
+        }).catch(function () {
+          state.token = ''; state.user = null; state.busy = false;
+          sessionStorage.removeItem('pgs_token');
+          render();
+        });
+      } else {
+        render();
+      }
+    }
+    start();
+  </script>
+<? } else { ?>
   <script>
     /* ================= VIEW SWITCHER (one file, five views) =================
        ?page=home|about|programmes|register|contact arrives as INITIAL_PAGE from
-       doGet; nav/rail links switch views in place. Login keeps a full reload. */
+       doGet; the shared interceptor in the common block switches views in
+       place and navigates ?page=login to the absolute web-app URL. */
     var INITIAL_PAGE = <?!= initialPageJson ?>;
-    var PUBLIC_PAGES = ['home', 'about', 'programmes', 'register', 'contact'];
     var PAGE_TITLES = {
       home: 'Department of Physics Postgraduate Journey — University of Abuja',
       about: 'About — Department of Physics Postgraduate Journey',
@@ -422,45 +1711,49 @@
       document.title = PAGE_TITLES[page] || PAGE_TITLES.home;
       if (updateUrl && window.history && history.replaceState) history.replaceState(null, '', '?page=' + page);
     }
-    document.addEventListener('click', function (e) {
-      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-      if (!a) return;
-      var m = String(a.getAttribute('href') || '').match(/[?&]page=([a-z]+)/);
-      if (!m || PUBLIC_PAGES.indexOf(m[1]) === -1) return;   // ?page=login → normal navigation
-      e.preventDefault();
-      showView(m[1], true);
-      window.scrollTo(0, 0);
-    });
+    // ?page= links (public views + login) are handled by the shared
+    // interceptor in the common block above — absolute URLs, no native nav.
     showView(INITIAL_PAGE || 'home', false);
 
-    /* ================= HOME: announcements ================= */
-    (function () {
-      var el = document.getElementById('ann-list');
-      call('api_publicAnnouncements').then(function (r) {
-        var items = (r && r.items) || [];
-        if (!items.length) {
-          el.className = '';
-          el.innerHTML = '<p class="small muted" style="margin:0">No announcements yet. Check back soon.</p>';
-          return;
-        }
-        el.className = '';
-        el.innerHTML = items.map(function (a) {
-          var when = '';
-          if (a.createdAt) {
-            var d = new Date(a.createdAt);
-            if (!isNaN(d)) when = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    /* ================= HOME: announcements =================
+       try/catch so a failure here can never stop the listeners below from
+       attaching (a dead listener is what let forms fall through to a native
+       submit and land on Google's userCodeAppPanel URL). */
+    try {
+      (function () {
+        var el = document.getElementById('ann-list');
+        call('api_publicAnnouncements').then(function (r) {
+          var items = (r && r.items) || [];
+          if (!items.length) {
+            el.className = '';
+            el.innerHTML = '<p class="small muted" style="margin:0">No announcements yet. Check back soon.</p>';
+            return;
           }
-          return '<div class="ann-item">' +
-            '<div class="ann-title">' + esc(a.title) + '</div>' +
-            (a.body ? '<div class="ann-body">' + esc(a.body) + '</div>' : '') +
-            (when ? '<div class="when">' + when + '</div>' : '') +
-          '</div>';
-        }).join('');
-      }).catch(function () {
-        el.className = '';
-        el.innerHTML = '<p class="small muted" style="margin:0">Could not load announcements right now. Please try again later.</p>';
-      });
-    })();
+          el.className = '';
+          el.innerHTML = items.map(function (a) {
+            var when = '';
+            if (a.createdAt) {
+              var d = new Date(a.createdAt);
+              if (!isNaN(d)) when = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            }
+            return '<div class="ann-item">' +
+              '<div class="ann-title">' + esc(a.title) + '</div>' +
+              (a.body ? '<div class="ann-body">' + esc(a.body) + '</div>' : '') +
+              (when ? '<div class="when">' + when + '</div>' : '') +
+            '</div>';
+          }).join('');
+        }).catch(function () {
+          el.className = '';
+          el.innerHTML = '<p class="small muted" style="margin:0">Could not load announcements right now. Please try again later.</p>';
+        });
+      })();
+    } catch (err) {
+      var annFallback = document.getElementById('ann-list');
+      if (annFallback) {
+        annFallback.className = '';
+        annFallback.innerHTML = '<p class="small muted" style="margin:0">Could not load announcements right now. Please try again later.</p>';
+      }
+    }
 
     /* ================= REGISTER: two-step review + submit + status ================= */
     function regMsg(kind, text) {
@@ -598,5 +1891,6 @@
       });
     });
   </script>
+<? } ?>
 </body>
 </html>

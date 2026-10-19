@@ -14,8 +14,8 @@ token auth, `HEADERS` schema, `_locked_` wrappers).
 - **Public site (this repo → Cloudflare Pages)** — one combined `index.html`
   (all five public views) pre-rendered by `tools/build-pg.js`; announcements and
   contact enquiries reach the portal through JSONP.
-- **Portal (Google Apps Script)** — HtmlService (`doGet` + `createTemplateFromFile`),
-  5 files total: `index`, `login`, `styles`, `common` + `Code.gs`. All transactions
+- **Portal (Google Apps Script)** — HtmlService (`doGet` + `createTemplateFromFile('index')`),
+  2 files total: the combined `index.html` template + `Code.gs`. All transactions
   (login, registration + passport upload, approvals, submissions, dashboards) run here.
 - Google Sheets (database — one tab per table)
 - Google Drive (passport photos + submission files)
@@ -28,7 +28,7 @@ Three pieces, each with one job:
 |-------|-------|--------|
 | **GitHub `Physics-pg`** (this repo) | source of truth | pushes to `main` build & deploy automatically (Cloudflare Git integration) |
 | **Cloudflare Pages `physics-pg`** | `dist/` built by `npm run build` | the public site: home, about, programmes, contact |
-| **Apps Script `/exec`** | the 5 pasted files + Spreadsheet | the portal: register, status check, login, dashboards |
+| **Apps Script `/exec`** | the 2 pasted files + Spreadsheet | the portal: register, status check, login, dashboards |
 
 - The static site links **Register / Login / Portal** to the live `/exec` URL
   (same architecture as KMSS: static site + portal on GAS).
@@ -63,27 +63,25 @@ what Cloudflare runs on each push. Manual fallback if ever needed:
 Physics-pg/
 ├── GAS_Files/
 │   ├── Code.gs            ← paste into Apps Script editor as "Code"
-│   ├── index.html         ← file name "index" — ONE combined file holding all five
-│   │                          public views: home, about, programmes, register,
-│   │                          contact (client-side view switcher; ?page= still works
-│   │                          and deep-links open the right view)
-│   ├── login.html         ← file name "login" — the SPA app (login, dashboards, admin)
-│   ├── styles.html        ← file name "styles" — all CSS + theme bootstrap (shared)
-│   └── common.html        ← file name "common" — brand/helpers/theme/music (shared)
+│   └── index.html         ← file name "index" — ONE template, selected
+│                              server-side by the `page` scriptlet: the five
+│                              public views (home, about, programmes, register,
+│                              contact) and the portal SPA (?page=login)
 ├── images/Phy_Complex.png ← hero background photo (set HERO_IMAGE_URL — see below)
 ├── PG_Journey_Infographic.png ← journey infographic shown on Home (set JOURNEY_IMAGE_URL)
 ├── PG Journey Roadmap.docx  ← reference for journey stages
 ├── README.md
 ├── SeedData.md              ← seed rows + hash generator for demo accounts
 └── tools/
+    ├── pg-template.js       ← shared template renderer (doGet semantics)
     ├── serve-pg.js          ← npm run pg — local preview with demo backend
     └── build-pg.js          ← npm run build — static site into dist/ (Cloudflare)
 ```
 
 > Apps Script page URLs: `…/exec` (Home) · `…/exec?page=about|programmes|register|contact|login`.
-> Create every HTML file with the exact lowercase name above — `doGet` resolves the
-> page name to a file in `template_` (everything except `login` → `index`) and includes
-> via `include('…')`.
+> There is exactly **one** HTML file: `doGet` renders `index.html` as a template —
+> the `page` scriptlet branch serves the portal (`login`) or the public site (all
+> other page names) from that single paste.
 > The static site paths are `/about/`, `/programmes/`, `/contact/`; register/login
 > are handed off to the portal.
 
@@ -162,10 +160,10 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 
 1. [script.google.com](https://script.google.com) → **New project** → rename `Physics_PG_Portal`.
 2. Paste `GAS_Files/Code.gs` over the default `Code.gs`.
-3. For **each** of the 4 HTML files: File → New → HTML file → name it exactly
-   (`index`, `login`, `styles`, `common`) → paste the matching `GAS_Files/*.html`.
-   If your project still contains the old standalone `about`, `programmes`, `register`
-   or `contact` files, **delete them** — they are superseded by the combined `index`.
+3. Create **one** HTML file: File → New → HTML file → name it exactly `index` →
+   paste `GAS_Files/index.html`. **Delete every other HTML file** in the project
+   (`login`, `styles`, `common`, and any old standalone `about`, `programmes`,
+   `register`, `contact`) — the single template supersedes all of them.
 4. (Optional) Script Properties: `SPREADSHEET_ID`, `PASSPORT_FOLDER_ID`,
    `HERO_IMAGE_URL` (public hero photo), `JOURNEY_IMAGE_URL` (journey infographic).
 5. Run `setUp()` once, authorize.
@@ -239,7 +237,7 @@ Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes
 ## Theming, hero & landing-page music
 
 - Two themes, both built on University of Abuja green-and-white (the `--g-50` …
-  `--g-950` scale in `styles.html`):
+  `--g-950` scale in `index.html`):
   - **Light** (`:root`) — white/off-white surfaces, dark-green accents.
   - **Creme** (`[data-theme="dark"]`) — warm creme background (`#f6f0e3`) and soft
     creme cards with deep-green accents; no near-black surfaces (the sidebar is a
@@ -247,14 +245,14 @@ Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes
     the original near-black green theme.
 - Toggle button on every page (public top bar / app top bar / theme fab on the
   login card); choice saved to `localStorage['kms-pg-theme']`; defaults to system
-  preference (early inline script in `styles.html` prevents a flash).
+  preference (early inline script in `index.html` prevents a flash).
 - Sidebar is deep green in both themes; the Home hero keeps its photo behind a dark
   green gradient in both.
 - Home hero uses the department photo (`images/Phy_Complex.png`) behind a dark
   green gradient — enabled via the `HERO_IMAGE_URL` Script Property (see
   "Folder contents" above); the journey infographic uses `JOURNEY_IMAGE_URL`.
-- **Floating quick-access rail** on every public page (injected once by `common.html`,
-  mirroring the KMSS landing page): **Contact · Register · Portal · Top**, with labels on
+- **Floating quick-access rail** on every public page (injected once by the
+  shared script in `index.html`, mirroring the KMSS landing page): **Contact · Register · Portal · Top**, with labels on
   hover, plus a top **scroll-progress bar**.
 - **Animations**: scroll-reveal on headings, lead paragraphs and cards, hover lift on
   cards, animated hero fade-in and smooth back-to-top — all disabled automatically under
@@ -264,11 +262,11 @@ Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes
 - Background music on all public pages + login: playlist cycles
   `music1→2→3→1…`, starts on first interaction, EQ-style mute button + volume
   slider bottom-right (muted state and volume remembered). Controls hide and
-  music pauses once signed in. Shared logic lives in `common.html`. The three
+  music pauses once signed in. Shared logic lives in the common block of `index.html`. The three
   tracks are served from the live static host
   (`https://kingsmetroschools.vercel.app/music*.mp3` — byte-identical copies
   of `audio/music*.mp3` in this repo, since Apps Script cannot serve binary files);
-  edit the `MUSIC` track list in `common.html` if you host them elsewhere.
+  edit the `MUSIC` track list in `index.html` if you host them elsewhere.
 
 ## Local preview (no Apps Script needed)
 
@@ -277,8 +275,8 @@ npm run pg          →  http://localhost:8081          (Home)
                        http://localhost:8081/?page=register   etc.
 ```
 
-`tools/serve-pg.js` inlines the `styles`/`common` includes, substitutes the
-template scriptlets and mocks `google.script.run` with the SeedData accounts
+`tools/serve-pg.js` renders the `index.html` template scriptlets exactly like
+`doGet` and mocks `google.script.run` with the SeedData accounts
 (password `PhysicsPG2026!`), including the public APIs
 (`api_publicAnnouncements`, `api_checkRegistrationStatus`, `api_publicEnquiry`).
 
