@@ -243,20 +243,21 @@ Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes
 
 ## Theming, hero & landing-page music
 
-- Two themes, both built on University of Abuja green-and-white (the `--g-50` …
-  `--g-950` scale in `index.html`):
-  - **Light** (`:root`) — white/off-white surfaces, dark-green accents.
-  - **Creme** (`[data-theme="dark"]`) — warm creme background (`#f6f0e3`) and soft
-    creme cards with deep-green accents; no near-black surfaces (the sidebar is a
-    deep green `#14532d`, `color-scheme: light`). This is the softer alternate to
-    the original near-black green theme.
+- Two themes, both on the KMSS palette — emerald accents on slate neutrals (the
+  `--g-50` … `--g-950` scale in `index.html` is the Tailwind emerald scale):
+  - **Light** (`:root`) — white/slate-50 canvas (`#f8fafc`), slate text, emerald
+    `#059669` accents, slate-900 `#0f172a` sidebar/header.
+  - **Dark** (`[data-theme="dark"]`) — slate-950 canvas (`#0b1220`), `#0f172a`
+    surfaces, `#1e293b` borders, bright emerald accents (`#6ee7b7` links,
+    `#34d399` highlights) and `color-scheme: dark`.
 - Toggle button on every page (public top bar / app top bar / theme fab on the
   login card); choice saved to `localStorage['kms-pg-theme']`; defaults to system
   preference (early inline script in `index.html` prevents a flash).
-- Sidebar is deep green in both themes; the Home hero keeps its photo behind a dark
-  green gradient in both.
-- Home hero uses the department photo (`images/Phy_Complex.png`) behind a dark
-  green gradient — enabled via the `HERO_IMAGE_URL` Script Property (see
+- Home hero uses the department photo (`images/Phy_Complex.png`) under a **bright
+  emerald gradient** (deep → emerald-500/400) so the photo stays visible instead of
+  being buried under near-black green; white text keeps a soft shadow for contrast.
+  Sidebar/header are slate-900 in light and near-black `#060b16` in dark.
+- Home hero photo is enabled via the `HERO_IMAGE_URL` Script Property (see
   "Folder contents" above); the journey infographic uses `JOURNEY_IMAGE_URL`.
 - **Floating quick-access rail** on every public page (injected once by the
   shared script in `index.html`, mirroring the KMSS landing page): **Contact · Register · Portal · Top**, with labels on

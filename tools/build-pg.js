@@ -215,24 +215,31 @@ function loginWrapper() {
     "  <title>Portal Login — Department of Physics Postgraduate Journey</title>\n" +
     '  <meta name="description" content="Sign in to the Department of Physics postgraduate portal — students, staff, PG Coordinator and HoD.">\n' +
     '  <meta name="robots" content="noindex, follow">\n' +
-    '  <meta name="theme-color" content="#14532d">\n' +
+    '  <meta name="theme-color" content="#0f172a">\n' +
     "  <style>\n" +
     "    * { box-sizing: border-box; }\n" +
     "    body { margin: 0; height: 100vh; display: flex; flex-direction: column;\n" +
     "      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;\n" +
-    "      background: #f4f6f5; color: #1c2b21; }\n" +
+    "      background: #f8fafc; color: #0f172a; }\n" +
     "    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;\n" +
-    "      gap: 12px; padding: 10px 16px; background: #14532d; color: #fff; }\n" +
+    "      gap: 12px; padding: 10px 16px; background: #0f172a; color: #fff; }\n" +
     "    header a { color: #fff; text-decoration: none; }\n" +
     "    header .brand { font-weight: 700; font-size: 15px; }\n" +
-    "    header .brand span { font-weight: 400; opacity: .75; font-size: 13px; margin-left: 8px; }\n" +
-    "    header nav a { font-size: 14px; margin-left: 14px; opacity: .9; }\n" +
-    "    header nav a:hover { text-decoration: underline; }\n" +
+    "    header .brand span { font-weight: 400; opacity: .7; font-size: 13px; margin-left: 8px; }\n" +
+    "    header nav a { font-size: 14px; margin-left: 14px; opacity: .85; }\n" +
+    "    header nav a:hover { text-decoration: underline; color: #6ee7b7; }\n" +
     "    .frame-wrap { flex: 1 1 auto; position: relative; min-height: 0; }\n" +
     "    .frame-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }\n" +
     "    .hint { flex: 0 0 auto; margin: 0; padding: 8px 16px; text-align: center;\n" +
-    "      font-size: 13px; background: #eceff0; color: #44504a; }\n" +
-    "    .hint a { color: #14532d; font-weight: 600; }\n" +
+    "      font-size: 13px; background: #f1f5f9; color: #64748b; border-top: 1px solid #e2e8f0; }\n" +
+    "    .hint a { color: #047857; font-weight: 600; }\n" +
+    "    @media (prefers-color-scheme: dark) {\n" +
+    "      body { background: #0b1220; color: #e2e8f0; }\n" +
+    "      header { background: #060b16; }\n" +
+    "      .frame-wrap iframe { background: #0f172a; }\n" +
+    "      .hint { background: #0f172a; color: #94a3b8; border-top-color: #1e293b; }\n" +
+    "      .hint a { color: #6ee7b7; }\n" +
+    "    }\n" +
     "  </style>\n</head>\n<body>\n" +
     "  <header>\n" +
     '    <a class="brand" href="/">Department of Physics Postgraduate Journey<span>University of Abuja</span></a>\n' +

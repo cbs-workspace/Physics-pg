@@ -6,79 +6,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Department of Physics Postgraduate Journey — University of Abuja</title>
   <style>
-    /* University of Abuja colours — green & white (dark green dominant) */
+    /* KMSS palette — emerald accents on slate neutrals, bright over imagery */
     :root {
-      --g-50: #f0f9f3; --g-100: #dcf0e4; --g-200: #b9e0c9; --g-300: #88caa4;
-      --g-400: #4fa97a; --g-500: #2d8a5c; --g-600: #1d6e45; --g-700: #14532d;
-      --g-800: #0f4023; --g-900: #0a2f19; --g-950: #061f10;
+      --g-50: #ecfdf5; --g-100: #d1fae5; --g-200: #a7f3d0; --g-300: #6ee7b7;
+      --g-400: #34d399; --g-500: #10b981; --g-600: #059669; --g-700: #047857;
+      --g-800: #065f46; --g-900: #064e3b; --g-950: #022c22;
 
-      /* ---- Light theme (default) ---- */
-      --bg: #eef6f0;
+      /* ---- Light theme (default) — KMSS light: white/slate canvas ---- */
+      --bg: #f8fafc;
       --surface: #ffffff;
-      --surface-2: #f4faf6;
-      --border: #cfe3d7;
-      --border-soft: #e2f0e7;
-      --text: #0d2718;
-      --text-strong: #061a0e;
-      --text-muted: #4d6558;
-      --primary: #14532d;
-      --primary-hover: #0f4023;
-      --primary-strong: #14532d;
+      --surface-2: #f1f5f9;
+      --border: #e2e8f0;
+      --border-soft: #eef2f6;
+      --text: #0f172a;
+      --text-strong: #0b1220;
+      --text-muted: #64748b;
+      --primary: #059669;
+      --primary-hover: #047857;
+      --primary-strong: #047857;
       --primary-contrast: #ffffff;
-      --primary-soft: #dcf0e4;
-      --primary-soft-text: #0f4023;
-      --focus-ring: rgba(20, 83, 45, .16);
-      --sidebar-bg: #0a2f19;
-      --sidebar-border: rgba(255, 255, 255, .09);
-      --sidebar-text: #d8ece0;
-      --sidebar-text-muted: #9dbfae;
-      --sidebar-brand: #8fd9b0;
+      --primary-soft: #d1fae5;
+      --primary-soft-text: #065f46;
+      --focus-ring: rgba(5, 150, 105, .22);
+      --sidebar-bg: #0f172a;
+      --sidebar-border: rgba(255, 255, 255, .10);
+      --sidebar-text: #cbd5e1;
+      --sidebar-text-muted: #94a3b8;
+      --sidebar-brand: #6ee7b7;
       --sidebar-hover: rgba(255, 255, 255, .08);
-      --sidebar-active-bg: #1d6e45;
+      --sidebar-active-bg: #059669;
       --field-bg: #ffffff;
-      --thead-bg: #f0f7f2;
-      --shadow: 0 1px 2px rgba(10, 47, 25, .07), 0 10px 28px rgba(10, 47, 25, .07);
-      --overlay: rgba(4, 20, 10, .45);
-      --warn: #a3540a; --warn-soft: #fdf0c2; --warn-border: #f3d789;
-      --danger: #b91c1c; --danger-soft: #fde3e3; --danger-border: #f5b5b5;
-      --info: #1d4ed8; --info-soft: #dbeafe; --info-border: #a9c6f7;
-      --ok: #14532d; --ok-soft: #dcf0e4; --ok-border: #a9d9bd;
+      --thead-bg: #f1f5f9;
+      --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 10px 28px rgba(15, 23, 42, .07);
+      --overlay: rgba(15, 23, 42, .45);
+      --warn: #b45309; --warn-soft: #fef3c7; --warn-border: #fde68a;
+      --danger: #b91c1c; --danger-soft: #fee2e2; --danger-border: #fecaca;
+      --info: #1d4ed8; --info-soft: #dbeafe; --info-border: #bfdbfe;
+      --ok: #047857; --ok-soft: #d1fae5; --ok-border: #a7f3d0;
       color-scheme: light;
     }
     [data-theme="dark"] {
-      /* ---- Creme theme (warm, light) — the alternate toggle is a soft creme
-         palette; sidebar/hero keep deep-green accents, nothing near-black. ---- */
-      --bg: #f6f0e3;
-      --surface: #fffdf6;
-      --surface-2: #f1e9d8;
-      --border: #e0d5bd;
-      --border-soft: #ece3d0;
-      --text: #3b3527;
-      --text-strong: #221d10;
-      --text-muted: #7c7360;
-      --primary: #1d6e45;
-      --primary-hover: #14532d;
-      --primary-strong: #14532d;
+      /* ---- Dark theme — KMSS dark: slate-950 canvas, emerald accents ---- */
+      --bg: #0b1220;
+      --surface: #0f172a;
+      --surface-2: #1e293b;
+      --border: #1e293b;
+      --border-soft: #172033;
+      --text: #e2e8f0;
+      --text-strong: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #059669;
+      --primary-hover: #10b981;
+      --primary-strong: #6ee7b7;
       --primary-contrast: #ffffff;
-      --primary-soft: #e2efe4;
-      --primary-soft-text: #0f4023;
-      --focus-ring: rgba(20, 83, 45, .18);
-      --sidebar-bg: #14532d;
-      --sidebar-border: rgba(255, 255, 255, .14);
-      --sidebar-text: #e9f4ec;
-      --sidebar-text-muted: #b6d3c0;
-      --sidebar-brand: #cdeed7;
-      --sidebar-hover: rgba(255, 255, 255, .10);
-      --sidebar-active-bg: #0f4023;
-      --field-bg: #fffdf8;
-      --thead-bg: #f1e9d8;
-      --shadow: 0 1px 2px rgba(97, 76, 36, .08), 0 10px 28px rgba(97, 76, 36, .09);
-      --overlay: rgba(56, 44, 18, .42);
-      --warn: #92400e; --warn-soft: #fceeda; --warn-border: #eccfa4;
-      --danger: #b91c1c; --danger-soft: #fde3e3; --danger-border: #f2b8b8;
-      --info: #1d4ed8; --info-soft: #e0e9fd; --info-border: #b6cbf7;
-      --ok: #14532d; --ok-soft: #e2efe4; --ok-border: #b2d8bf;
-      color-scheme: light;
+      --primary-soft: rgba(5, 150, 105, .18);
+      --primary-soft-text: #6ee7b7;
+      --focus-ring: rgba(52, 211, 153, .28);
+      --sidebar-bg: #060b16;
+      --sidebar-border: rgba(255, 255, 255, .10);
+      --sidebar-text: #cbd5e1;
+      --sidebar-text-muted: #94a3b8;
+      --sidebar-brand: #6ee7b7;
+      --sidebar-hover: rgba(255, 255, 255, .08);
+      --sidebar-active-bg: #065f46;
+      --field-bg: #0b1220;
+      --thead-bg: #172033;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 10px 28px rgba(0, 0, 0, .45);
+      --overlay: rgba(3, 7, 18, .68);
+      --warn: #fbbf24; --warn-soft: rgba(217, 119, 6, .16); --warn-border: rgba(251, 191, 36, .35);
+      --danger: #fca5a5; --danger-soft: rgba(185, 28, 28, .20); --danger-border: rgba(252, 165, 165, .35);
+      --info: #93c5fd; --info-soft: rgba(29, 78, 216, .22); --info-border: rgba(147, 197, 253, .35);
+      --ok: #6ee7b7; --ok-soft: rgba(5, 150, 105, .18); --ok-border: rgba(110, 231, 183, .35);
+      color-scheme: dark;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); font-size: 14px; transition: background .2s, color .2s; }
@@ -244,13 +243,13 @@
     .pub-hero {
       border-radius: 16px; color: #fff; text-align: center; padding: 64px 28px; margin-bottom: 30px;
       position: relative; overflow: hidden;
-      background-color: var(--sidebar-bg);
-      background-image: linear-gradient(135deg, rgba(6, 31, 16, .90), rgba(13, 61, 39, .78)), var(--hero-img, none);
+      background-color: var(--g-800);
+      background-image: linear-gradient(135deg, rgba(2, 44, 34, .88) 0%, rgba(5, 150, 105, .66) 52%, rgba(16, 185, 129, .55) 100%), var(--hero-img, none);
       background-size: cover; background-position: center 45%;
     }
-    .pub-hero h1 { margin: 0 0 10px; font-size: 32px; color: #fff; }
+    .pub-hero h1 { margin: 0 0 10px; font-size: 32px; color: #fff; text-shadow: 0 1px 12px rgba(2, 44, 34, .55); }
     .pub-hero .kicker { color: var(--g-200); margin-bottom: 8px; }
-    .pub-hero p { margin: 0 auto 26px; max-width: 640px; color: rgba(255, 255, 255, .88); font-size: 16px; line-height: 1.6; }
+    .pub-hero p { margin: 0 auto 26px; max-width: 640px; color: rgba(255, 255, 255, .94); font-size: 16px; line-height: 1.6; text-shadow: 0 1px 10px rgba(2, 44, 34, .5); }
     .pub-hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
     .pub-hero .btn-outline-light { background: transparent; border: 1px solid rgba(255, 255, 255, .55); color: #fff; }
     .pub-hero .btn-outline-light:hover { background: rgba(255, 255, 255, .14); }
@@ -307,18 +306,18 @@
     /* ---- floating quick-access rail (mirrors the KMSS landing-page rail) ---- */
     .fab-rail { position: fixed; right: calc(14px + env(safe-area-inset-right)); top: 50%; z-index: 540; display: flex; flex-direction: column; gap: 10px; opacity: 0; transform: translateY(-50%) translateX(28px); transition: opacity .45s ease, transform .45s ease; }
     .fab-rail.ready { opacity: 1; transform: translateY(-50%) translateX(0); }
-    .fab { position: relative; width: 46px; height: 46px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; color: #fff; box-shadow: 0 8px 18px rgba(6, 31, 16, .28); transition: transform .2s ease, box-shadow .2s ease; text-decoration: none; }
-    .fab:hover { transform: translateY(-2px) scale(1.06); box-shadow: 0 12px 24px rgba(6, 31, 16, .36); text-decoration: none; }
+    .fab { position: relative; width: 46px; height: 46px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; color: #fff; box-shadow: 0 8px 18px rgba(15, 23, 42, .28); transition: transform .2s ease, box-shadow .2s ease; text-decoration: none; }
+    .fab:hover { transform: translateY(-2px) scale(1.06); box-shadow: 0 12px 24px rgba(15, 23, 42, .36); text-decoration: none; }
     .fab svg { width: 21px; height: 21px; }
-    .fab .fab-label { position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0a2f19; color: #fff; padding: 6px 11px; border-radius: 8px; font-size: 12px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity .2s; }
+    .fab .fab-label { position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%); white-space: nowrap; background: #0f172a; color: #fff; padding: 6px 11px; border-radius: 8px; font-size: 12px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity .2s; }
     .fab:hover .fab-label, .fab:focus-visible .fab-label { opacity: 1; }
     .fab-contact { background: var(--g-600); }
-    .fab-apply { background: #b45309; }
+    .fab-apply { background: #d97706; }
     .fab-portal { background: var(--g-800); }
-    .fab-top { background: var(--g-950); }
+    .fab-top { background: #1e293b; }
 
     /* ---- top scroll-progress bar ---- */
-    .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; width: 100%; transform: scaleX(0); transform-origin: 0 50%; background: linear-gradient(90deg, var(--g-600), var(--g-300)); z-index: 600; pointer-events: none; }
+    .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; width: 100%; transform: scaleX(0); transform-origin: 0 50%; background: linear-gradient(90deg, #34d399, #fbbf24); z-index: 600; pointer-events: none; }
 
     /* ---- scroll-reveal + hover lift + hero fade ---- */
     .reveal { opacity: 0; transform: translateY(20px); transition: opacity .55s ease, transform .55s ease; }
