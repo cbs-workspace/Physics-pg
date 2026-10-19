@@ -37,6 +37,7 @@ const BRAND = {
   logoUrl: "https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl",
   cbsLogoUrl: "https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ",
   heroBgUrl: "/images/Phy_Complex.png",
+  journeyImgUrl: "/images/PG_Journey_Infographic.png",
 };
 
 const STAGES = [
@@ -816,20 +817,21 @@ function readGas(name) {
   return fs.readFileSync(path.join(GAS_DIR, name + ".html"), "utf8");
 }
 
-function buildPage(pageName) {
-  if (pageCache.has(pageName)) return pageCache.get(pageName);
+function buildPage(pageName, embed) {
+  const cacheKey = pageName + (embed ? "?embed=1" : "");
+  if (pageCache.has(cacheKey)) return pageCache.get(cacheKey);
   let html = renderTemplate(readGas("index"), {
     page: pageName,
     brandJson: JSON.stringify(BRAND),
     // mirrors doGet: the index view switcher must not point at the portal
     initialPageJson: JSON.stringify(pageName === "login" ? "home" : pageName),
     initialViewJson: JSON.stringify(""),
-    embedJson: JSON.stringify(false),
+    embedJson: JSON.stringify(!!embed),
   });
   if (html.match(/<\?/g)) console.warn("warning: unreplaced scriptlet(s) in index.html");
   // inject the mocks right after <body> so every page script can use them
   html = html.replace(/<body>/, function () { return "<body>\n" + MOCK_JS + "\n" + MOCK_API_JS; });
-  pageCache.set(pageName, html);
+  pageCache.set(cacheKey, html);
   return html;
 }
 
@@ -860,8 +862,9 @@ http
     const seg = urlPath.replace(/^\/+|\/+$/g, "").replace(/\.html$/i, "");
     const key = String(query.get("page") || seg || "").toLowerCase();
     if (PAGES.indexOf(key) !== -1) {
+      const embed = query.get("embed") === "1" || query.get("embed") === "true";
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(buildPage(key || "home"));
+      return res.end(buildPage(key || "home", embed));
     }
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Not found. Pages: / (home), /?page=about|programmes|register|contact|login");

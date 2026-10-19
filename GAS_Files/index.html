@@ -292,6 +292,12 @@
     .caveat-card p + p { margin-top: 8px; }
     .footer-note { max-width: 1100px; margin: 26px auto 0; padding: 0 20px; text-align: center; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
 
+    /* ---- embed mode (?embed=1): chrome-less render for the in-site iframe
+       wrappers (/login/ and /register/ hide their own top bar, hero and rail) ---- */
+    body.embed .public-topbar, body.embed .pub-hero, body.embed .fab-rail, body.embed .music-controls,
+    body.embed .scroll-progress, body.embed .footer-note, body.embed .pub-footer { display: none !important; }
+    body.embed .pub-main { padding: 16px 20px 8px; }
+
     /* ---- mobile: stack the inline multi-column form rows ---- */
     .row-cols { display: grid; gap: 12px; grid-template-columns: repeat(var(--cols, 3), 1fr); }
     @media (max-width: 640px) {
@@ -768,6 +774,12 @@
       if (ji) ji.src = BRAND.journeyImgUrl;
     }
 
+    /* Embed mode (?embed=1): this render is shown inside an in-site iframe
+       (/login/ or /register/ wrapper) — drop the site chrome and keep every
+       ?page= link navigating INSIDE the frame instead of escaping to top. */
+    var EMBED = <?!= embedJson ?>;
+    if (EMBED) document.body.classList.add('embed');
+
     /* ================= SHARED HELPERS ================= */
     function esc(v) { return String(v === undefined || v === null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
     function call(fn) {
@@ -979,6 +991,7 @@
     var PUBLIC_PAGES = ['home', 'about', 'programmes', 'register', 'contact'];
     function pageUrl(query) {
       var base = (BRAND && BRAND.execUrl) || (window.location.origin + window.location.pathname);
+      if (EMBED) query += '&embed=1';   // keep the destination framable (stays in the wrapper)
       return base + (base.indexOf('?') === -1 ? '?' : '&') + query;
     }
     document.addEventListener('click', function (e) {

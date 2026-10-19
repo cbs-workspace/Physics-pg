@@ -30,18 +30,20 @@ Three pieces, each with one job:
 | **Cloudflare Pages `physics-pg`** | `dist/` built by `npm run build` | the public site: home, about, programmes, contact |
 | **Apps Script `/exec`** | the 2 pasted files + Spreadsheet | the portal: register, status check, login, dashboards |
 
-- The static site links **Register / Portal** to the live `/exec` URL (same
-  architecture as KMSS: static site + portal on GAS). **Login** follows the
-  KMSS `loginMode: 'page'` logic: every login button goes to the in-site
-  `/login/` page, which embeds the portal in a full-page iframe
-  (`?page=login&embed=1`, `XFrameOptions ALLOWALL`), so the raw
-  `script.google.com` URL never appears in the address bar — only via the
-  "Open in new tab" escape hatch.
+- The static site follows the KMSS `loginMode: 'page'` logic for the **Login**
+  and **Register** buttons: they go to in-site pages (`/login/`, `/register/`)
+  that embed the live portal in a full-page iframe (`?page=login&embed=1`,
+  `?page=register&embed=1`, `XFrameOptions ALLOWALL`), so the raw
+  `script.google.com` URL never appears in the address bar — only via each
+  page's "Open in new tab" escape hatch.
+- Those iframes render with `?embed=1`, so the portal drops its own top bar,
+  hero, rail and music (`body.embed` in `index.html`); any `?page=` link inside
+  the frame stays in-frame (the shared guard appends `&embed=1`).
 - Live data on the static site: announcements (`?public=announcements`) and the
   contact enquiry (`?public=enquiry`) are JSONP endpoints in `Code.gs`, so both
   work cross-origin without CORS.
-- `/register/` on the static site is a redirect stub to the portal, so old
-  links keep working.
+- Old `/register/` links keep working (the page is still the registration form,
+  now framed in-site rather than a redirect stub).
 - After pasting file changes into Apps Script, publish with
   **Deploy → Manage deployments → Edit → Version: New version → Deploy** so the
   `/exec` link never changes.
@@ -72,9 +74,12 @@ Physics-pg/
 │                              server-side by the `page` scriptlet: the five
 │                              public views (home, about, programmes, register,
 │                              contact) and the portal SPA (?page=login)
-├── images/Phy_Complex.png ← hero background photo (set HERO_IMAGE_URL — see below)
-├── PG_Journey_Infographic.png ← journey infographic shown on Home (set JOURNEY_IMAGE_URL)
-├── PG Journey Roadmap.docx  ← reference for journey stages
+├── images/
+│   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
+│   └── PG_Journey_Infographic.png ← journey infographic on Home (set JOURNEY_IMAGE_URL)
+├── docs/
+│   ├── PG Journey Roadmap.docx ← reference for journey stages
+│   └── Staff.xlsx          ← internal staff roster (local only, never committed)
 ├── README.md
 ├── SeedData.md              ← seed rows + hash generator for demo accounts
 └── tools/
@@ -88,8 +93,8 @@ Physics-pg/
 > the `page` scriptlet branch serves the portal (`login`) or the public site (all
 > other page names) from that single paste.
 > The static site paths are `/about/`, `/programmes/`, `/contact/`; register
-> is handed off to the portal, and login opens `/login/` — an in-site page
-> that iframes `…/exec?page=login&embed=1`.
+> and login open `/register/` and `/login/` — in-site pages that iframe
+> `…/exec?page=register|login&embed=1`.
 
 ## Public site (no login required)
 
@@ -106,7 +111,8 @@ Physics-pg/
   student first reviews a summary card (all details + passport preview) and can go back
   to edit before pressing *Submit Registration*; then a **status-check box**
   (enter reg number → Pending / Approved / Rejected / Not Found via
-  `api_checkRegistrationStatus`).
+  `api_checkRegistrationStatus`). On the static site this form is served in-site at
+  `/register/` (portal iframe, `?embed=1`) instead of leaving the website.
 - **Student emails** (all branded via `sendPortalMail_`):
   - On submission, `notifyRegistrationReceived_` emails the student a summary +
     "awaiting approval", with the PG Coordinator BCC'd (`coordinatorEmail_`).
@@ -123,10 +129,10 @@ Physics-pg/
 - Hero background: upload `images/Phy_Complex.png` to Drive (or any host), set the
   Script Property `HERO_IMAGE_URL` to its direct image URL (`brand_()` reads it as
   `heroBgUrl`; the local harness serves the file from `images/` automatically).
-- Journey infographic: host `PG_Journey_Infographic.png` (Drive or any host) and set
-  the Script Property `JOURNEY_IMAGE_URL` (`brand_()` → `brand.journeyImgUrl`; the
-  local harness serves the PNG from the repo root — the static build bakes the same
-  image as `/PG_Journey_Infographic.png`). Until the Script Property is set, the
+- Journey infographic: host `images/PG_Journey_Infographic.png` (Drive or any host) and
+  set the Script Property `JOURNEY_IMAGE_URL` (`brand_()` → `brand.journeyImgUrl`; the
+  local harness serves `/images/…` from `images/` — the static build bakes the same
+  image as `/images/PG_Journey_Infographic.png`). Until the Script Property is set, the
   portal's Home infographic image is hidden (the phase cards still show); the static
   site always shows it.
 
@@ -292,12 +298,12 @@ npm run pg          →  http://localhost:8081          (Home)
 
 ```
 npm run build       →  dist/  (index + about/ + programmes/ + contact/
-                               + register/ handoff + login/ iframe page + images)
+                               + register/ & login/ iframe pages + images)
 ```
 
 `tools/build-pg.js` pre-renders the four public views from the same combined
-`index.html`, rewrites register links to the live portal and login links to
-the in-site `/login/` iframe page, and injects the
+`index.html`, rewrites register/login links to the in-site `/register/` and
+`/login/` iframe pages, and injects the
 JSONP bridge (`?public=announcements` / `?public=enquiry`) instead of the demo
 mocks. To preview the static output locally: `npx serve dist` (any static file
 server works).
