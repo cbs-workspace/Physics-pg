@@ -27,7 +27,7 @@ Three pieces, each with one job:
 | Piece | Holds | Serves |
 |-------|-------|--------|
 | **GitHub `Physics-pg`** (this repo) | source of truth | pushes to `main` build & deploy automatically (Cloudflare Git integration) |
-| **Cloudflare Pages `physics-pg`** | `dist/` built by `npm run build` | the public site: home, about, programmes, contact |
+| **Cloudflare Pages `physics-pg`** | `dist/` built by `npm run build` | the public site: home (with About condensed into it), contact |
 | **Apps Script `/exec`** | the 2 pasted files + Spreadsheet | the portal: register, status check, login, dashboards |
 
 - The static site follows the KMSS `loginMode: 'page'` logic for the **Login**
@@ -71,9 +71,10 @@ Physics-pg/
 ├── GAS_Files/
 │   ├── Code.gs            ← paste into Apps Script editor as "Code"
 │   └── index.html         ← file name "index" — ONE template, selected
-│                              server-side by the `page` scriptlet: the five
-│                              public views (home, about, programmes, register,
-│                              contact) and the portal SPA (?page=login)
+│                              server-side by the `page` scriptlet: the public
+│                              views (home — About is condensed into a Home
+│                              section — register, contact) and the portal SPA
+│                              (?page=login)
 ├── images/
 │   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
 │   └── PG_Journey_Infographic.png ← journey infographic on Home (set JOURNEY_IMAGE_URL)
@@ -88,13 +89,15 @@ Physics-pg/
     └── build-pg.js          ← npm run build — static site into dist/ (Cloudflare)
 ```
 
-> Apps Script page URLs: `…/exec` (Home) · `…/exec?page=about|programmes|register|contact|login`.
+> Apps Script page URLs: `…/exec` (Home) · `…/exec?page=register|contact|login`.
 > There is exactly **one** HTML file: `doGet` renders `index.html` as a template —
 > the `page` scriptlet branch serves the portal (`login`) or the public site (all
-> other page names) from that single paste.
-> The static site paths are `/about/`, `/programmes/`, `/contact/`; register
-> and login open `/register/` and `/login/` — in-site pages that iframe
-> `…/exec?page=register|login&embed=1`.
+> other page names) from that single paste. Old `?page=about|programmes` links
+> are still accepted by `doGet` and fall back to Home.
+> The static site paths are `/contact/`; About is a section on Home and
+> Programmes was retired. `/about/` and `/programmes/` redirect to `/`
+> (`dist/_redirects`, 301); register and login open `/register/` and `/login/` —
+> in-site pages that iframe `…/exec?page=register|login&embed=1`.
 
 ## Public site (no login required)
 
@@ -106,7 +109,8 @@ Physics-pg/
   PG coordination, progress monitoring and documentation; other matters (incl. SPGS
   referrals) go to the Head, Department of Physics or the PG Coordinator. Full callout
   on Home; one-line version in the footer of every public page.
-- **About / Programmes** — department, degrees, five specialisation areas, 15 stages.
+- **About** — condensed into a single **About the Department** section on Home
+  (the standalone About page was retired; `/about/` redirects to `/`).
 - **Register** — full registration form (`api_register`) with a **two-step flow**: the
   student first reviews a summary card (all details + passport preview) and can go back
   to edit before pressing *Submit Registration*; then a **status-check box**
@@ -297,11 +301,12 @@ npm run pg          →  http://localhost:8081          (Home)
 ## Static build (Cloudflare Pages)
 
 ```
-npm run build       →  dist/  (index + about/ + programmes/ + contact/
-                               + register/ & login/ iframe pages + images)
+npm run build       →  dist/  (index + contact/
+                               + register/ & login/ iframe pages + images
+                               + _redirects: /about/ & /programmes/ → /)
 ```
 
-`tools/build-pg.js` pre-renders the four public views from the same combined
+`tools/build-pg.js` pre-renders the public views from the same combined
 `index.html`, rewrites register/login links to the in-site `/register/` and
 `/login/` iframe pages, and injects the
 JSONP bridge (`?public=announcements` / `?public=enquiry`) instead of the demo

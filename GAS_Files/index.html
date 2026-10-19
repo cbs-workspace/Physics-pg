@@ -272,8 +272,6 @@
     @media (max-width: 900px) { .reg-grid { grid-template-columns: 1fr; } }
     .status-result { margin-top: 14px; }
     ul.tick { margin: 8px 0 0; padding-left: 20px; } ul.tick li { margin: 5px 0; color: var(--text-muted); line-height: 1.55; }
-    .prog-card .prog-level { color: var(--primary-soft-text); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
-    .prog-card h4 { margin: 4px 0 8px; }
     .back-link { display: inline-block; margin-bottom: 14px; font-size: 13px; }
 
     /* ---- journey (Home) ---- */
@@ -370,10 +368,8 @@
         <span><span class="name">Postgraduate Journey</span><br><span class="sub">Department of Physics &middot; University of Abuja</span></span>
       </a>
       <nav class="p-tabs">
-        <a href="?page=home" data-page="home" class="active">Home</a>
-        <a href="?page=about" data-page="about">About</a>
-        <a href="?page=programmes" data-page="programmes">Programmes</a>
-        <a href="?page=register" data-page="register">Register</a>
+          <a href="?page=home" data-page="home" class="active">Home</a>
+          <a href="?page=register" data-page="register">Register</a>
         <a href="?page=contact" data-page="contact">Contact</a>
       </nav>
       <div class="p-actions">
@@ -395,8 +391,25 @@
            University's main portal.</p>
         <div class="cta">
           <a class="btn btn-primary" href="?page=register">Register Now</a>
-          <a class="btn btn-outline-light" href="?page=programmes">View Programmes</a>
           <a class="btn btn-outline-light" href="?page=login">Student Login</a>
+        </div>
+      </section>
+
+      <!-- About is condensed into one section on Home (its own page was retired). -->
+      <section class="pub-section" id="about">
+        <h2>About the Department</h2>
+        <p class="lead">The Department of Physics, Faculty of Science, University of Abuja trains postgraduate
+          physicists across MPhil, MSc and PhD programmes, with research strengths spanning experimental and
+          theoretical solid-state, nuclear and solar physics and applied geophysics.</p>
+        <div class="card">
+          <p>This is the department's own postgraduate journey platform — an addition to the University's central
+            portal, focused only on how our students progress. It manages everything before the transcript:
+            admission status, lecture attendance checkpoints, supervisor allocation, proposal milestones,
+            submissions, inspections and final compliance.</p>
+          <p style="margin-top:8px">Built for coordination: the <strong>PG Coordinator</strong> approves
+            registrations, allocates supervisors and reviews submissions; the <strong>Head of Department</strong>
+            has a read-only overview; <strong>staff</strong> record supervisory notes and stage updates; and
+            <strong>students</strong> always see exactly where they stand.</p>
         </div>
       </section>
 
@@ -489,119 +502,6 @@
             requiring referral to the School of Postgraduate Studies (SPGS) — please contact the
             <strong>Head, Department of Physics</strong> or the <strong>PG Coordinator</strong>.</p>
         </div>
-      </section>
-    </div>
-
-    <!-- ==================== ABOUT ==================== -->
-    <div class="pub-page" data-page="about" hidden>
-      <section class="pub-hero">
-        <div class="kicker">Department of Physics &middot; University of Abuja</div>
-        <h1>About the Postgraduate Journey</h1>
-        <p>The department's own platform for tracking and managing postgraduate progress — built for
-           students, the PG Coordinator and the Head of Department.</p>
-      </section>
-
-      <section class="pub-section">
-        <h2>Who We Are</h2>
-        <p class="lead">The Department of Physics, Faculty of Science, University of Abuja trains postgraduate
-          physicists across MPhil, MSc and PhD programmes, with research strengths in five specialisation
-          areas spanning solid-state, nuclear, solar and applied geophysics.</p>
-        <div class="card-grid">
-          <div class="card info-card">
-            <div class="card-icon">&#127963;</div>
-            <h4>A Departmental Tool</h4>
-            <p>The University already runs a central portal for postgraduate students across all departments.
-              This platform is the department's own addition — focused only on how our students progress.</p>
-          </div>
-          <div class="card info-card">
-            <div class="card-icon">&#128200;</div>
-            <h4>Non-Result Progress</h4>
-            <p>It manages everything before the transcript: admission status, lecture attendance checkpoints,
-              supervisor allocation, proposal milestones, submissions, inspections and final compliance.</p>
-          </div>
-          <div class="card info-card">
-            <div class="card-icon">&#129309;</div>
-            <h4>Built for Coordination</h4>
-            <p>Designed so the PG Coordinator and Head of Department can oversee every student's journey,
-              while students see exactly where they stand at any time.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="pub-section">
-        <h2>What the Portal Does</h2>
-        <div class="card">
-          <ul class="tick">
-            <li><strong>Students</strong> register online, check their registration status, sign in to a personal dashboard and follow their 15-stage journey.</li>
-            <li><strong>The PG Coordinator</strong> approves registrations, allocates supervisors, manages staff entries, posts announcements and reviews submissions.</li>
-            <li><strong>The Head of Department</strong> has a read-only overview of the department's postgraduate cohort and progress.</li>
-            <li><strong>Staff</strong> record supervisory notes and stage updates; <strong>submission inspectors</strong> review, approve or reject submitted work with comments.</li>
-          </ul>
-        </div>
-      </section>
-    </div>
-
-    <!-- ==================== PROGRAMMES ==================== -->
-    <div class="pub-page" data-page="programmes" hidden>
-      <section class="pub-hero">
-        <div class="kicker">Department of Physics &middot; University of Abuja</div>
-        <h1>Postgraduate Programmes</h1>
-        <p>MPhil, MSc and PhD study in Physics — with five research specialisation areas and a clearly
-           staged journey from admission to completion.</p>
-        <div class="cta">
-          <a class="btn btn-primary" href="?page=register">Register Now</a>
-          <a class="btn btn-outline-light" href="?page=contact">Ask a Question</a>
-        </div>
-      </section>
-
-      <section class="pub-section">
-        <h2>Our Degrees</h2>
-        <p class="lead">Choose the research pathway that matches your goals. All three are tracked stage-by-stage on this portal.</p>
-        <div class="card-grid">
-          <div class="card prog-card">
-            <div class="prog-level">Postgraduate</div>
-            <h4>MPhil</h4>
-            <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.6">The research threshold degree — proposal development, defence and supervised research leading to a thesis.</p>
-          </div>
-          <div class="card prog-card">
-            <div class="prog-level">Masters</div>
-            <h4>MSc</h4>
-            <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.6">Master of Science in Physics — advanced study and a supervised research dissertation.</p>
-          </div>
-          <div class="card prog-card">
-            <div class="prog-level">Doctoral</div>
-            <h4>PhD</h4>
-            <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.6">Doctoral research — original contribution to physics, culminating in thesis and external defence.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="pub-section">
-        <h2>Specialisation Areas</h2>
-        <div class="card">
-          <ul class="tick">
-            <li>Experimental Solid-State Physics</li>
-            <li>Theoretical Solid-State Physics</li>
-            <li>Nuclear Physics</li>
-            <li>Solar Physics</li>
-            <li>Applied Geophysics</li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="pub-section">
-        <h2>The Journey</h2>
-        <p class="lead">Every student moves through fifteen defined stages — the portal shows exactly which one you are on.</p>
-        <div class="card">
-          <ul class="tick">
-            <li>1 &ndash; Admission &nbsp;&middot;&nbsp; 2 &ndash; Lecture Attendance &nbsp;&middot;&nbsp; 3 &ndash; Supervisor Allocation</li>
-            <li>4 &ndash; Proposal Submission &nbsp;&middot;&nbsp; 5 &ndash; Proposal Defence Form &nbsp;&middot;&nbsp; 6 &ndash; Proposal Defence</li>
-            <li>7 &ndash; Progression Clearance &nbsp;&middot;&nbsp; 8 &ndash; Progress Report &nbsp;&middot;&nbsp; 9 &ndash; Compliance Inspection</li>
-            <li>10 &ndash; Plagiarism Check &nbsp;&middot;&nbsp; 11 &ndash; External Defence &nbsp;&middot;&nbsp; 12 &ndash; Examiners Comments</li>
-            <li>13 &ndash; Final Compliance &nbsp;&middot;&nbsp; 14 &ndash; Signed Copies &nbsp;&middot;&nbsp; 15 &ndash; Completion</li>
-          </ul>
-        </div>
-        <p class="lead" style="margin-top:14px">Ready? <a href="?page=register">Register as a new student</a> — already registered? <a href="?page=login">sign in</a>.</p>
       </section>
     </div>
 
@@ -727,7 +627,7 @@
               <div class="ann-body">PG Coordinator &mdash; enquiries and registration approvals, during working hours.</div>
             </div>
             <p class="small muted" style="margin-bottom:0">Prefer to browse first? See the
-              <a href="?page=programmes">programmes</a> or the <a href="?page=about">about</a> page.</p>
+              <a href="?page=home">home page</a> for the department overview, announcements and the full journey.</p>
           </div>
 
           <div class="card">
@@ -988,7 +888,7 @@
        reported. So every ?page= link is handled here: public views switch in
        place; everything else goes to the absolute web-app URL (BRAND.execUrl);
        and native form submits are blocked outright. */
-    var PUBLIC_PAGES = ['home', 'about', 'programmes', 'register', 'contact'];
+    var PUBLIC_PAGES = ['home', 'register', 'contact'];
     function pageUrl(query) {
       var base = (BRAND && BRAND.execUrl) || (window.location.origin + window.location.pathname);
       if (EMBED) query += '&embed=1';   // keep the destination framable (stays in the wrapper)
@@ -1702,15 +1602,14 @@
   </script>
 <? } else { ?>
   <script>
-    /* ================= VIEW SWITCHER (one file, five views) =================
-       ?page=home|about|programmes|register|contact arrives as INITIAL_PAGE from
-       doGet; the shared interceptor in the common block switches views in
-       place and navigates ?page=login to the absolute web-app URL. */
+    /* ================= VIEW SWITCHER (one file, three public views) =================
+       ?page=home|register|contact arrives as INITIAL_PAGE from doGet (legacy
+       ?page=about|programmes falls back to home in showView below); the shared
+       interceptor in the common block switches views in place and navigates
+       ?page=login to the absolute web-app URL. */
     var INITIAL_PAGE = <?!= initialPageJson ?>;
     var PAGE_TITLES = {
       home: 'Department of Physics Postgraduate Journey — University of Abuja',
-      about: 'About — Department of Physics Postgraduate Journey',
-      programmes: 'Programmes — Department of Physics Postgraduate Journey',
       register: 'Register — Department of Physics Postgraduate Journey',
       contact: 'Contact — Department of Physics Postgraduate Journey'
     };

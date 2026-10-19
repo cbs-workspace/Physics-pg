@@ -4,7 +4,7 @@
  * The Apps Script project is TWO files in GAS_Files/:
  *   Code.gs        server (mocked below — the deployed sheet API is not used)
  *   index.html     one combined template: the public site
- *                  (?page=home|about|programmes|register|contact) AND the
+ *                  (?page=home|register|contact) AND the
  *                  portal SPA (?page=login), selected server-side by the
  *                  `page` scriptlet branch
  *
@@ -28,7 +28,11 @@ const port = Number(process.env.PORT || process.argv[2] || 8081);
 
 /** ?page= name (or path) → allowed keys. Whitelisted. All views render the
  *  single combined index.html with that page name as the `page` context. */
-const PAGES = ["", "home", "about", "programmes", "register", "contact", "login"];
+const PAGES = ["", "home", "register", "contact", "login"];
+
+/** Retired page names still accepted for old links — they fall back to Home
+ *  (the template's showView also coerces anything unknown to home). */
+const LEGACY = { about: "home", programmes: "home" };
 
 const BRAND = {
   schoolName: "Department of Physics Postgraduate Journey",
@@ -860,18 +864,20 @@ http
 
     // page name from ?page= or path (/about, /register, /login, …)
     const seg = urlPath.replace(/^\/+|\/+$/g, "").replace(/\.html$/i, "");
-    const key = String(query.get("page") || seg || "").toLowerCase();
+    let key = String(query.get("page") || seg || "").toLowerCase();
+    if (LEGACY[key]) key = LEGACY[key]; // /about/ and /programmes/ → home
     if (PAGES.indexOf(key) !== -1) {
       const embed = query.get("embed") === "1" || query.get("embed") === "true";
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       return res.end(buildPage(key || "home", embed));
     }
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    res.end("Not found. Pages: / (home), /?page=about|programmes|register|contact|login");
+    res.end("Not found. Pages: / (home), /?page=register|contact|login");
   })
   .listen(port, () => {
     console.log("Postgraduate Journey local preview running at http://localhost:" + port);
-    console.log("Pages: / (home), /?page=about, /?page=programmes, /?page=register, /?page=contact, /?page=login");
+    console.log("Pages: / (home), /?page=register, /?page=contact, /?page=login");
+    console.log("(legacy /?page=about and /?page=programmes fall back to Home)");
     console.log("Demo logins (password PhysicsPG2026!):");
     console.log("  Student          UA/pg2026/000001");
     console.log("  Student (2nd pattern)  26/408PHYX/040");

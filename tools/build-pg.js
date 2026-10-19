@@ -2,24 +2,24 @@
  * Static build for the Physics-pg public site (Cloudflare Pages).
  *
  * The source of truth is GAS_Files/index.html — ONE combined template with
- * five views and the portal SPA, selected server-side by the `page` scriptlet
- * branch. Apps Script renders it (doGet + template scriptlets); this script
- * pre-renders the four public views for a static host:
+ * the public views and the portal SPA, selected server-side by the `page`
+ * scriptlet branch. Apps Script renders it (doGet + template scriptlets); this
+ * script pre-renders the public views for a static host:
  *
- *   dist/index.html           home
- *   dist/about/index.html     about
- *   dist/about…               programmes, contact likewise
+ *   dist/index.html           home (About is condensed into a Home section)
+ *   dist/contact/index.html   contact
  *   dist/register/index.html  in-site portal page (full-page iframe, KMSS
  *                             "page" mode — raw /exec URL stays hidden)
  *   dist/login/index.html     in-site portal page (full-page iframe, KMSS
  *                             "page" mode — raw /exec URL stays hidden)
+ *   dist/_redirects           /about/ and /programmes/ → / (retired pages)
  *
  * Transformations applied to every page:
  *   - template scriptlets rendered with page = <view> (tools/pg-template.js);
  *     brand gets execUrl so portal links resolve to the live deployment
  *   - PUBLIC_PAGES drops "register" (register + login are in-site iframe pages
  *     served by the live portal with ?embed=1)
- *   - href="?page=X" rewritten: in-site views → /about/ etc.;
+ *   - href="?page=X" rewritten: in-site views → /contact/ etc.;
  *     register → /register/; login → /login/
  *   - a google.script.run → JSONP bridge injected that talks to the live
  *     deployment (announcements + contact enquiry only; any other
@@ -52,16 +52,15 @@ const BRAND = {
 };
 
 /** Public views rendered statically (register stays on the portal; login is
- *  an in-site iframe page built separately — see loginWrapper()). */
-const VIEWS = ["home", "about", "programmes", "contact"];
+ *  an in-site iframe page built separately — see portalFramePage()).
+ *  About was condensed into a Home section and Programmes was retired. */
+const VIEWS = ["home", "contact"];
 
 /** href="?page=X" → destination (in-site path, never a bare portal URL).
  *  login/register use the KMSS "page" mode: in-site pages that iframe the
  *  portal, so the raw script.google.com URL never lands in the address bar. */
 const HREFS = {
   home: "/",
-  about: "/about/",
-  programmes: "/programmes/",
   contact: "/contact/",
   register: "/register/",
   login: "/login/",
@@ -164,11 +163,12 @@ function buildView(view) {
     embedJson: JSON.stringify(false),
   });
 
-  // 2. the register view is portal-only here: keep the interceptor from
-  //    swallowing portal links (?page=register / ?page=login fall through)
+  // 2. register/login are in-site pages on the static host: keep the
+  //    interceptor from swallowing those portal links (?page=register /
+  //    ?page=login fall through to the real link targets)
   html = html.replace(
     /var PUBLIC_PAGES = \[[^\]]*\];/,
-    "var PUBLIC_PAGES = ['home', 'about', 'programmes', 'contact'];"
+    "var PUBLIC_PAGES = ['home', 'contact'];"
   );
 
   // 3. real links: in-site views → paths, register → live portal,
@@ -182,7 +182,7 @@ function buildView(view) {
 
   const leftover = html.match(/<\?/g);
   if (leftover) throw new Error("Unreplaced scriptlet(s) in view " + view);
-  if (html.indexOf('PUBLIC_PAGES = [\'home\', \'about\', \'programmes\', \'contact\']') === -1) {
+  if (html.indexOf('PUBLIC_PAGES = [\'home\', \'contact\']') === -1) {
     throw new Error("PUBLIC_PAGES rewrite failed for view " + view);
   }
   if (html.indexOf("__PG_MOCK_API__") !== -1) throw new Error("Demo mock leaked into static build (" + view + ")");
@@ -192,11 +192,9 @@ function buildView(view) {
 /** In-site portal page — the KMSS "page" pattern: a full-page iframe of the
  *  live portal with ?embed=1 (XFrameOptions ALLOWALL on the GAS side, and the
  *  portal drops its own chrome), so the site stays in the address bar. The raw
- *  /exec URL is only reachable through the "Open in new tab" escape hatch.
- *  Used for both /login/ and /register/. */
+ *  /exec URL is never linked from the site. Used for both /login/ and /register/. */
 function portalFramePage(opts) {
   const embedUrl = GAS_EXEC + "?page=" + opts.view + "&embed=1";
-  const plainUrl = GAS_EXEC + "?page=" + opts.view;
   const cross = opts.cross
     ? '      <a href="' + opts.cross.href + '">' + opts.cross.label + "</a>\n"
     : "";
@@ -210,21 +208,32 @@ function portalFramePage(opts) {
     '  <meta name="theme-color" content="#0f172a">\n' +
     "  <style>\n" +
     "    * { box-sizing: border-box; }\n" +
-    "    body { margin: 0; height: 100vh; display: flex; flex-direction: column;\n" +
+    "    html { height: 100%; }\n" +
+    "    body { margin: 0; min-height: 100vh; height: 100vh; height: 100dvh;\n" +
+    "      display: flex; flex-direction: column;\n" +
     "      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;\n" +
     "      background: #f8fafc; color: #0f172a; }\n" +
     "    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;\n" +
-    "      gap: 12px; padding: 10px 16px; background: #0f172a; color: #fff; }\n" +
+    "      flex-wrap: wrap; gap: 6px 12px; padding: 10px 16px; background: #0f172a; color: #fff; }\n" +
     "    header a { color: #fff; text-decoration: none; }\n" +
     "    header .brand { font-weight: 700; font-size: 15px; }\n" +
     "    header .brand span { font-weight: 400; opacity: .7; font-size: 13px; margin-left: 8px; }\n" +
-    "    header nav a { font-size: 14px; margin-left: 14px; opacity: .85; }\n" +
+    "    header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }\n" +
+    "    header nav a { font-size: 14px; opacity: .85; }\n" +
     "    header nav a:hover { text-decoration: underline; color: #6ee7b7; }\n" +
     "    .frame-wrap { flex: 1 1 auto; position: relative; min-height: 0; }\n" +
     "    .frame-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }\n" +
     "    .hint { flex: 0 0 auto; margin: 0; padding: 8px 16px; text-align: center;\n" +
     "      font-size: 13px; background: #f1f5f9; color: #64748b; border-top: 1px solid #e2e8f0; }\n" +
     "    .hint a { color: #047857; font-weight: 600; }\n" +
+    "    @media (max-width: 480px) {\n" +
+    "      header { padding: 8px 12px; gap: 4px 10px; }\n" +
+    "      header .brand { font-size: 14px; }\n" +
+    "      header .brand span { display: none; }\n" +
+    "      header nav { gap: 2px 12px; }\n" +
+    "      header nav a { font-size: 13px; }\n" +
+    "      .hint { font-size: 12px; padding: 8px 12px; }\n" +
+    "    }\n" +
     "    @media (prefers-color-scheme: dark) {\n" +
     "      body { background: #0b1220; color: #e2e8f0; }\n" +
     "      header { background: #060b16; }\n" +
@@ -239,7 +248,6 @@ function portalFramePage(opts) {
     '      <a href="/">Home</a>\n' +
     cross +
     '      <a href="/contact/">Contact</a>\n' +
-    '      <a href="' + plainUrl + '" target="_blank" rel="noreferrer">Open in new tab</a>\n' +
     "    </nav>\n  </header>\n" +
     '  <div class="frame-wrap">\n' +
     '    <iframe id="portal" title="' + opts.frameTitle + '" src="' + embedUrl + '" allow="clipboard-write"></iframe>\n' +
@@ -295,7 +303,18 @@ writeFile("login/index.html", portalFramePage({
 copyAsset("images/Phy_Complex.png");
 copyAsset("images/PG_Journey_Infographic.png");
 
+/** Retired pages → Home (permanent). Cloudflare Pages serves any real file
+ *  first, so these only apply while /about/ and /programmes/ do not exist. */
+writeFile(
+  "_redirects",
+  "# retired pages → Home (About is now a section on Home; Programmes removed)\n" +
+    "/about/       /   301\n" +
+    "/about        /   301\n" +
+    "/programmes/  /   301\n" +
+    "/programmes   /   301\n"
+);
+
 console.log(
-  "Done: " + VIEWS.length + " views + register/login iframe pages + assets.\n" +
+  "Done: " + VIEWS.length + " views + register/login iframe pages + assets + _redirects.\n" +
   "Deploy folder: dist/   (Cloudflare Pages build command: npm run build)"
 );
