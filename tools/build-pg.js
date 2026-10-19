@@ -10,14 +10,16 @@
  *   dist/about/index.html     about
  *   dist/about…               programmes, contact likewise
  *   dist/register/index.html  meta-refresh handoff → live Apps Script portal
- *   dist/login/index.html     meta-refresh handoff → live Apps Script portal
+ *   dist/login/index.html     in-site portal page (full-page iframe, KMSS
+ *                             loginMode "page" — raw /exec URL stays hidden)
  *
  * Transformations applied to every page:
  *   - template scriptlets rendered with page = <view> (tools/pg-template.js);
  *     brand gets execUrl so portal links resolve to the live deployment
- *   - PUBLIC_PAGES drops "register" (register/login live on the portal)
+ *   - PUBLIC_PAGES drops "register" (register lives on the portal, login is
+ *     an in-site page here)
  *   - href="?page=X" rewritten: in-site views → /about/ etc.;
- *     register/login → the live GAS /exec URL (KMSS-style portal links)
+ *     register → the live GAS /exec URL; login → /login/
  *   - a google.script.run → JSONP bridge injected that talks to the live
  *     deployment (announcements + contact enquiry only; any other
  *     call rejects with "runs on the official portal")
@@ -48,17 +50,20 @@ const BRAND = {
   journeyImgUrl: "/PG_Journey_Infographic.png",
 };
 
-/** Public views rendered statically (register + login stay on the portal). */
+/** Public views rendered statically (register stays on the portal; login is
+ *  an in-site iframe page built separately — see loginWrapper()). */
 const VIEWS = ["home", "about", "programmes", "contact"];
 
-/** href="?page=X" → destination (in-site path or live portal URL). */
+/** href="?page=X" → destination (in-site path or live portal URL).
+ *  login uses KMSS "page" mode: an in-site page that iframes the portal,
+ *  so the raw script.google.com URL never lands in the address bar. */
 const HREFS = {
   home: "/",
   about: "/about/",
   programmes: "/programmes/",
   contact: "/contact/",
   register: GAS_EXEC + "?page=register",
-  login: GAS_EXEC + "?page=login",
+  login: "/login/",
 };
 
 /** Browser-side google.script.run → JSONP bridge against the live deployment. */
@@ -165,7 +170,8 @@ function buildView(view) {
     "var PUBLIC_PAGES = ['home', 'about', 'programmes', 'contact'];"
   );
 
-  // 3. real links: in-site views → paths, register/login → live portal
+  // 3. real links: in-site views → paths, register → live portal,
+  //    login → /login/ (the in-site iframe page)
   Object.keys(HREFS).forEach((p) => {
     html = html.split('href="?page=' + p + '"').join('href="' + HREFS[p] + '"');
   });
@@ -182,7 +188,7 @@ function buildView(view) {
   return html;
 }
 
-/** Portal handoff page (old ?page=register / ?page=login URLs keep working). */
+/** Portal handoff page (old ?page=register URLs keep working). */
 function portalRedirect(view) {
   const url = GAS_EXEC + "?page=" + view;
   return (
@@ -192,6 +198,54 @@ function portalRedirect(view) {
     "<title>Opening the official portal…</title></head><body>" +
     '<p style="font-family:sans-serif;padding:40px;text-align:center">Opening the official portal… ' +
     '<a href="' + url + '">Continue</a></p></body></html>'
+  );
+}
+
+/** In-site portal login page — KMSS loginMode "page": a full-page iframe of
+ *  the live portal (?embed=1 → XFrameOptions ALLOWALL on the GAS side), so the
+ *  site stays in the address bar. The raw /exec URL is only reachable through
+ *  the "Open in new tab" escape hatch. */
+function loginWrapper() {
+  const embedUrl = GAS_EXEC + "?page=login&embed=1";
+  const plainUrl = GAS_EXEC + "?page=login";
+  return (
+    '<!doctype html>\n<html lang="en">\n<head>\n' +
+    '  <meta charset="utf-8">\n' +
+    '  <meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    "  <title>Portal Login — Department of Physics Postgraduate Journey</title>\n" +
+    '  <meta name="description" content="Sign in to the Department of Physics postgraduate portal — students, staff, PG Coordinator and HoD.">\n' +
+    '  <meta name="robots" content="noindex, follow">\n' +
+    '  <meta name="theme-color" content="#14532d">\n' +
+    "  <style>\n" +
+    "    * { box-sizing: border-box; }\n" +
+    "    body { margin: 0; height: 100vh; display: flex; flex-direction: column;\n" +
+    "      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;\n" +
+    "      background: #f4f6f5; color: #1c2b21; }\n" +
+    "    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;\n" +
+    "      gap: 12px; padding: 10px 16px; background: #14532d; color: #fff; }\n" +
+    "    header a { color: #fff; text-decoration: none; }\n" +
+    "    header .brand { font-weight: 700; font-size: 15px; }\n" +
+    "    header .brand span { font-weight: 400; opacity: .75; font-size: 13px; margin-left: 8px; }\n" +
+    "    header nav a { font-size: 14px; margin-left: 14px; opacity: .9; }\n" +
+    "    header nav a:hover { text-decoration: underline; }\n" +
+    "    .frame-wrap { flex: 1 1 auto; position: relative; min-height: 0; }\n" +
+    "    .frame-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }\n" +
+    "    .hint { flex: 0 0 auto; margin: 0; padding: 8px 16px; text-align: center;\n" +
+    "      font-size: 13px; background: #eceff0; color: #44504a; }\n" +
+    "    .hint a { color: #14532d; font-weight: 600; }\n" +
+    "  </style>\n</head>\n<body>\n" +
+    "  <header>\n" +
+    '    <a class="brand" href="/">Department of Physics Postgraduate Journey<span>University of Abuja</span></a>\n' +
+    "    <nav>\n" +
+    '      <a href="/">Home</a>\n' +
+    '      <a href="/contact/">Contact</a>\n' +
+    '      <a href="' + plainUrl + '" target="_blank" rel="noreferrer">Open in new tab</a>\n' +
+    "    </nav>\n  </header>\n" +
+    '  <div class="frame-wrap">\n' +
+    '    <iframe id="portal" title="Postgraduate portal login" src="' + embedUrl + '" allow="clipboard-write"></iframe>\n' +
+    "  </div>\n" +
+    '  <p class="hint">Sign in with the credentials issued by the department. Trouble signing in? <a href="/contact/">Contact the PG Coordinator</a>.</p>\n' +
+    "</body>\n</html>\n"
   );
 }
 
@@ -223,11 +277,11 @@ for (const view of VIEWS) {
   }
 }
 writeFile("register/index.html", portalRedirect("register"));
-writeFile("login/index.html", portalRedirect("login"));
+writeFile("login/index.html", loginWrapper());
 copyAsset("images/Phy_Complex.png");
 copyAsset("PG_Journey_Infographic.png");
 
 console.log(
-  "Done: " + VIEWS.length + " views + register/login handoffs + assets.\n" +
+  "Done: " + VIEWS.length + " views + register handoff + login iframe page + assets.\n" +
   "Deploy folder: dist/   (Cloudflare Pages build command: npm run build)"
 );

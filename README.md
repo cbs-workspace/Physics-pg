@@ -30,13 +30,18 @@ Three pieces, each with one job:
 | **Cloudflare Pages `physics-pg`** | `dist/` built by `npm run build` | the public site: home, about, programmes, contact |
 | **Apps Script `/exec`** | the 2 pasted files + Spreadsheet | the portal: register, status check, login, dashboards |
 
-- The static site links **Register / Login / Portal** to the live `/exec` URL
-  (same architecture as KMSS: static site + portal on GAS).
+- The static site links **Register / Portal** to the live `/exec` URL (same
+  architecture as KMSS: static site + portal on GAS). **Login** follows the
+  KMSS `loginMode: 'page'` logic: every login button goes to the in-site
+  `/login/` page, which embeds the portal in a full-page iframe
+  (`?page=login&embed=1`, `XFrameOptions ALLOWALL`), so the raw
+  `script.google.com` URL never appears in the address bar — only via the
+  "Open in new tab" escape hatch.
 - Live data on the static site: announcements (`?public=announcements`) and the
   contact enquiry (`?public=enquiry`) are JSONP endpoints in `Code.gs`, so both
   work cross-origin without CORS.
-- `/register/` and `/login/` on the static site are redirect stubs to the portal,
-  so old links keep working.
+- `/register/` on the static site is a redirect stub to the portal, so old
+  links keep working.
 - After pasting file changes into Apps Script, publish with
   **Deploy → Manage deployments → Edit → Version: New version → Deploy** so the
   `/exec` link never changes.
@@ -82,8 +87,9 @@ Physics-pg/
 > There is exactly **one** HTML file: `doGet` renders `index.html` as a template —
 > the `page` scriptlet branch serves the portal (`login`) or the public site (all
 > other page names) from that single paste.
-> The static site paths are `/about/`, `/programmes/`, `/contact/`; register/login
-> are handed off to the portal.
+> The static site paths are `/about/`, `/programmes/`, `/contact/`; register
+> is handed off to the portal, and login opens `/login/` — an in-site page
+> that iframes `…/exec?page=login&embed=1`.
 
 ## Public site (no login required)
 
@@ -112,7 +118,8 @@ Physics-pg/
   active PG Coordinator through branded `sendPortalMail_` (rate-limited 3/hour/email).
   Public/enquiries address is `abel.osagie@uniabuja.edu.ng` (`ENQUIRIES_EMAIL` in
   `Code.gs`, overridable by the `ENQUIRIES_EMAIL` Script Property).
-- Top navigation on every page with a **Login** button → `?page=login` (the SPA).
+- Top navigation on every page with a **Login** button → `?page=login` (the SPA;
+  on the static site the same buttons go to `/login/`, the iframe wrapper).
 - Hero background: upload `images/Phy_Complex.png` to Drive (or any host), set the
   Script Property `HERO_IMAGE_URL` to its direct image URL (`brand_()` reads it as
   `heroBgUrl`; the local harness serves the file from `images/` automatically).
@@ -284,11 +291,12 @@ npm run pg          →  http://localhost:8081          (Home)
 
 ```
 npm run build       →  dist/  (index + about/ + programmes/ + contact/
-                               + register/ & login/ handoffs + images)
+                               + register/ handoff + login/ iframe page + images)
 ```
 
 `tools/build-pg.js` pre-renders the four public views from the same combined
-`index.html`, rewrites register/login links to the live portal, and injects the
+`index.html`, rewrites register links to the live portal and login links to
+the in-site `/login/` iframe page, and injects the
 JSONP bridge (`?public=announcements` / `?public=enquiry`) instead of the demo
 mocks. To preview the static output locally: `npx serve dist` (any static file
 server works).
