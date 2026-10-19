@@ -366,14 +366,14 @@ function hasRole_(user, roles) { if (!user) return false; return roles.indexOf(u
 function assertRole_(user, roles, message) { if (!hasRole_(user, roles)) throw new Error(message || 'You do not have permission to do that.'); }
 
 function api_login(regNumber, password) {
-  if (!regNumber || !password) throw new Error('Enter your registration number and password.');
+  if (!regNumber || !password) throw new Error('Enter your registration number or staff ID and password.');
   var key = String(regNumber).trim();
   if (isLoginLocked_(key)) throw new Error('Too many failed attempts. Please try again in 15 minutes.');
   var user = findWhere_('Users', function (u) { return String(u.regNumber) === key; });
-  if (!user || !toBool_(user.active)) { recordLoginFailure_(key); throw new Error('Invalid registration number or password.'); }
+  if (!user || !toBool_(user.active)) { recordLoginFailure_(key); throw new Error('Invalid registration number / staff ID or password.'); }
   if (String(user.status) === 'Pending') throw new Error('Awaiting PG Coordinator approval. You cannot log in yet.');
   if (String(user.status) === 'Rejected') throw new Error('Your registration was rejected. Please contact the PG Coordinator.');
-  if (hashPassword_(password, user.salt) !== String(user.passwordHash)) { recordLoginFailure_(key); throw new Error('Invalid registration number or password.'); }
+  if (hashPassword_(password, user.salt) !== String(user.passwordHash)) { recordLoginFailure_(key); throw new Error('Invalid registration number / staff ID or password.'); }
   clearLoginFailures_(key);
   var token = Utilities.getUuid();
   CacheService.getScriptCache().put('sess_' + token, JSON.stringify({ id: user.id, epoch: sessionEpoch_(user.id) }), CFG.SESSION_TTL_SECONDS);
@@ -430,6 +430,9 @@ var REG_RE_1 = /^UA\/pg20\d{2}\/\d{6}$/;
 var REG_RE_2 = /^\d{2}\/\d{3}[A-Z]{3,4}\/\d{3,4}$/;
 
 function validateRegNumber_(reg) { return REG_RE_1.test(reg) || REG_RE_2.test(reg); }
+/** Staff IDs: three uppercase letters "ACA" + 3 or 4 digits (e.g. ACA1335). */
+var STAFF_ID_RE = /^ACA\d{3,4}$/;
+function validateStaffId_(id) { return STAFF_ID_RE.test(String(id || '').trim().toUpperCase()); }
 function validateEmail_(email) { return EMAIL_RE.test(email); }
 function validatePhone_(phone) {
   phone = String(phone || '').replace(/\D/g, '');
@@ -572,6 +575,33 @@ function notifyRegistrationDecision_(target, status, reason) {
   sendPortalMail_({ to: target.email, subject: head + ' — ' + target.regNumber + ' (' + CFG.APP_NAME + ')', body: text, htmlBody: html });
 }
 
+/** Branded account-created email (coordinator added a student directly). */
+function notifyStudentAccountCreated_(p) {
+  if (!p.email || !EMAIL_RE.test(String(p.email))) return;
+  var name = String((p.firstName || '') + ' ' + (p.surname || '')).trim();
+  var rows = [
+    ['Registration number', p.regNumber],
+    ['Name', name],
+    ['Initial password', CFG.DEFAULT_PASSWORD],
+    ['Programme', p.programme || '—']
+  ];
+  var text = [CFG.APP_NAME + ' — portal account created', '', 'Dear ' + name + ',', '',
+    'An account has been created for you by the PG Coordinator. You can now sign in to the portal.', '',
+    'Registration number: ' + p.regNumber,
+    'Initial password: ' + CFG.DEFAULT_PASSWORD, '',
+    'For your security you will be asked to change this password at first sign-in.', '',
+    'Open the portal Login page to sign in.'].join('\n');
+  var html = '<h2 style="color:#14532d;margin:0 0 4px;font-size:18px">' + escHtml_(CFG.APP_NAME) + '</h2>' +
+    '<p style="color:#66756f;margin:0 0 16px;font-size:13px">Portal account created</p>' +
+    '<p style="margin:0 0 12px">Dear ' + escHtml_(name) + ', an account has been created for you by the PG Coordinator. You can now sign in to the portal.</p>' +
+    '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:14px">' +
+    rows.map(function (r) {
+      return '<tr><td style="padding:6px 8px;border:1px solid #e2e8e4;background:#f4f7f5;color:#14532d;white-space:nowrap"><strong>' + escHtml_(r[0]) + '</strong></td><td style="padding:6px 8px;border:1px solid #e2e8e4">' + escHtml_(String(r[1] || '—')) + '</td></tr>';
+    }).join('') +
+    '</table><p style="color:#66756f;font-size:13px;margin-top:12px">For your security you will be asked to change this password at first sign-in. Open the portal Login page to sign in.</p>';
+  sendPortalMail_({ to: p.email, subject: 'Portal account created — ' + p.regNumber + ' (' + CFG.APP_NAME + ')', body: text, htmlBody: html });
+}
+
 function savePassportPhoto_(filePayload, regNumber) {
   var folderId = getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID);
   var folder = DriveApp.getFolderById(folderId);
@@ -615,6 +645,192 @@ function api_saveStaff_locked_(token, payload) {
   return { id: row.id };
 }
 function api_saveStaff() { var a = arguments; return withScriptLock_(function () { return api_saveStaff_locked_.apply(null, a); }, 30000); }
+
+/* ==================== 7b. COORDINATOR: ADD/REMOVE STAFF & STUDENTS + IMPORT ==================== */
+
+/** Delete matching rows from a sheet (row-delete helper the coordinator removals need). */
+function removeWhere_(name, predicate) {
+  return withScriptLock_(function () {
+    var sheet = getSheet_(name), headers = sheetHeaders_(name);
+    var values = sheet.getDataRange().getValues();
+    var removed = 0;
+    for (var i = values.length - 1; i >= 1; i--) {
+      var obj = {};
+      for (var c = 0; c < headers.length; c++) obj[headers[c]] = sheetCellValue_(values[i][c]);
+      if (predicate(obj)) { sheet.deleteRow(i + 1); removed++; }
+    }
+    if (removed) invalidateTable_(name);
+    return removed;
+  }, 30000);
+}
+
+function api_removeStaff_locked_(token, staffId) {
+  var user = requireUser_(token);
+  assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can remove staff.');
+  var staff = findById_('Staff', staffId);
+  if (!staff) throw new Error('Staff member not found.');
+  if (String(staffId) === String(user.id)) throw new Error('You cannot remove your own staff record.');
+  var affected = filterWhere_('Students', function (s) {
+    return String(s.mainSupervisorId) === String(staffId) || String(s.coSupervisorId) === String(staffId);
+  });
+  affected.forEach(function (s) {
+    updateRow_('Students', s.id, {
+      mainSupervisorId: String(s.mainSupervisorId) === String(staffId) ? '' : s.mainSupervisorId,
+      coSupervisorId: String(s.coSupervisorId) === String(staffId) ? '' : s.coSupervisorId,
+      updatedAt: nowIso_()
+    });
+  });
+  removeWhere_('Staff', function (r) { return String(r.id) === String(staffId); });
+  var email = String(staff.email || '').toLowerCase();
+  var deactivated = 0;
+  if (email) {
+    filterWhere_('Users', function (u) {
+      return String(u.email || '').toLowerCase() === email && toBool_(u.active) &&
+        String(u.id) !== String(user.id) && u.role !== 'PG_Coordinator' && u.role !== 'HoD';
+    }).forEach(function (u) { updateRow_('Users', u.id, { active: false }); deactivated++; });
+  }
+  logAudit_(user.id, user.regNumber, 'REMOVE_STAFF', String(staffId),
+    staff.fullName + (affected.length ? ' · unassigned from ' + affected.length + ' student(s)' : '') +
+    (deactivated ? ' · login deactivated' : ''));
+  return { ok: true, unassigned: affected.length, loginsDeactivated: deactivated };
+}
+function api_removeStaff() { var a = arguments; return withScriptLock_(function () { return api_removeStaff_locked_.apply(null, a); }, 30000); }
+
+function api_addStudent_locked_(token, payload) {
+  var user = requireUser_(token);
+  assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can add students.');
+  if (!payload) throw new Error('Missing form data.');
+  var reg = String(payload.regNumber || '').trim();
+  if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531 or 26/408PHYX/040.');
+  if (!validateName_(payload.surname)) throw new Error('Surname must be at least 2 letters.');
+  if (!validateName_(payload.firstName)) throw new Error('First name must be at least 2 letters.');
+  var email = String(payload.email || '').trim();
+  if (!validateEmail_(email)) throw new Error('Invalid email address.');
+  var phone = validatePhone_(payload.phoneNumber);
+  if (!phone) throw new Error('Phone must be exactly 11 digits.');
+  if (CFG.PROGRAMMES.indexOf(payload.programme) === -1) throw new Error('Invalid programme.');
+  if (CFG.SPECIALISATIONS.indexOf(payload.specialisation) === -1) throw new Error('Invalid specialisation.');
+  if (['Male', 'Female'].indexOf(payload.gender) === -1) throw new Error('Gender must be Male or Female.');
+  var year = parseInt(payload.yearOfAdmission, 10);
+  if (!year || year < 1950 || year > 2100) year = new Date().getFullYear();
+  if (findWhere_('Users', function (u) { return String(u.regNumber) === reg; })) throw new Error('Registration number already exists.');
+  var salt = makeSalt_();
+  var now = nowIso_();
+  appendRow_('Students', {
+    regNumber: reg,
+    surname: String(payload.surname).trim(),
+    firstName: String(payload.firstName).trim(),
+    otherNames: String(payload.otherNames || '').trim(),
+    gender: payload.gender,
+    phoneNumber: phone,
+    email: email,
+    faculty: String(payload.faculty || 'Faculty of Science').trim(),
+    department: String(payload.department || 'Physics').trim(),
+    programme: payload.programme,
+    specialisation: payload.specialisation,
+    passportFileId: '',
+    passportUrl: '',
+    mainSupervisorId: '',
+    coSupervisorId: '',
+    currentStage: '1 - Admission',
+    yearOfAdmission: year,
+    createdAt: now,
+    updatedAt: now
+  });
+  appendRow_('Users', {
+    regNumber: reg,
+    email: email,
+    passwordHash: hashPassword_(CFG.DEFAULT_PASSWORD, salt),
+    salt: salt,
+    role: 'Student',
+    fullName: String(payload.firstName).trim() + ' ' + String(payload.surname).trim(),
+    firstLogin: true,
+    active: true,
+    status: 'Approved',
+    createdAt: now
+  });
+  logAudit_(user.id, user.regNumber, 'ADD_STUDENT', reg, 'Student added directly by coordinator: ' + payload.firstName + ' ' + payload.surname);
+  try {
+    notifyStudentAccountCreated_({
+      regNumber: reg, email: email,
+      firstName: String(payload.firstName).trim(),
+      surname: String(payload.surname).trim(),
+      programme: payload.programme
+    });
+  } catch (mailErr) { Logger.log('addStudent mail failed for ' + reg + ': ' + (mailErr && mailErr.message ? mailErr.message : mailErr)); }
+  return { ok: true, regNumber: reg, message: 'Student added. Sign-in details sent to ' + email + '.' };
+}
+function api_addStudent() { var a = arguments; return withScriptLock_(function () { return api_addStudent_locked_.apply(null, a); }, 30000); }
+
+function api_removeStudent_locked_(token, regNumber) {
+  var user = requireUser_(token);
+  assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can remove students.');
+  var reg = String(regNumber || '').trim();
+  if (String(reg) === String(user.regNumber)) throw new Error('You cannot remove your own record.');
+  var student = findWhere_('Students', function (s) { return String(s.regNumber) === reg; });
+  var account = findWhere_('Users', function (u) { return String(u.regNumber) === reg; });
+  if (!student && !account) throw new Error('Student not found.');
+  var removedSubs = removeWhere_('Submissions', function (r) { return String(r.regNumber) === reg; });
+  if (student) removeWhere_('Students', function (r) { return String(r.regNumber) === reg; });
+  if (account) removeWhere_('Users', function (r) { return String(r.regNumber) === reg; });
+  var name = student ? fullNameOf_(student) : (account ? account.fullName : reg);
+  logAudit_(user.id, user.regNumber, 'REMOVE_STUDENT', reg,
+    'Removed ' + name + (removedSubs ? ' · ' + removedSubs + ' submission(s) removed' : ''));
+  return { ok: true, message: name + ' removed.' };
+}
+function api_removeStudent() { var a = arguments; return withScriptLock_(function () { return api_removeStudent_locked_.apply(null, a); }, 30000); }
+
+/**
+ * Bulk staff import — run from the Apps Script editor, e.g.:
+ *   importStaffRows([{ staffId: 'ACA1335', fullName: 'Dr. Abel U. Osagie', email: '…@uniabuja.edu.ng', rank: 'Dr.', specialisation: '', role: 'PG_Coordinator' }, …]);
+ * role defaults to 'Staff'. Creates the Staff directory row plus a Users login
+ * (password CFG.DEFAULT_PASSWORD, firstLogin → forces a change at sign-in). No email is sent.
+ * Skips (and reports) rows whose staff ID / email already exists.
+ */
+function importStaffRows(rows) {
+  if (!rows || !rows.length) throw new Error("Pass an array: [{staffId, fullName, email, rank, specialisation, role}].");
+  var summary = { imported: [], skipped: [] };
+  rows.forEach(function (r) {
+    r = r || {};
+    var id = String(r.staffId || '').trim().toUpperCase();
+    var name = String(r.fullName || '').trim();
+    var email = String(r.email || '').trim();
+    var role = CFG.ROLES.indexOf(r.role) !== -1 ? r.role : 'Staff';
+    if (!validateStaffId_(id)) { summary.skipped.push({ id: id || name || '(blank)', reason: 'Bad staff ID (ACA + 3 or 4 digits)' }); return; }
+    if (name.length < 2) { summary.skipped.push({ id: id, reason: 'Missing name' }); return; }
+    if (!validateEmail_(email)) { summary.skipped.push({ id: id, reason: 'Invalid email' }); return; }
+    if (findWhere_('Users', function (u) { return String(u.regNumber) === id; })) { summary.skipped.push({ id: id, reason: 'Staff ID already has a login' }); return; }
+    if (findWhere_('Users', function (u) { return String(u.email || '').toLowerCase() === email.toLowerCase(); })) { summary.skipped.push({ id: id, reason: 'Email already has a login' }); return; }
+    if (findWhere_('Staff', function (s) { return String(s.email || '').toLowerCase() === email.toLowerCase() && toBool_(s.active); })) { summary.skipped.push({ id: id, reason: 'Already in staff directory' }); return; }
+    var salt = makeSalt_();
+    var now = nowIso_();
+    appendRow_('Staff', {
+      fullName: name,
+      email: email,
+      rank: String(r.rank || '').trim(),
+      specialisation: String(r.specialisation || '').trim(),
+      active: true,
+      createdAt: now
+    });
+    appendRow_('Users', {
+      regNumber: id,
+      email: email,
+      passwordHash: hashPassword_(CFG.DEFAULT_PASSWORD, salt),
+      salt: salt,
+      role: role,
+      fullName: name,
+      firstLogin: true,
+      active: true,
+      status: 'Approved',
+      createdAt: now
+    });
+    summary.imported.push({ staffId: id, role: role, name: name });
+  });
+  Logger.log('importStaffRows → imported: ' + summary.imported.length + ', skipped: ' + summary.skipped.length);
+  summary.imported.forEach(function (x) { Logger.log('  + ' + x.staffId + '  ' + x.role + '  ' + x.name); });
+  summary.skipped.forEach(function (x) { Logger.log('  - ' + x.id + '  skipped: ' + x.reason); });
+  return summary;
+}
 
 /* =========================== 8. SUPERVISOR ASSIGNMENT =========================== */
 

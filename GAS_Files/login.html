@@ -265,7 +265,7 @@
         '<div class="logo-row"><img src="' + esc(BRAND.logoUrl) + '" alt="Logo"><h2>Department of Physics Postgraduate Journey</h2><div class="kicker">' + esc(BRAND.subtitle || 'University of Abuja') + '</div></div>' +
         headerHtml() +
         '<form id="login-form">' +
-          '<div class="field"><label>Registration Number</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531"></div>' +
+          '<div class="field"><label>Registration Number / Staff ID</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531 or ACA1335"></div>' +
           '<div class="field"><label>Password</label><input type="password" name="password" required></div>' +
           '<button class="btn btn-primary btn-block" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? '<span class="spinner"></span>' : 'Sign In') + '</button>' +
         '</form>' +
@@ -410,24 +410,43 @@
       out += '<div class="card"><h4 style="margin:0 0 12px">All Students</h4>';
       if (!c.students.length) out += '<p class="muted">No students.</p>';
       else {
-        out += '<div class="table-wrap"><table><thead><tr><th>Reg</th><th>Name</th><th>Programme</th><th>Main Supervisor</th><th>Co-Supervisor</th><th>Stage</th><th>Status</th><th>Assign Supervisors</th></tr></thead><tbody>';
+        out += '<div class="table-wrap"><table><thead><tr><th>Reg</th><th>Name</th><th>Programme</th><th>Main Supervisor</th><th>Co-Supervisor</th><th>Stage</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
         c.students.forEach(function (s) {
           out += '<tr><td>' + esc(s.regNumber) + '</td><td>' + esc(s.fullName) + '</td><td>' + esc(s.programme) + '</td>' +
             '<td>' + esc(s.mainSupervisor || '—') + '</td><td>' + esc(s.coSupervisor || '—') + '</td>' +
             '<td class="small">' + esc(s.currentStage) + '</td><td>' + statusBadge(s.status) + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" data-action="assign-super" data-id="' + esc(s.regNumber) + '">Assign</button></td></tr>';
+            '<td><button class="btn btn-outline btn-sm" data-action="assign-super" data-id="' + esc(s.regNumber) + '">Assign</button> ' +
+            '<button class="btn btn-danger btn-sm" data-action="remove-student" data-id="' + esc(s.regNumber) + '">Remove</button></td></tr>';
         });
         out += '</tbody></table></div>';
       }
       out += '</div>';
 
+      // Add student directly
+      out += '<div class="card"><h4 style="margin:0 0 12px">Add Student</h4>' +
+        '<form id="addstudent-form"><div class="row-cols" style="--cols:3">' +
+        '<div class="field"><label>Reg Number</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531"></div>' +
+        '<div class="field"><label>First Name</label><input type="text" name="firstName" required></div>' +
+        '<div class="field"><label>Surname</label><input type="text" name="surname" required></div>' +
+        '<div class="field"><label>Other Names</label><input type="text" name="otherNames"></div>' +
+        '<div class="field"><label>Gender</label><select name="gender" required><option value="">—</option><option>Male</option><option>Female</option></select></div>' +
+        '<div class="field"><label>Phone</label><input type="text" name="phoneNumber" required placeholder="08012345678"></div>' +
+        '<div class="field"><label>Email</label><input type="email" name="email" required></div>' +
+        '<div class="field"><label>Programme</label><select name="programme" required>' + optionsHtml(PROGRAMMES, null, '') + '</select></div>' +
+        '<div class="field"><label>Specialisation</label><select name="specialisation" required>' + optionsHtml(SPECIALISATIONS, null, '') + '</select></div>' +
+        '<div class="field"><label>Year of Admission</label><input type="number" name="yearOfAdmission" min="1950" max="2100" value="' + new Date().getFullYear() + '"></div>' +
+        '</div><button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>Add Student</button>' +
+        '<p class="small muted" style="margin:8px 0 0">The student is approved immediately; sign-in details are emailed (initial password must be changed at first login).</p>' +
+        '</form></div>';
+
       // Staff management
       out += '<div class="card"><h4 style="margin:0 0 12px">Staff List (Supervisors)</h4>';
       if (!c.staff.length) out += '<p class="muted">No staff added yet. Use the form below.</p>';
       else {
-        out += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Rank</th><th>Specialisation</th><th>Email</th></tr></thead><tbody>';
+        out += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Rank</th><th>Specialisation</th><th>Email</th><th>Action</th></tr></thead><tbody>';
         c.staff.forEach(function (s) {
-          out += '<tr><td>' + esc(s.fullName) + '</td><td>' + esc(s.rank) + '</td><td>' + esc(s.specialisation) + '</td><td>' + esc(s.email) + '</td></tr>';
+          out += '<tr><td>' + esc(s.fullName) + '</td><td>' + esc(s.rank) + '</td><td>' + esc(s.specialisation) + '</td><td>' + esc(s.email) + '</td>' +
+            '<td><button class="btn btn-danger btn-sm" data-action="remove-staff" data-id="' + esc(s.id) + '">Remove</button></td></tr>';
         });
         out += '</tbody></table></div>';
       }
@@ -573,6 +592,20 @@
           var co = document.getElementById('assign-co').value;
           act(authed('api_assignSupervisors', id, main, co), 'Supervisors assigned.', function () { closeModal(); loadView('coordinator'); });
           break;
+        case 'remove-staff':
+          var stfList = (state.coordinator && state.coordinator.staff) || [];
+          var stf = null;
+          for (var si = 0; si < stfList.length; si++) if (String(stfList[si].id) === String(id)) { stf = stfList[si]; break; }
+          var stfName = stf ? stf.fullName : id;
+          if (confirm('Remove ' + stfName + ' from staff?\n\nStudents assigned to them will be unassigned, and their portal login (if matched by email) will be deactivated.')) {
+            act(authed('api_removeStaff', id), 'Staff removed.', function () { loadView('coordinator'); });
+          }
+          break;
+        case 'remove-student':
+          if (confirm('Permanently remove student ' + id + ' and all their submissions?\n\nThis cannot be undone.')) {
+            act(authed('api_removeStudent', id), 'Student removed.', function () { loadView('coordinator'); });
+          }
+          break;
         case 'close-modal': closeModal(); break;
         case 'add-note':
           var note = prompt('Enter supervisory note:');
@@ -609,6 +642,10 @@
       else if (form.id === 'staff-form') {
         var sd = collect(form);
         act(authed('api_saveStaff', sd), 'Staff added.', function () { loadView('coordinator'); });
+      }
+      else if (form.id === 'addstudent-form') {
+        var ns = collect(form);
+        act(authed('api_addStudent', ns), 'Student added. Sign-in details emailed.', function () { loadView('coordinator'); });
       }
       else if (form.id === 'ann-form') {
         var ad = collect(form);

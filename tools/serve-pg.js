@@ -254,6 +254,71 @@ const API = {
     DB.staff.push({ id: nextId("Stf"), fullName: payload.fullName, email: payload.email || "", rank: payload.rank || "", specialisation: payload.specialisation || "", active: true, createdAt: now() });
     return { id: DB.staff[DB.staff.length - 1].id };
   },
+  api_removeStaff(token, staffId) {
+    const user = requireUser(token);
+    assertRole(user, ["PG_Coordinator"]);
+    const staff = DB.staff.find((s) => String(s.id) === String(staffId));
+    if (!staff) throw new Error("Staff member not found.");
+    if (String(staffId) === String(user.id)) throw new Error("You cannot remove your own staff record.");
+    let unassigned = 0;
+    DB.students.forEach((s) => {
+      let hit = false;
+      if (String(s.mainSupervisorId) === String(staffId)) { s.mainSupervisorId = ""; hit = true; }
+      if (String(s.coSupervisorId) === String(staffId)) { s.coSupervisorId = ""; hit = true; }
+      if (hit) { unassigned++; s.updatedAt = now(); }
+    });
+    staff.active = false;
+    let deactivated = 0;
+    const email = String(staff.email || "").toLowerCase();
+    if (email) {
+      DB.users.forEach((u) => {
+        if (String(u.email || "").toLowerCase() === email && u.active && String(u.id) !== String(user.id) && u.role !== "PG_Coordinator" && u.role !== "HoD") { u.active = false; deactivated++; }
+      });
+    }
+    return { ok: true, unassigned: unassigned, loginsDeactivated: deactivated };
+  },
+  api_addStudent(token, payload) {
+    const user = requireUser(token);
+    assertRole(user, ["PG_Coordinator"]);
+    if (!payload) throw new Error("Missing form data.");
+    const reg = String(payload.regNumber || "").trim();
+    if (!/^UA\/pg20\d{2}\/\d{6}$/.test(reg) && !/^\d{2}\/\d{3}[A-Z]{3,4}\/\d{3,4}$/.test(reg)) throw new Error("Invalid registration number. Use UA/pg2026/003531 or 26/408PHYX/040.");
+    if (!payload.surname || String(payload.surname).trim().length < 2) throw new Error("Surname must be at least 2 letters.");
+    if (!payload.firstName || String(payload.firstName).trim().length < 2) throw new Error("First name must be at least 2 letters.");
+    if (DB.users.find((u) => String(u.regNumber) === reg)) throw new Error("Registration number already exists.");
+    const nowStr = now();
+    DB.students.push({
+      id: nextId("Stu"), regNumber: reg,
+      surname: payload.surname || "", firstName: payload.firstName || "", otherNames: payload.otherNames || "",
+      gender: payload.gender || "", phoneNumber: payload.phoneNumber || "", email: payload.email || "",
+      faculty: payload.faculty || "Faculty of Science", department: payload.department || "Physics",
+      programme: payload.programme || "MSc", specialisation: payload.specialisation || "",
+      passportFileId: "", passportUrl: "",
+      mainSupervisorId: "", coSupervisorId: "", currentStage: "1 - Admission",
+      yearOfAdmission: parseInt(payload.yearOfAdmission, 10) || new Date().getFullYear(), createdAt: nowStr, updatedAt: nowStr
+    });
+    DB.users.push({
+      id: nextId("Usr"), regNumber: reg, email: payload.email || "", role: "Student",
+      fullName: (payload.firstName || "") + " " + (payload.surname || ""), firstLogin: true, active: true, status: "Approved", createdAt: nowStr
+    });
+    return { ok: true, regNumber: reg, message: "Student added. Sign-in details sent to " + (payload.email || "") + "." };
+  },
+  api_removeStudent(token, regNumber) {
+    const user = requireUser(token);
+    assertRole(user, ["PG_Coordinator"]);
+    const reg = String(regNumber || "").trim();
+    if (String(reg) === String(user.regNumber)) throw new Error("You cannot remove your own record.");
+    const student = DB.students.find((s) => String(s.regNumber) === reg);
+    const account = DB.users.find((u) => String(u.regNumber) === reg);
+    if (!student && !account) throw new Error("Student not found.");
+    const before = DB.submissions.length;
+    DB.submissions = DB.submissions.filter((r) => String(r.regNumber) !== reg);
+    const removedSubs = before - DB.submissions.length;
+    if (student) DB.students = DB.students.filter((s) => String(s.regNumber) !== reg);
+    if (account) DB.users = DB.users.filter((u) => String(u.regNumber) !== reg);
+    const name = student ? fullNameOf(student) : (account ? account.fullName : reg);
+    return { ok: true, message: name + " removed." + (removedSubs ? " " + removedSubs + " submission(s) removed." : "") };
+  },
   api_assignSupervisors(token, regNumber, mainId, coId) {
     const user = requireUser(token);
     assertRole(user, ["PG_Coordinator"]);
@@ -556,6 +621,71 @@ window.__PG_MOCK_API__ = (function () {
       var row = { id: nextId('Stf'), fullName: payload.fullName, email: payload.email || '', rank: payload.rank || '', specialisation: payload.specialisation || '', active: true, createdAt: now() };
       DB.staff.push(row);
       return { id: row.id };
+    },
+    api_removeStaff: function (token, staffId) {
+      var user = requireUser(token);
+      assertRole(user, ['PG_Coordinator']);
+      var staff = find(DB.staff, function (s) { return String(s.id) === String(staffId); });
+      if (!staff) throw new Error('Staff member not found.');
+      if (String(staffId) === String(user.id)) throw new Error('You cannot remove your own staff record.');
+      var unassigned = 0;
+      DB.students.forEach(function (s) {
+        var hit = false;
+        if (String(s.mainSupervisorId) === String(staffId)) { s.mainSupervisorId = ''; hit = true; }
+        if (String(s.coSupervisorId) === String(staffId)) { s.coSupervisorId = ''; hit = true; }
+        if (hit) { unassigned++; s.updatedAt = now(); }
+      });
+      staff.active = false;
+      var deactivated = 0;
+      var email = String(staff.email || '').toLowerCase();
+      if (email) {
+        DB.users.forEach(function (u) {
+          if (String(u.email || '').toLowerCase() === email && u.active && String(u.id) !== String(user.id) && u.role !== 'PG_Coordinator' && u.role !== 'HoD') { u.active = false; deactivated++; }
+        });
+      }
+      return { ok: true, unassigned: unassigned, loginsDeactivated: deactivated };
+    },
+    api_addStudent: function (token, payload) {
+      var user = requireUser(token);
+      assertRole(user, ['PG_Coordinator']);
+      if (!payload) throw new Error('Missing form data.');
+      var reg = String(payload.regNumber || '').trim();
+      if (!/^UA\\/pg20\\d{2}\\/\\d{6}$/.test(reg) && !/^\\d{2}\\/\\d{3}[A-Z]{3,4}\\/\\d{3,4}$/.test(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531 or 26/408PHYX/040.');
+      if (!payload.surname || String(payload.surname).trim().length < 2) throw new Error('Surname must be at least 2 letters.');
+      if (!payload.firstName || String(payload.firstName).trim().length < 2) throw new Error('First name must be at least 2 letters.');
+      if (find(DB.users, function (u) { return String(u.regNumber) === reg; })) throw new Error('Registration number already exists.');
+      var nowStr = now();
+      DB.students.push({
+        id: nextId('Stu'), regNumber: reg,
+        surname: payload.surname || '', firstName: payload.firstName || '', otherNames: payload.otherNames || '',
+        gender: payload.gender || '', phoneNumber: payload.phoneNumber || '', email: payload.email || '',
+        faculty: payload.faculty || 'Faculty of Science', department: payload.department || 'Physics',
+        programme: payload.programme || 'MSc', specialisation: payload.specialisation || '',
+        passportFileId: '', passportUrl: '',
+        mainSupervisorId: '', coSupervisorId: '', currentStage: '1 - Admission',
+        yearOfAdmission: parseInt(payload.yearOfAdmission, 10) || new Date().getFullYear(), createdAt: nowStr, updatedAt: nowStr
+      });
+      DB.users.push({
+        id: nextId('Usr'), regNumber: reg, email: payload.email || '', role: 'Student',
+        fullName: (payload.firstName || '') + ' ' + (payload.surname || ''), firstLogin: true, active: true, status: 'Approved', createdAt: nowStr
+      });
+      return { ok: true, regNumber: reg, message: 'Student added. Sign-in details sent to ' + (payload.email || '') + '.' };
+    },
+    api_removeStudent: function (token, regNumber) {
+      var user = requireUser(token);
+      assertRole(user, ['PG_Coordinator']);
+      var reg = String(regNumber || '').trim();
+      if (String(reg) === String(user.regNumber)) throw new Error('You cannot remove your own record.');
+      var student = find(DB.students, function (s) { return String(s.regNumber) === reg; });
+      var account = find(DB.users, function (u) { return String(u.regNumber) === reg; });
+      if (!student && !account) throw new Error('Student not found.');
+      var before = DB.submissions.length;
+      DB.submissions = DB.submissions.filter(function (r) { return String(r.regNumber) !== reg; });
+      var removedSubs = before - DB.submissions.length;
+      if (student) DB.students = DB.students.filter(function (s) { return String(s.regNumber) !== reg; });
+      if (account) DB.users = DB.users.filter(function (u) { return String(u.regNumber) !== reg; });
+      var name = student ? fullNameOf(student) : (account ? account.fullName : reg);
+      return { ok: true, message: name + ' removed.' + (removedSubs ? ' ' + removedSubs + ' submission(s) removed.' : '') };
     },
     api_assignSupervisors: function (token, regNumber, mainId, coId) {
       var user = requireUser(token);
