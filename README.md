@@ -41,6 +41,9 @@ Three pieces, each with one job:
   **Deploy → Manage deployments → Edit → Version: New version → Deploy** so the
   `/exec` link never changes.
 
+Full step-by-step for future releases (GitHub push, Cloudflare auto-deploy,
+manual fallback, connection repair): **[`DEPLOYMENT.md`](DEPLOYMENT.md)**.
+
 ### Cloudflare Pages build settings
 
 - Build command: `npm run build`
