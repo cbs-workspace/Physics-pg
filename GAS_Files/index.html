@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Department of Physics Postgraduate Journey — University of Abuja</title>
+  <?!= include('styles') ?>
+</head>
+<body>
+  <header class="public-topbar">
+    <div class="pt-inner">
+      <a class="p-brand" href="?page=home">
+        <img src="https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl" alt="">
+        <span><span class="name">Postgraduate Journey</span><br><span class="sub">Department of Physics &middot; University of Abuja</span></span>
+      </a>
+      <nav class="p-tabs">
+        <a href="?page=home" data-page="home" class="active">Home</a>
+        <a href="?page=about" data-page="about">About</a>
+        <a href="?page=programmes" data-page="programmes">Programmes</a>
+        <a href="?page=register" data-page="register">Register</a>
+        <a href="?page=contact" data-page="contact">Contact</a>
+      </nav>
+      <div class="p-actions">
+        <button class="btn btn-outline btn-sm theme-btn" data-action="toggle-theme" data-theme-icon title="Toggle light/dark theme" aria-label="Toggle theme">&#9790;</button>
+        <a class="btn btn-primary btn-sm" href="?page=login">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="pub-main">
+
+    <!-- ==================== HOME ==================== -->
+    <div class="pub-page" data-page="home">
+      <section class="pub-hero">
+        <div class="kicker">Department of Physics &middot; Faculty of Science &middot; University of Abuja</div>
+        <h1>Postgraduate Journey</h1>
+        <p>Follow your postgraduate progress from admission to completion — registration, supervisor
+           allocation, proposals, submissions and compliance checks — all in one place, alongside the
+           University's main portal.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="?page=register">Register Now</a>
+          <a class="btn btn-outline-light" href="?page=programmes">View Programmes</a>
+          <a class="btn btn-outline-light" href="?page=login">Student Login</a>
+        </div>
+      </section>
+
+      <section class="pub-section">
+        <h2>Latest Announcements</h2>
+        <p class="lead">News from the PG Coordinator and the Department of Physics.</p>
+        <div class="card">
+          <div id="ann-list" class="page-loading"><span class="spinner"></span> Loading announcements…</div>
+        </div>
+      </section>
+
+      <section class="pub-section" id="journey">
+        <h2>Your Postgraduate Journey</h2>
+        <p class="lead">Five phases and fifteen steps, from admission to completion — exactly as set out
+          in the department's <em>Postgraduate Journey Roadmap</em>. Five steps are <strong>decision
+          gates</strong>: you must pass before moving on.</p>
+        <div class="card" style="padding:14px">
+          <img class="journey-img" src="images/PG_Journey_Infographic.png" loading="lazy"
+               alt="Postgraduate Journey infographic — 5 phases and 15 steps"
+               onerror="this.parentNode.style.display='none'">
+        </div>
+        <div class="card-grid" style="margin-top:16px">
+          <div class="card phase-card">
+            <div class="phase-no">Phase 1</div>
+            <h4>Coursework &amp; Research Preparation</h4>
+            <p>Admission and university registration, prescribed lectures (MSc), then formal departmental supervisor allocation.</p>
+            <div class="steps">Steps 1&ndash;3</div>
+          </div>
+          <div class="card phase-card">
+            <div class="phase-no">Phase 2</div>
+            <h4>Proposal Stage</h4>
+            <p>Draft proposal to your supervisor(s), proposal-defence form (SPGS guidelines plus departmental additions), then defence at the monthly seminar with the Internal Examiner present or represented.</p>
+            <div class="steps">Steps 4&ndash;7</div>
+            <div class="gate-badge">Gate at Step 7 &middot; fail &rarr; back to Step 5</div>
+          </div>
+          <div class="card phase-card">
+            <div class="phase-no">Phase 3</div>
+            <h4>Research Execution &amp; Progress</h4>
+            <p>Progress report presented at the departmental monthly seminar, with the Internal Examiner present or represented.</p>
+            <div class="steps">Step 8</div>
+            <div class="gate-badge">Gate at Step 8 &middot; repeat / fall back as outcome requires</div>
+          </div>
+          <div class="card phase-card">
+            <div class="phase-no">Phase 4</div>
+            <h4>Thesis Verification &amp; External Examination</h4>
+            <p>Compliance &amp; quality-assurance inspection by the Departmental Thesis Inspector, plagiarism check at the Library or ITMS (fees apply), then external defence.</p>
+            <div class="steps">Steps 9&ndash;11</div>
+            <div class="gate-badge">Gates at Steps 9 &amp; 10</div>
+          </div>
+          <div class="card phase-card">
+            <div class="phase-no">Phase 5</div>
+            <h4>Post-Defence Corrections &amp; Completion</h4>
+            <p>Comment-by-comment response to examiners' comments, final compliance inspection, submission of signed copies, completion.</p>
+            <div class="steps">Steps 12&ndash;15</div>
+            <div class="gate-badge">Gate at Step 13</div>
+          </div>
+        </div>
+        <p class="small muted" style="margin-top:12px">Step 2 is for MSc students only. The proposal defence and progress
+          report both hold at the departmental monthly seminar. Inspector clearance is required twice — before the
+          plagiarism check and before final submission. See the full <em>PG Journey Roadmap</em> for every requirement
+          and outcome.</p>
+      </section>
+
+      <section class="pub-section">
+        <div class="card-grid">
+          <div class="card info-card">
+            <div class="card-icon">&#127891;</div>
+            <h4>Register Online</h4>
+            <p>New students register directly on this site and follow up with a status check using their registration number.</p>
+          </div>
+          <div class="card info-card">
+            <div class="card-icon">&#128204;</div>
+            <h4>Track Your Journey</h4>
+            <p>Fifteen clearly defined stages — from admission and lectures to external defence and final completion — visible at a glance.</p>
+          </div>
+          <div class="card info-card">
+            <div class="card-icon">&#128218;</div>
+            <h4>Supervision &amp; Submissions</h4>
+            <p>Research plans, seminars, proposals, progress reports and theses flow through a transparent review process.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pub-section" id="notice">
+        <div class="card caveat-card">
+          <h4>Please note — what this site is for</h4>
+          <p>This site is developed strictly to assist students in navigating their postgraduate journey, and
+            to facilitate departmental PG coordination, progress monitoring and documentation.</p>
+          <p>It does not replace official University processes. For any other matter — including anything
+            requiring referral to the School of Postgraduate Studies (SPGS) — please contact the
+            <strong>Head, Department of Physics</strong> or the <strong>PG Coordinator</strong>.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== ABOUT ==================== -->
+    <div class="pub-page" data-page="about" hidden>
+      <section class="pub-hero">
+        <div class="kicker">Department of Physics &middot; University of Abuja</div>
+        <h1>About the Postgraduate Journey</h1>
+        <p>The department's own platform for tracking and managing postgraduate progress — built for
+           students, the PG Coordinator and the Head of Department.</p>
+      </section>
+
+      <section class="pub-section">
+        <h2>Who We Are</h2>
+        <p class="lead">The Department of Physics, Faculty of Science, University of Abuja trains postgraduate
+          physicists across MPhil, MSc and PhD programmes, with research strengths in five specialisation
+          areas spanning solid-state, nuclear, solar and applied geophysics.</p>
+        <div class="card-grid">
+          <div class="card info-card">
+            <div class="card-icon">&#127963;</div>
+            <h4>A Departmental Tool</h4>
+            <p>The University already runs a central portal for postgraduate students across all departments.
+              This platform is the department's own addition — focused only on how our students progress.</p>
+          </div>
+          <div class="card info-card">
+            <div class="card-icon">&#128200;</div>
+            <h4>Non-Result Progress</h4>
+            <p>It manages everything before the transcript: admission status, lecture attendance checkpoints,
+              supervisor allocation, proposal milestones, submissions, inspections and final compliance.</p>
+          </div>
+          <div class="card info-card">
+            <div class="card-icon">&#129309;</div>
+            <h4>Built for Coordination</h4>
+            <p>Designed so the PG Coordinator and Head of Department can oversee every student's journey,
+              while students see exactly where they stand at any time.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pub-section">
+        <h2>What the Portal Does</h2>
+        <div class="card">
+          <ul class="tick">
+            <li><strong>Students</strong> register online, check their registration status, sign in to a personal dashboard and follow their 15-stage journey.</li>
+            <li><strong>The PG Coordinator</strong> approves registrations, allocates supervisors, manages staff entries, posts announcements and reviews submissions.</li>
+            <li><strong>The Head of Department</strong> has a read-only overview of the department's postgraduate cohort and progress.</li>
+            <li><strong>Staff</strong> record supervisory notes and stage updates; <strong>submission inspectors</strong> review, approve or reject submitted work with comments.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== PROGRAMMES ==================== -->
+    <div class="pub-page" data-page="programmes" hidden>
+      <section class="pub-hero">
+        <div class="kicker">Department of Physics &middot; University of Abuja</div>
+        <h1>Postgraduate Programmes</h1>
+        <p>MPhil, MSc and PhD study in Physics — with five research specialisation areas and a clearly
+           staged journey from admission to completion.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="?page=register">Register Now</a>
+          <a class="btn btn-outline-light" href="?page=contact">Ask a Question</a>
+        </div>
+      </section>
+
+      <section class="pub-section">
+        <h2>Our Degrees</h2>
+        <p class="lead">Choose the research pathway that matches your goals. All three are tracked stage-by-stage on this portal.</p>
+        <div class="card-grid">
+          <div class="card prog-card">
+            <div class="prog-level">Postgraduate</div>
+            <h4>MPhil</h4>
+            <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.6">The research threshold degree — proposal development, defence and supervised research leading to a thesis.</p>
+          </div>
+          <div class="card prog-card">
+            <div class="prog-level">Masters</div>
+            <h4>MSc</h4>
+            <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.6">Master of Science in Physics — advanced study and a supervised research dissertation.</p>
+          </div>
+          <div class="card prog-card">
+            <div class="prog-level">Doctoral</div>
+            <h4>PhD</h4>
+            <p style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.6">Doctoral research — original contribution to physics, culminating in thesis and external defence.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pub-section">
+        <h2>Specialisation Areas</h2>
+        <div class="card">
+          <ul class="tick">
+            <li>Experimental Solid-State Physics</li>
+            <li>Theoretical Solid-State Physics</li>
+            <li>Nuclear Physics</li>
+            <li>Solar Physics</li>
+            <li>Applied Geophysics</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="pub-section">
+        <h2>The Journey</h2>
+        <p class="lead">Every student moves through fifteen defined stages — the portal shows exactly which one you are on.</p>
+        <div class="card">
+          <ul class="tick">
+            <li>1 &ndash; Admission &nbsp;&middot;&nbsp; 2 &ndash; Lecture Attendance &nbsp;&middot;&nbsp; 3 &ndash; Supervisor Allocation</li>
+            <li>4 &ndash; Proposal Submission &nbsp;&middot;&nbsp; 5 &ndash; Proposal Defence Form &nbsp;&middot;&nbsp; 6 &ndash; Proposal Defence</li>
+            <li>7 &ndash; Progression Clearance &nbsp;&middot;&nbsp; 8 &ndash; Progress Report &nbsp;&middot;&nbsp; 9 &ndash; Compliance Inspection</li>
+            <li>10 &ndash; Plagiarism Check &nbsp;&middot;&nbsp; 11 &ndash; External Defence &nbsp;&middot;&nbsp; 12 &ndash; Examiners Comments</li>
+            <li>13 &ndash; Final Compliance &nbsp;&middot;&nbsp; 14 &ndash; Signed Copies &nbsp;&middot;&nbsp; 15 &ndash; Completion</li>
+          </ul>
+        </div>
+        <p class="lead" style="margin-top:14px">Ready? <a href="?page=register">Register as a new student</a> — already registered? <a href="?page=login">sign in</a>.</p>
+      </section>
+    </div>
+
+    <!-- ==================== REGISTER ==================== -->
+    <div class="pub-page" data-page="register" hidden>
+      <section class="pub-section" style="margin-top:6px">
+        <h2>Student Registration</h2>
+        <p class="lead">New students of the Department of Physics complete the form below. After submitting,
+          use the status check to see whether your registration has been approved.</p>
+
+        <div class="reg-grid">
+          <div>
+            <div class="card" id="reg-form-card">
+              <div id="reg-msg"></div>
+              <form id="register-form">
+                <div class="field"><label>Registration Number *</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531 or 26/408PHYX/040"></div>
+                <div class="row-cols" style="--cols:3">
+                  <div class="field"><label>Surname *</label><input type="text" name="surname" required></div>
+                  <div class="field"><label>First Name *</label><input type="text" name="firstName" required></div>
+                  <div class="field"><label>Other Names</label><input type="text" name="otherNames"></div>
+                </div>
+                <div class="row-cols" style="--cols:3">
+                  <div class="field"><label>Gender *</label><select name="gender" required><option value="">Select</option><option>Male</option><option>Female</option></select></div>
+                  <div class="field"><label>Phone Number *</label><input type="tel" name="phoneNumber" required placeholder="08012345678"></div>
+                  <div class="field"><label>Email *</label><input type="email" name="email" required></div>
+                </div>
+                <div class="row-cols" style="--cols:2">
+                  <div class="field"><label>Faculty *</label><input type="text" name="faculty" value="Faculty of Science" required></div>
+                  <div class="field"><label>Department *</label><input type="text" name="department" value="Physics" required></div>
+                </div>
+                <div class="row-cols" style="--cols:2">
+                  <div class="field"><label>Programme *</label>
+                    <select name="programme" required>
+                      <option value="">Select</option>
+                      <option>MPhil</option>
+                      <option>MSc</option>
+                      <option>PhD</option>
+                    </select>
+                  </div>
+                  <div class="field"><label>Specialisation *</label>
+                    <select name="specialisation" required>
+                      <option value="">Select</option>
+                      <option>Experimental Solid-State Physics</option>
+                      <option>Theoretical Solid-State Physics</option>
+                      <option>Nuclear Physics</option>
+                      <option>Solar Physics</option>
+                      <option>Applied Geophysics</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field"><label>Passport Photo * (JPG/PNG, max 1 MB)</label><input type="file" name="passportPhoto" accept="image/jpeg,image/png" required></div>
+                <button class="btn btn-primary btn-block" type="submit" id="reg-submit">Review Details</button>
+              </form>
+              <p class="small muted" style="text-align:center;margin-top:16px">Already registered? <a href="?page=login">Login here</a></p>
+            </div>
+
+            <div class="card" id="reg-review-card" style="display:none">
+              <h3 style="margin:0 0 6px">Review your details</h3>
+              <p class="small muted" style="margin-top:0">Check every detail below. Use <strong>Back to edit</strong> to make changes, or
+                <strong>Submit Registration</strong> to send your registration to the PG Coordinator for approval.</p>
+              <div id="reg-review"></div>
+              <div class="row" style="margin-top:16px;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-primary" type="button" id="reg-confirm">Submit Registration</button>
+                <button class="btn btn-outline" type="button" id="reg-back">Back to edit</button>
+              </div>
+            </div>
+
+            <div class="card" id="reg-done-card" style="display:none;text-align:center">
+              <h2 style="color:var(--primary-strong);margin:0 0 8px">&check; Registration Submitted</h2>
+              <p style="margin:12px 0;color:var(--text-muted)" id="reg-done-msg"></p>
+              <p class="small muted">Your registration is reviewed by the PG Coordinator. Check your status in the box beside this form, then sign in once approved.</p>
+              <div class="row" style="justify-content:center;gap:10px">
+                <a class="btn btn-primary" href="?page=login">Go to Login</a>
+                <a class="btn btn-outline" href="?page=home">Back to Home</a>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <h3 style="margin:0 0 6px">Check Registration Status</h3>
+              <p class="small muted" style="margin-top:0">Enter your registration number to see whether your registration is pending, approved or rejected.</p>
+              <form id="status-form">
+                <div class="field"><label>Registration Number</label><input type="text" name="statusRegNumber" required placeholder="UA/pg2026/003531"></div>
+                <button class="btn btn-outline btn-block" type="submit" id="status-submit">Check Status</button>
+              </form>
+              <div class="status-result" id="status-result"></div>
+            </div>
+
+            <div class="card">
+              <h3 style="margin:0 0 6px">After Approval</h3>
+              <p class="small muted" style="margin-top:0">Once approved, sign in with your registration number and the password set during account activation. Your dashboard shows your journey stage, supervisors and submissions.</p>
+              <a class="btn btn-outline btn-block" href="?page=login">Student Login</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== CONTACT ==================== -->
+    <div class="pub-page" data-page="contact" hidden>
+      <section class="pub-hero">
+        <div class="kicker">Department of Physics &middot; University of Abuja</div>
+        <h1>Contact Us</h1>
+        <p>Questions about registration, supervision or your journey? Send a message — enquiries go
+           straight to the PG Coordinator.</p>
+      </section>
+
+      <section class="pub-section" style="margin-top:0">
+        <div class="contact-grid">
+          <div class="card">
+            <h3 style="margin:0 0 12px">Reach the Department</h3>
+            <div class="ann-item">
+              <div class="ann-title">Address</div>
+              <div class="ann-body">Department of Physics, Faculty of Science, University of Abuja</div>
+            </div>
+            <div class="ann-item">
+              <div class="ann-title">Email</div>
+                <div class="ann-body">abel.osagie@uniabuja.edu.ng</div>
+            </div>
+            <div class="ann-item">
+              <div class="ann-title">Office</div>
+              <div class="ann-body">PG Coordinator &mdash; enquiries and registration approvals, during working hours.</div>
+            </div>
+            <p class="small muted" style="margin-bottom:0">Prefer to browse first? See the
+              <a href="?page=programmes">programmes</a> or the <a href="?page=about">about</a> page.</p>
+          </div>
+
+          <div class="card">
+            <h3 style="margin:0 0 4px">Send an Enquiry</h3>
+            <p class="small muted" style="margin-top:0">We usually respond by email within a few working days.</p>
+            <div id="enq-msg"></div>
+            <form id="enquiry-form">
+              <div class="field"><label>Your Name *</label><input type="text" name="name" required minlength="2"></div>
+              <div class="field"><label>Email Address *</label><input type="email" name="email" required></div>
+              <div class="field"><label>Message * <span class="muted">(10&ndash;2000 characters)</span></label><textarea name="message" required minlength="10" maxlength="2000" rows="6" placeholder="How can we help?"></textarea></div>
+              <button class="btn btn-primary btn-block" type="submit" id="enq-submit">Send Enquiry</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <p class="footer-note">This site assists journey navigation and departmental PG coordination only — for SPGS matters contact the Head of Department or the PG Coordinator.</p>
+
+  <footer class="footer pub-footer">
+    <img src="https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ" alt="CBS">
+    <span class="text">&copy; 2026 Capacity Building and Support. All rights reserved.</span>
+  </footer>
+
+  <?!= include('common') ?>
+  <script>
+    /* ================= VIEW SWITCHER (one file, five views) =================
+       ?page=home|about|programmes|register|contact arrives as INITIAL_PAGE from
+       doGet; nav/rail links switch views in place. Login keeps a full reload. */
+    var INITIAL_PAGE = <?!= initialPageJson ?>;
+    var PUBLIC_PAGES = ['home', 'about', 'programmes', 'register', 'contact'];
+    var PAGE_TITLES = {
+      home: 'Department of Physics Postgraduate Journey — University of Abuja',
+      about: 'About — Department of Physics Postgraduate Journey',
+      programmes: 'Programmes — Department of Physics Postgraduate Journey',
+      register: 'Register — Department of Physics Postgraduate Journey',
+      contact: 'Contact — Department of Physics Postgraduate Journey'
+    };
+    function showView(page, updateUrl) {
+      if (PUBLIC_PAGES.indexOf(page) === -1) page = 'home';
+      var views = document.querySelectorAll('.pub-page');
+      for (var i = 0; i < views.length; i++) views[i].hidden = views[i].getAttribute('data-page') !== page;
+      var tabs = document.querySelectorAll('.p-tabs a[data-page]');
+      for (var j = 0; j < tabs.length; j++) tabs[j].classList.toggle('active', tabs[j].getAttribute('data-page') === page);
+      document.title = PAGE_TITLES[page] || PAGE_TITLES.home;
+      if (updateUrl && window.history && history.replaceState) history.replaceState(null, '', '?page=' + page);
+    }
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a) return;
+      var m = String(a.getAttribute('href') || '').match(/[?&]page=([a-z]+)/);
+      if (!m || PUBLIC_PAGES.indexOf(m[1]) === -1) return;   // ?page=login → normal navigation
+      e.preventDefault();
+      showView(m[1], true);
+      window.scrollTo(0, 0);
+    });
+    showView(INITIAL_PAGE || 'home', false);
+
+    /* ================= HOME: announcements ================= */
+    (function () {
+      var el = document.getElementById('ann-list');
+      call('api_publicAnnouncements').then(function (r) {
+        var items = (r && r.items) || [];
+        if (!items.length) {
+          el.className = '';
+          el.innerHTML = '<p class="small muted" style="margin:0">No announcements yet. Check back soon.</p>';
+          return;
+        }
+        el.className = '';
+        el.innerHTML = items.map(function (a) {
+          var when = '';
+          if (a.createdAt) {
+            var d = new Date(a.createdAt);
+            if (!isNaN(d)) when = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+          }
+          return '<div class="ann-item">' +
+            '<div class="ann-title">' + esc(a.title) + '</div>' +
+            (a.body ? '<div class="ann-body">' + esc(a.body) + '</div>' : '') +
+            (when ? '<div class="when">' + when + '</div>' : '') +
+          '</div>';
+        }).join('');
+      }).catch(function () {
+        el.className = '';
+        el.innerHTML = '<p class="small muted" style="margin:0">Could not load announcements right now. Please try again later.</p>';
+      });
+    })();
+
+    /* ================= REGISTER: two-step review + submit + status ================= */
+    function regMsg(kind, text) {
+      var el = document.getElementById('reg-msg');
+      el.innerHTML = text ? '<div class="alert ' + (kind === 'error' ? 'error' : 'success') + '">' + esc(text) + '</div>' : '';
+    }
+
+    var pendingPayload = null;
+    function reviewRow(label, value) {
+      return '<tr><td style="padding:6px 8px;border:1px solid var(--border);background:var(--surface-2);font-weight:600;white-space:nowrap">' + esc(label) + '</td>' +
+        '<td style="padding:6px 8px;border:1px solid var(--border)">' + esc(value || '—') + '</td></tr>';
+    }
+    function showReview(d, file) {
+      var rows = [
+        ['Registration number', d.regNumber],
+        ['Name', [d.firstName, d.otherNames, d.surname].filter(Boolean).join(' ')],
+        ['Gender', d.gender],
+        ['Phone number', d.phoneNumber],
+        ['Email', d.email],
+        ['Faculty', d.faculty],
+        ['Department', d.department],
+        ['Programme', d.programme],
+        ['Specialisation', d.specialisation]
+      ];
+      document.getElementById('reg-review').innerHTML =
+        '<div class="row" style="align-items:flex-start;gap:16px;flex-wrap:wrap">' +
+        '<div><img src="' + file.dataUrl + '" alt="Passport photo" style="width:110px;border:1px solid var(--border);border-radius:8px;display:block">' +
+        '<div class="small muted" style="text-align:center;margin-top:6px">Passport</div></div>' +
+        '<div style="flex:1;min-width:240px"><table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13.5px">' +
+        rows.map(function (r) { return reviewRow(r[0], r[1]); }).join('') + '</table></div></div>';
+    }
+
+    document.getElementById('register-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var form = e.target;
+      var d = {};
+      form.querySelectorAll('[name]').forEach(function (el) { if (el.type !== 'file') d[el.getAttribute('name')] = el.value; });
+      var regRe1 = /^UA\/pg20\d{2}\/\d{6}$/;
+      var regRe2 = /^\d{2}\/\d{3}[A-Z]{3,4}\/\d{3,4}$/;
+      if (!regRe1.test(d.regNumber) && !regRe2.test(d.regNumber)) {
+        regMsg('error', 'Invalid registration number format. Use UA/pg2026/003531 or 26/408PHYX/040.');
+        return;
+      }
+      regMsg('', '');
+      var btn = document.getElementById('reg-submit');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Preparing…';
+      readFileInput(form.querySelector('[name=passportPhoto]')).then(function (file) {
+        d.passportPhoto = file;
+        pendingPayload = d;
+        showReview(d, file);
+        document.getElementById('reg-form-card').style.display = 'none';
+        document.getElementById('reg-review-card').style.display = '';
+        btn.disabled = false;
+        btn.textContent = 'Review Details';
+        window.scrollTo(0, 0);
+      }).catch(function (err) {
+        regMsg('error', err && err.message ? err.message : String(err));
+        btn.disabled = false;
+        btn.textContent = 'Review Details';
+      });
+    });
+
+    // step 2 — confirm the reviewed details and submit
+    document.getElementById('reg-confirm').addEventListener('click', function () {
+      if (!pendingPayload) return;
+      var btn = this;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Submitting…';
+      call('api_register', pendingPayload).then(function (r) {
+        document.getElementById('reg-review-card').style.display = 'none';
+        var done = document.getElementById('reg-done-card');
+        done.style.display = '';
+        document.getElementById('reg-done-msg').textContent = (r.message || 'Registration submitted.') +
+          ' A confirmation email has been sent to ' + pendingPayload.email + '.';
+        window.scrollTo(0, 0);
+      }).catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Submit Registration';
+        document.getElementById('reg-review-card').style.display = 'none';
+        document.getElementById('reg-form-card').style.display = '';
+        regMsg('error', err && err.message ? err.message : String(err));
+        window.scrollTo(0, 0);
+      });
+    });
+
+    document.getElementById('reg-back').addEventListener('click', function () {
+      document.getElementById('reg-review-card').style.display = 'none';
+      document.getElementById('reg-form-card').style.display = '';
+      window.scrollTo(0, 0);
+    });
+
+    document.getElementById('status-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var reg = e.target.querySelector('[name=statusRegNumber]').value;
+      var out = document.getElementById('status-result');
+      var btn = document.getElementById('status-submit');
+      btn.disabled = true;
+      out.innerHTML = '<div class="page-loading" style="padding:20px"><span class="spinner"></span> Checking…</div>';
+      call('api_checkRegistrationStatus', reg).then(function (r) {
+        btn.disabled = false;
+        var st = String(r.status || 'Not Found');
+        var cls = st === 'Approved' ? 'ok' : st === 'Rejected' ? 'bad' : st === 'Pending' ? 'warn' : 'info';
+        var alertKind = st === 'Rejected' ? 'error' : 'success';
+        out.innerHTML = '<div class="alert ' + alertKind + '" style="margin-bottom:0">' +
+          '<span class="badge ' + cls + '">' + esc(st) + '</span>' +
+          '<div style="margin-top:8px">' + esc(r.message || '') + '</div></div>';
+      }).catch(function (err) {
+        btn.disabled = false;
+        out.innerHTML = '<div class="alert error" style="margin-bottom:0">' + esc(err && err.message ? err.message : String(err)) + '</div>';
+      });
+    });
+
+    /* ================= CONTACT: enquiry form ================= */
+    document.getElementById('enquiry-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var form = e.target;
+      var d = {};
+      form.querySelectorAll('[name]').forEach(function (el) { d[el.getAttribute('name')] = el.value; });
+      var msgEl = document.getElementById('enq-msg');
+      msgEl.innerHTML = '';
+      var btn = document.getElementById('enq-submit');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Sending…';
+      call('api_publicEnquiry', d.name, d.email, d.message).then(function (r) {
+        msgEl.innerHTML = '<div class="alert success">' + esc((r && r.message) || 'Thank you. Your enquiry has been sent.') + '</div>';
+        form.reset();
+        btn.disabled = false;
+        btn.textContent = 'Send Enquiry';
+        msgEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }).catch(function (err) {
+        msgEl.innerHTML = '<div class="alert error">' + esc(err && err.message ? err.message : String(err)) + '</div>';
+        btn.disabled = false;
+        btn.textContent = 'Send Enquiry';
+      });
+    });
+  </script>
+</body>
+</html>

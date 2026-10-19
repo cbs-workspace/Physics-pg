@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Department of Physics Postgraduate Journey — University of Abuja</title>
+  <?!= include('styles') ?>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="print-area"></div>
+
+  <?!= include('common') ?>
+  <script>
+    var INITIAL_VIEW = <?!= initialViewJson ?>;
+    var EMBED = <?!= embedJson ?>;
+
+    window.addEventListener('error', function (e) {
+      var el = document.getElementById('app');
+      if (el && !el.innerHTML) el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--danger)"><h2>Something went wrong</h2><p>' + (e.message || 'Unknown error') + '</p></div>';
+    });
+
+    /* ================= STATE ================= */
+    var state = {
+      token: sessionStorage.getItem('pgs_token') || '',
+      user: null,
+      boot: false,
+      view: 'login',
+      error: '',
+      notice: '',
+      busy: false,
+      dashboard: null,
+      coordinator: null,
+      hod: null,
+      staff: null,
+      submissions: null,
+      inspector: null,
+      reg: { step: 'form' },
+      pwChange: { flash: '' },
+      photoPreview: ''
+    };
+
+    var JOURNEY_STAGES = [
+      '1 - Admission', '2 - Lecture Attendance', '3 - Supervisor Allocation',
+      '4 - Proposal Submission', '5 - Proposal Defence Form', '6 - Proposal Defence',
+      '7 - Progression Clearance', '8 - Progress Report', '9 - Compliance Inspection',
+      '10 - Plagiarism Check', '11 - External Defence', '12 - Examiners Comments',
+      '13 - Final Compliance', '14 - Signed Copies', '15 - Completion'
+    ];
+    var PROGRAMMES = ['MPhil', 'MSc', 'PhD'];
+    var SPECIALISATIONS = ['Experimental Solid-State Physics', 'Theoretical Solid-State Physics', 'Nuclear Physics', 'Solar Physics', 'Applied Geophysics'];
+    var SUBMISSION_TYPES = ['Research Plan Form', 'Seminar Presentation', 'Research Proposal', 'Progress Report', 'Final Thesis/Dissertation'];
+    var ROLE_LABELS = { Student: 'Student', PG_Coordinator: 'PG Coordinator', HoD: 'Head of Department', Staff: 'Staff', Submission_Inspector: 'Submission Inspector' };
+
+    /* ================= RPC ================= */
+    function authed(fn) {
+      var args = [state.token].concat(Array.prototype.slice.call(arguments, 1));
+      return call.apply(null, [fn].concat(args));
+    }
+
+    /* ================= HELPERS ================= */
+
+    function setError(err) { state.error = err && err.message ? err.message : String(err); state.busy = false; render(); }
+    function setNotice(msg) { state.notice = msg; state.busy = false; }
+    function clearMsgs() { state.error = ''; state.notice = ''; }
+    function act(promise, notice, reload) {
+      state.busy = true; clearMsgs(); render();
+      promise.then(function () {
+        state.busy = false; setNotice(notice || 'Done.');
+        if (reload) reload(); else render();
+      }).catch(setError);
+    }
+    function optionsHtml(list, valueFn, selected, labelFn) {
+      return list.map(function (item) {
+        var val = valueFn ? valueFn(item) : item;
+        var label = labelFn ? labelFn(item) : item;
+        return '<option value="' + esc(val) + '"' + (String(val) === String(selected) ? ' selected' : '') + '>' + esc(label) + '</option>';
+      }).join('');
+    }
+    function collect(form) {
+      var data = {};
+      form.querySelectorAll('[name]').forEach(function (el) { if (el.type !== 'file') data[el.getAttribute('name')] = el.value; });
+      return data;
+    }
+    function statusBadge(s) {
+      var cls = 'badge';
+      if (s === 'Approved') cls += ' ok';
+      else if (s === 'Rejected') cls += ' bad';
+      else if (s === 'Pending' || s === 'Changes Requested' || s === 'Draft') cls += ' warn';
+      else if (s === 'Submitted' || s === 'Under Review') cls += ' info';
+      return '<span class="' + cls + '">' + esc(s) + '</span>';
+    }
+
+    /* ================= NAV ================= */
+    var NAV = [
+      { key: 'dashboard', label: 'Dashboard', roles: ['Student'] },
+      { key: 'submissions', label: 'My Submissions', roles: ['Student'] },
+      { key: 'coordinator', label: 'Coordinator', roles: ['PG_Coordinator'] },
+      { key: 'hod', label: 'HoD Overview', roles: ['HoD'] },
+      { key: 'staffdash', label: 'My Students', roles: ['Staff'] },
+      { key: 'inspector', label: 'Review Queue', roles: ['Submission_Inspector'] }
+    ];
+    function roleAllowed(key) {
+      var item = NAV.filter(function (n) { return n.key === key; })[0];
+      if (!item) return true;
+      return !state.user || item.roles.indexOf(state.user.role) !== -1;
+    }
+    function navigate(view) {
+      clearMsgs();
+      state.view = view;
+      loadView(view);
+    }
+    function loadView(view) {
+      if (view === 'dashboard' && state.user && state.user.role === 'Student') {
+        state.busy = true; render();
+        authed('api_getStudentDashboard').then(function (d) { state.dashboard = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'submissions' && state.user && state.user.role === 'Student') {
+        state.busy = true; render();
+        authed('api_listSubmissions').then(function (d) { state.submissions = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'coordinator' && state.user && state.user.role === 'PG_Coordinator') {
+        state.busy = true; render();
+        authed('api_getCoordinatorDashboard').then(function (d) { state.coordinator = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'hod' && state.user && state.user.role === 'HoD') {
+        state.busy = true; render();
+        authed('api_getHoDStats').then(function (d) { state.hod = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'staffdash' && state.user && state.user.role === 'Staff') {
+        state.busy = true; render();
+        authed('api_getStaffDashboard').then(function (d) { state.staff = d; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'inspector' && state.user && state.user.role === 'Submission_Inspector') {
+        state.busy = true; render();
+        authed('api_listSubmissions').then(function (d) { state.inspector = d; state.busy = false; render(); }).catch(setError);
+      } else {
+        render();
+      }
+    }
+
+    /* ================= LOGIN ================= */
+    function doLogin(form) {
+      var d = collect(form);
+      state.busy = true; clearMsgs(); render();
+      call('api_login', d.regNumber, d.password).then(function (r) {
+        state.token = r.token; state.user = r.user;
+        sessionStorage.setItem('pgs_token', r.token);
+        state.busy = false;
+        if (r.user.firstLogin) { state.view = 'pwchange'; render(); return; }
+        var target = INITIAL_VIEW && roleAllowed(INITIAL_VIEW) ? INITIAL_VIEW : defaultView_();
+        navigate(target);
+      }).catch(setError);
+    }
+    function defaultView_() {
+      if (state.user.role === 'Student') return 'dashboard';
+      if (state.user.role === 'PG_Coordinator') return 'coordinator';
+      if (state.user.role === 'HoD') return 'hod';
+      if (state.user.role === 'Staff') return 'staffdash';
+      if (state.user.role === 'Submission_Inspector') return 'inspector';
+      return 'dashboard';
+    }
+    function doLogout() {
+      authed('api_logout').catch(function () {});
+      state.token = ''; state.user = null; state.view = 'login';
+      sessionStorage.removeItem('pgs_token');
+      render();
+    }
+
+    /* ================= PASSWORD CHANGE ================= */
+    function doChangePassword(form) {
+      var d = collect(form);
+      if (d.newPassword !== d.confirmPassword) { state.pwChange.flash = 'New passwords do not match.'; render(); return; }
+      state.busy = true; clearMsgs(); render();
+      authed('api_changePassword', d.oldPassword, d.newPassword).then(function () {
+        state.busy = false; setNotice('Password changed. Please sign in again.');
+        state.token = ''; state.user = null; state.view = 'login';
+        sessionStorage.removeItem('pgs_token');
+        render();
+      }).catch(function (e) { state.busy = false; state.pwChange.flash = e.message; render(); });
+    }
+
+    /* ================= PHOTO UPDATE ================= */
+    function doUpdatePhoto(form) {
+      var input = form.querySelector('[name=newPhoto]');
+      state.busy = true; clearMsgs(); render();
+      readFileInput(input).then(function (file) {
+        return authed('api_updateProfilePhoto', file);
+      }).then(function (r) {
+        state.busy = false; setNotice('Profile photo updated.');
+        if (state.dashboard) state.dashboard.student.passportUrl = r.url;
+        render();
+      }).catch(setError);
+    }
+
+    /* ================= RENDER ================= */
+    function render() {
+      document.body.classList.toggle('embed', !!EMBED);
+      if (typeof MUSIC !== 'undefined' && MUSIC.sync) MUSIC.sync(!!state.user);
+      var app = document.getElementById('app');
+      if (!state.user) { app.innerHTML = state.view === 'pwchange' ? pwChangeHtml() : loginHtml(); return; }
+      if (state.view === 'pwchange') { app.innerHTML = pwChangeHtml(); return; }
+      app.innerHTML = shellHtml();
+      document.getElementById('ci').innerHTML = contentHtml();
+    }
+
+    function shellHtml() {
+      var navHtml = NAV.filter(function (n) { return roleAllowed(n.key); }).map(function (n) {
+        return '<button data-nav="' + n.key + '" class="' + (state.view === n.key ? 'active' : '') + '">' + esc(n.label) + '</button>';
+      }).join('');
+      return '<div class="layout">' +
+        '<aside class="sidebar">' +
+          '<div class="sidebar-brand">' +
+            '<img src="' + esc(BRAND.logoUrl) + '" onerror="this.outerHTML=\'<div class=&quot;logo-fallback&quot;>PG</div>\'" alt="">' +
+            '<div><div class="name">' + esc(BRAND.schoolName || 'Postgraduate Journey') + '</div><div class="sub">' + esc(BRAND.subtitle || 'University of Abuja') + '</div></div>' +
+          '</div>' +
+          '<nav class="nav">' + navHtml + '</nav>' +
+          '<div class="sidebar-foot">v1.0 &middot; Apps Script</div>' +
+        '</aside>' +
+        '<div class="sidebar-backdrop" data-action="close-nav"></div>' +
+        '<div class="main">' +
+          '<div class="topbar">' +
+            '<div class="row">' +
+              '<button class="nav-toggle" data-action="toggle-nav">&#9776;</button>' +
+              '<div><div class="who">' + esc(state.user.fullName) + '</div><div class="mail">' + esc(ROLE_LABELS[state.user.role] || state.user.role) + ' &middot; ' + esc(state.user.regNumber) + '</div></div>' +
+            '</div>' +
+            '<div class="tb-actions">' +
+              '<button class="btn btn-outline btn-sm theme-btn" data-action="toggle-theme" data-theme-icon title="Toggle light/dark theme" aria-label="Toggle theme">' + themeIcon() + '</button>' +
+              '<button class="btn btn-outline btn-sm" data-action="pwchange">Change password</button>' +
+              '<button class="btn btn-outline btn-sm" data-action="signout">Sign out</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="content"><div class="content-inner" id="ci"></div></div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function headerHtml() {
+      var out = '';
+      if (state.error) out += '<div class="alert error">' + esc(state.error) + '</div>';
+      if (state.notice) out += '<div class="alert success">' + esc(state.notice) + '</div>';
+      return out;
+    }
+
+    function footerHtml(dark) {
+      return '<footer class="footer' + (dark ? ' dark' : '') + '">' +
+        (BRAND.cbsLogoUrl ? '<img src="' + esc(BRAND.cbsLogoUrl) + '" alt="CBS">' : '') +
+        '<span class="text">' + esc(BRAND.footerText || '© 2026 Capacity Building and Support. All rights reserved.') + '</span>' +
+      '</footer>';
+    }
+
+    function contentHtml() {
+      var out = headerHtml();
+      if (state.busy) { out += '<div class="page-loading"><span class="spinner"></span> Loading…</div>'; }
+      else if (state.view === 'dashboard') out += viewStudentDashboard();
+      else if (state.view === 'submissions') out += viewSubmissions();
+      else if (state.view === 'coordinator') out += viewCoordinator();
+      else if (state.view === 'hod') out += viewHoD();
+      else if (state.view === 'staffdash') out += viewStaff();
+      else if (state.view === 'inspector') out += viewInspector();
+      else out += viewStudentDashboard();
+      out += footerHtml(false);
+      return out;
+    }
+
+    /* ---- Landing / Login ---- */
+    function loginHtml() {
+      return '<div class="login-wrap">' + themeFabHtml() + '<div class="login-card">' +
+        '<div class="logo-row"><img src="' + esc(BRAND.logoUrl) + '" alt="Logo"><h2>Department of Physics Postgraduate Journey</h2><div class="kicker">' + esc(BRAND.subtitle || 'University of Abuja') + '</div></div>' +
+        headerHtml() +
+        '<form id="login-form">' +
+          '<div class="field"><label>Registration Number</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531"></div>' +
+          '<div class="field"><label>Password</label><input type="password" name="password" required></div>' +
+          '<button class="btn btn-primary btn-block" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? '<span class="spinner"></span>' : 'Sign In') + '</button>' +
+        '</form>' +
+        '<p class="small muted" style="text-align:center;margin-top:16px">New student? <a href="?page=register">Register here</a></p>' +
+        '<p class="small muted" style="text-align:center;margin-top:8px"><a href="?page=home">&larr; Back to public site</a></p>' +
+        footerHtml(true) +
+      '</div></div>';
+    }
+
+    /* ---- Change Password ---- */
+    function pwChangeHtml() {
+      return '<div class="login-wrap">' + themeFabHtml() + '<div class="login-card">' +
+        '<h2>Change Password</h2><p class="kicker">You must change your password before proceeding.</p>' +
+        (state.pwChange.flash ? '<div class="alert error">' + esc(state.pwChange.flash) + '</div>' : '') +
+        '<form id="pw-form">' +
+          '<div class="field"><label>Old Password</label><input type="password" name="oldPassword" required></div>' +
+          '<div class="field"><label>New Password</label><input type="password" name="newPassword" required minlength="8"></div>' +
+          '<div class="field"><label>Confirm New Password</label><input type="password" name="confirmPassword" required minlength="8"></div>' +
+          '<button class="btn btn-primary btn-block" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? '<span class="spinner"></span>' : 'Change Password') + '</button>' +
+        '</form>' +
+      '</div></div>';
+    }
+
+    /* ---- Student Dashboard ---- */
+    function viewStudentDashboard() {
+      if (!state.dashboard) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var s = state.dashboard.student;
+      var stageIdx = JOURNEY_STAGES.indexOf(s.currentStage);
+      var pct = ((stageIdx + 1) / JOURNEY_STAGES.length * 100).toFixed(0);
+      var out = '<h2 style="margin:0 0 20px">Student Dashboard</h2>';
+
+      // Profile + photo
+      out += '<div class="card"><div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">' +
+        '<div style="text-align:center">' +
+          (s.passportUrl ? '<img src="' + esc(s.passportUrl) + '" class="profile-photo-lg" alt="">' : '<div class="photo-placeholder" style="width:100px;height:100px;font-size:36px">?</div>') +
+          '<form id="photo-form" style="margin-top:12px"><input type="file" name="newPhoto" accept="image/jpeg,image/png" style="margin-bottom:8px"><button class="btn btn-outline btn-sm" type="submit">Update Photo</button></form>' +
+        '</div>' +
+        '<div style="flex:1;min-width:200px">' +
+          '<h3 style="margin:0 0 8px">' + esc(s.firstName + ' ' + s.otherNames + ' ' + s.surname) + '</h3>' +
+          '<p class="muted small" style="margin:0 0 12px">' + esc(s.regNumber) + ' &middot; ' + esc(s.programme) + ' &middot; ' + esc(s.specialisation) + '</p>' +
+          '<div class="grid cols-2" style="gap:12px">' +
+            '<div><label>Faculty</label><p style="margin:0">' + esc(s.faculty) + '</p></div>' +
+            '<div><label>Department</label><p style="margin:0">' + esc(s.department) + '</p></div>' +
+            '<div><label>Phone</label><p style="margin:0">' + esc(s.phoneNumber) + '</p></div>' +
+            '<div><label>Year of Admission</label><p style="margin:0">' + esc(s.yearOfAdmission) + '</p></div>' +
+          '</div>' +
+        '</div>' +
+      '</div></div>';
+
+      // Supervisors
+      out += '<div class="grid cols-2">';
+      out += '<div class="card"><h4 style="margin:0 0 12px">Main Supervisor</h4>';
+      if (s.mainSupervisor) {
+        out += '<p style="margin:0"><strong>' + esc(s.mainSupervisor.fullName) + '</strong></p><p class="muted small" style="margin:4px 0 0">' + esc(s.mainSupervisor.rank || '') + '</p>' +
+          (s.mainSupervisor.email ? '<p class="small" style="margin:4px 0 0"><a href="mailto:' + esc(s.mainSupervisor.email) + '">' + esc(s.mainSupervisor.email) + '</a></p>' : '');
+      } else { out += '<p class="muted">Not yet assigned.</p>'; }
+      out += '</div>';
+      out += '<div class="card"><h4 style="margin:0 0 12px">Co-Supervisor</h4>';
+      if (s.coSupervisor) {
+        out += '<p style="margin:0"><strong>' + esc(s.coSupervisor.fullName) + '</strong></p><p class="muted small" style="margin:4px 0 0">' + esc(s.coSupervisor.rank || '') + '</p>' +
+          (s.coSupervisor.email ? '<p class="small" style="margin:4px 0 0"><a href="mailto:' + esc(s.coSupervisor.email) + '">' + esc(s.coSupervisor.email) + '</a></p>' : '');
+      } else { out += '<p class="muted">Not yet assigned.</p>'; }
+      out += '</div></div>';
+
+      // Journey stage
+      out += '<div class="card"><h4 style="margin:0 0 12px">PG Journey — Stage ' + (stageIdx + 1) + ' of 15</h4>' +
+        '<div class="stage-bar"><div class="stage-fill" style="width:' + pct + '%">' + esc(s.currentStage) + '</div></div>' +
+        '<div class="stage-list">' +
+        JOURNEY_STAGES.map(function (st, i) {
+          var cls = i < stageIdx ? 'done' : i === stageIdx ? 'current' : '';
+          return '<div class="stage-item ' + cls + '">' + esc(st) + '</div>';
+        }).join('') +
+        '</div></div>';
+
+      // Announcements
+      out += '<div class="card"><h4 style="margin:0 0 12px">Announcements</h4>';
+      if (!state.dashboard.announcements.length) out += '<p class="muted">No announcements yet.</p>';
+      else state.dashboard.announcements.forEach(function (a) {
+        out += '<div style="padding:10px 0;border-bottom:1px solid var(--border-soft)"><strong>' + esc(a.title) + '</strong><br><span class="small muted">' + esc(a.createdAt) + '</span><br>' + esc(a.body) + '</div>';
+      });
+      out += '</div>';
+
+      // Templates
+      out += '<div class="card"><h4 style="margin:0 0 12px">Download Templates</h4><div class="row" style="flex-wrap:wrap">';
+      for (var key in state.dashboard.templates) {
+        out += '<a class="btn btn-outline btn-sm" href="https://drive.google.com/uc?export=download&id=' + esc(state.dashboard.templates[key]) + '" target="_blank">' + esc(key) + '</a>';
+      }
+      out += '</div></div>';
+
+      // New submission
+      out += '<div class="card"><h4 style="margin:0 0 12px">New Submission</h4>' +
+        '<form id="sub-form">' +
+          '<div class="field"><label>Type</label><select name="type" required>' + optionsHtml(SUBMISSION_TYPES, null, '') + '</select></div>' +
+          '<div class="field"><label>Drive File URL</label><input type="url" name="driveFileUrls" required placeholder="https://drive.google.com/..."></div>' +
+          '<button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button>' +
+        '</form></div>';
+
+      return out;
+    }
+
+    /* ---- Student Submissions ---- */
+    function viewSubmissions() {
+      if (!state.submissions) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var out = '<h2 style="margin:0 0 20px">My Submissions</h2>';
+      if (!state.submissions.length) return out + '<div class="empty">No submissions yet.</div>';
+      out += '<div class="table-wrap"><table><thead><tr><th>Type</th><th>Status</th><th>Date</th><th>Inspector Comments</th><th>Supervisor Notes</th></tr></thead><tbody>';
+      state.submissions.forEach(function (s) {
+        out += '<tr><td>' + esc(s.type) + '</td><td>' + statusBadge(s.status) + '</td><td class="small">' + esc(s.createdAt) + '</td><td class="small">' + esc(s.inspectorComments || '—') + '</td><td class="small">' + esc(s.supervisorNotes || '—') + '</td></tr>';
+      });
+      out += '</tbody></table></div>';
+      return out;
+    }
+
+    /* ---- Coordinator Dashboard ---- */
+    function viewCoordinator() {
+      if (!state.coordinator) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var c = state.coordinator;
+      var out = '<h2 style="margin:0 0 20px">PG Coordinator Dashboard</h2>';
+
+      // Stats
+      out += '<div class="grid cols-3" style="margin-bottom:20px">' +
+        '<div class="stat"><div class="label">Total Students</div><div class="value">' + c.students.length + '</div></div>' +
+        '<div class="stat"><div class="label">Pending Approval</div><div class="value" style="color:var(--warn)">' + c.pending.length + '</div></div>' +
+        '<div class="stat"><div class="label">Active Staff</div><div class="value">' + c.staff.length + '</div></div>' +
+      '</div>';
+
+      // Pending approvals
+      out += '<div class="card"><h4 style="margin:0 0 12px">Pending Approvals</h4>';
+      if (!c.pending.length) out += '<p class="muted">No pending registrations.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Reg Number</th><th>Name</th><th>Programme</th><th>Email</th><th>Action</th></tr></thead><tbody>';
+        c.pending.forEach(function (p) {
+          out += '<tr><td>' + esc(p.regNumber) + '</td><td>' + esc(p.fullName) + '</td><td>' + esc(p.programme) + '</td><td>' + esc(p.email) + '</td>' +
+            '<td><button class="btn btn-primary btn-sm" data-action="approve" data-id="' + esc(p.regNumber) + '">Approve</button> ' +
+            '<button class="btn btn-danger btn-sm" data-action="reject" data-id="' + esc(p.regNumber) + '">Reject</button></td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+
+      // All students
+      out += '<div class="card"><h4 style="margin:0 0 12px">All Students</h4>';
+      if (!c.students.length) out += '<p class="muted">No students.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Reg</th><th>Name</th><th>Programme</th><th>Main Supervisor</th><th>Co-Supervisor</th><th>Stage</th><th>Status</th><th>Assign Supervisors</th></tr></thead><tbody>';
+        c.students.forEach(function (s) {
+          out += '<tr><td>' + esc(s.regNumber) + '</td><td>' + esc(s.fullName) + '</td><td>' + esc(s.programme) + '</td>' +
+            '<td>' + esc(s.mainSupervisor || '—') + '</td><td>' + esc(s.coSupervisor || '—') + '</td>' +
+            '<td class="small">' + esc(s.currentStage) + '</td><td>' + statusBadge(s.status) + '</td>' +
+            '<td><button class="btn btn-outline btn-sm" data-action="assign-super" data-id="' + esc(s.regNumber) + '">Assign</button></td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+
+      // Staff management
+      out += '<div class="card"><h4 style="margin:0 0 12px">Staff List (Supervisors)</h4>';
+      if (!c.staff.length) out += '<p class="muted">No staff added yet. Use the form below.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Rank</th><th>Specialisation</th><th>Email</th></tr></thead><tbody>';
+        c.staff.forEach(function (s) {
+          out += '<tr><td>' + esc(s.fullName) + '</td><td>' + esc(s.rank) + '</td><td>' + esc(s.specialisation) + '</td><td>' + esc(s.email) + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '<h4 style="margin:16px 0 8px">Add Staff Member</h4>' +
+        '<form id="staff-form"><div class="row-cols" style="--cols:4">' +
+        '<div class="field"><label>Full Name</label><input type="text" name="fullName" required></div>' +
+        '<div class="field"><label>Rank</label><input type="text" name="rank" placeholder="Professor / Lecturer II"></div>' +
+        '<div class="field"><label>Specialisation</label><input type="text" name="specialisation"></div>' +
+        '<div class="field"><label>Email</label><input type="email" name="email"></div>' +
+        '</div><button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>Add Staff</button></form>';
+      out += '</div>';
+
+      // Announcements
+      out += '<div class="card"><h4 style="margin:0 0 12px">Post Announcement</h4>' +
+        '<form id="ann-form">' +
+          '<div class="field"><label>Title</label><input type="text" name="title" required></div>' +
+          '<div class="field"><label>Body</label><textarea name="body" required></textarea></div>' +
+          '<button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>Post</button>' +
+        '</form></div>';
+
+      // Export
+      out += '<div class="card"><h4 style="margin:0 0 12px">Export Data</h4>' +
+        '<button class="btn btn-outline" data-action="export-csv">Download CSV</button></div>';
+
+      return out;
+    }
+
+    /* ---- HoD Dashboard ---- */
+    function viewHoD() {
+      if (!state.hod) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var h = state.hod;
+      var out = '<h2 style="margin:0 0 4px">Head of Department</h2><p class="muted" style="margin:0 0 20px">Read-only oversight</p>';
+
+      out += '<div class="grid cols-4" style="margin-bottom:20px">' +
+        '<div class="stat"><div class="label">Total Students</div><div class="value">' + h.totalStudents + '</div></div>' +
+        '<div class="stat"><div class="label">Approved</div><div class="value" style="color:var(--primary-strong)">' + (h.byUserStatus.Approved || 0) + '</div></div>' +
+        '<div class="stat"><div class="label">Pending</div><div class="value" style="color:var(--warn)">' + (h.byUserStatus.Pending || 0) + '</div></div>' +
+        '<div class="stat"><div class="label">Total Submissions</div><div class="value">' + h.submissions.length + '</div></div>' +
+      '</div>';
+
+      out += '<div class="grid cols-2"><div class="card"><h4 style="margin:0 0 12px">Students by Programme</h4>';
+      for (var p in h.byProgramme) out += '<p style="margin:4px 0">' + esc(p) + ': <strong>' + h.byProgramme[p] + '</strong></p>';
+      out += '</div><div class="card"><h4 style="margin:0 0 12px">Submissions by Status</h4>';
+      for (var s in h.bySubmissionStatus) out += '<p style="margin:4px 0">' + esc(s) + ': <strong>' + h.bySubmissionStatus[s] + '</strong></p>';
+      out += '</div></div>';
+
+      out += '<div class="card"><h4 style="margin:0 0 12px">All Submissions</h4>';
+      if (!h.submissions.length) out += '<p class="muted">No submissions.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>ID</th><th>Student</th><th>Type</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+        h.submissions.forEach(function (sub) {
+          out += '<tr><td class="small">' + esc(sub.id) + '</td><td>' + esc(sub.studentName) + ' (' + esc(sub.regNumber) + ')</td><td>' + esc(sub.type) + '</td><td>' + statusBadge(sub.status) + '</td><td class="small">' + esc(sub.createdAt) + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+      return out;
+    }
+
+    /* ---- Staff Dashboard ---- */
+    function viewStaff() {
+      if (!state.staff) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var st = state.staff;
+      var out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>';
+
+      out += '<div class="card"><h4 style="margin:0 0 12px">My Supervised Students</h4>';
+      if (!st.students.length) out += '<p class="muted">No students assigned to you yet.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Photo</th><th>Reg</th><th>Name</th><th>Programme</th><th>Specialisation</th><th>Stage</th></tr></thead><tbody>';
+        st.students.forEach(function (s) {
+          out += '<tr>' +
+            '<td>' + (s.passportUrl ? '<img src="' + esc(s.passportUrl) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover">' : '<div class="photo-placeholder" style="width:36px;height:36px;font-size:14px">?</div>') + '</td>' +
+            '<td>' + esc(s.regNumber) + '</td><td>' + esc(s.fullName) + '</td><td>' + esc(s.programme) + '</td><td>' + esc(s.specialisation) + '</td><td class="small">' + esc(s.currentStage) + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+
+      out += '<div class="card"><h4 style="margin:0 0 12px">Submissions from My Students</h4>';
+      if (!st.submissions.length) out += '<p class="muted">No submissions yet.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>ID</th><th>Student</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+        st.submissions.forEach(function (sub) {
+          out += '<tr><td class="small">' + esc(sub.id) + '</td><td>' + esc(sub.studentName) + '</td><td>' + esc(sub.type) + '</td><td>' + statusBadge(sub.status) + '</td>' +
+            '<td><button class="btn btn-outline btn-sm" data-action="add-note" data-id="' + esc(sub.id) + '">Add Note</button></td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      out += '</div>';
+      return out;
+    }
+
+    /* ---- Inspector Dashboard ---- */
+    function viewInspector() {
+      if (!state.inspector) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var out = '<h2 style="margin:0 0 20px">Submission Inspector — Review Queue</h2>';
+      if (!state.inspector.length) return out + '<div class="empty">Queue is empty. No submissions awaiting review.</div>';
+      state.inspector.forEach(function (sub) {
+        out += '<div class="card" style="margin-bottom:16px">' +
+          '<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+            '<div><strong>' + esc(sub.type) + '</strong> <span class="muted small">&middot; ' + esc(sub.id) + '</span><br>' +
+            '<span class="small">' + esc(sub.studentName) + ' (' + esc(sub.regNumber) + ') ' + (sub.programme ? '&middot; ' + esc(sub.programme) : '') + '</span></div>' +
+            '<div>' + statusBadge(sub.status) + '</div>' +
+          '</div>' +
+          (sub.driveFileUrls ? '<p style="margin:8px 0"><a href="' + esc(sub.driveFileUrls) + '" target="_blank">View Document</a></p>' : '') +
+          '<div class="field" style="margin:12px 0 8px"><label>Comments</label><textarea id="cmt-' + esc(sub.id) + '" rows="2" placeholder="Required for Reject / Request Changes">' + esc(sub.inspectorComments || '') + '</textarea></div>' +
+          '<div class="row">' +
+            '<button class="btn btn-primary btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="Approved">Approve</button>' +
+            '<button class="btn btn-danger btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="Rejected">Reject</button>' +
+            '<button class="btn btn-outline btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="Changes Requested">Request Changes</button>' +
+            '<button class="btn btn-outline btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="Under Review">Under Review</button>' +
+          '</div>' +
+        '</div>';
+      });
+      return out;
+    }
+
+    /* ================= EVENT DELEGATION ================= */
+    document.addEventListener('click', function (e) {
+      var nav = e.target.closest('[data-nav]');
+      if (nav) { document.body.classList.remove('nav-open'); navigate(nav.getAttribute('data-nav')); return; }
+      var el = e.target.closest('[data-action]');
+      if (!el) return;
+      var a = el.getAttribute('data-action'), id = el.getAttribute('data-id');
+      switch (a) {
+        case 'signout': doLogout(); break;
+        case 'toggle-nav': document.body.classList.toggle('nav-open'); break;
+        case 'close-nav': document.body.classList.remove('nav-open'); break;
+        case 'pwchange': state.view = 'pwchange'; clearMsgs(); render(); break;
+        case 'approve':
+          if (confirm('Approve this student?')) act(authed('api_approveStudent', id), 'Student approved.', function () { loadView('coordinator'); });
+          break;
+        case 'reject':
+          var reason = prompt('Reason for rejection (optional):');
+          if (reason === null) break;
+          act(authed('api_rejectStudent', id, reason), 'Student rejected.', function () { loadView('coordinator'); });
+          break;
+        case 'assign-super':
+          openAssignModal(id);
+          break;
+        case 'assign-save':
+          var main = document.getElementById('assign-main').value;
+          var co = document.getElementById('assign-co').value;
+          act(authed('api_assignSupervisors', id, main, co), 'Supervisors assigned.', function () { closeModal(); loadView('coordinator'); });
+          break;
+        case 'close-modal': closeModal(); break;
+        case 'add-note':
+          var note = prompt('Enter supervisory note:');
+          if (note) act(authed('api_addSupervisoryNote', id, note), 'Note added.', function () { loadView('staffdash'); });
+          break;
+        case 'sub-status':
+          var status = el.getAttribute('data-status');
+          var cmt = document.getElementById('cmt-' + id);
+          var comments = cmt ? cmt.value : '';
+          if ((status === 'Rejected' || status === 'Changes Requested') && !comments.trim()) { alert('Comments are required for Reject / Request Changes.'); break; }
+          if (confirm('Change status to ' + status + '?')) act(authed('api_updateSubmissionStatus', id, status, comments), 'Status updated.', function () { loadView('inspector'); });
+          break;
+        case 'export-csv':
+          authed('api_exportData').then(function (csv) {
+            var blob = new Blob([csv], { type: 'text/csv' });
+            var url = URL.createObjectURL(blob);
+            var a2 = document.createElement('a'); a2.href = url; a2.download = 'pg_portal_export.csv'; a2.click();
+            URL.revokeObjectURL(url);
+          }).catch(setError);
+          break;
+      }
+    });
+
+    document.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var form = e.target;
+      if (form.id === 'login-form') doLogin(form);
+      else if (form.id === 'pw-form') doChangePassword(form);
+      else if (form.id === 'photo-form') doUpdatePhoto(form);
+      else if (form.id === 'sub-form') {
+        var d = collect(form);
+        act(authed('api_createSubmission', d), 'Submission created.', function () { loadView('dashboard'); });
+      }
+      else if (form.id === 'staff-form') {
+        var sd = collect(form);
+        act(authed('api_saveStaff', sd), 'Staff added.', function () { loadView('coordinator'); });
+      }
+      else if (form.id === 'ann-form') {
+        var ad = collect(form);
+        act(authed('api_addAnnouncement', ad.title, ad.body), 'Announcement posted.', function () { loadView('coordinator'); });
+      }
+      else if (form.id === 'assign-form') {
+        var assignId = form.getAttribute('data-id');
+        var main = form.querySelector('[name=mainSupervisorId]').value;
+        var co = form.querySelector('[name=coSupervisorId]').value;
+        act(authed('api_assignSupervisors', assignId, main, co), 'Supervisors assigned.', function () { closeModal(); loadView('coordinator'); });
+      }
+    });
+
+    function openAssignModal(regNumber) {
+      if (!state.coordinator) return;
+      var modal = document.createElement('div');
+      modal.id = 'modal';
+      modal.className = 'modal-overlay';
+      var staffOpts = '<option value="">— None —</option>' + state.coordinator.staff.map(function (s) {
+        return '<option value="' + esc(s.id) + '">' + esc(s.fullName) + (s.rank ? ' (' + esc(s.rank) + ')' : '') + '</option>';
+      }).join('');
+      modal.innerHTML = '<div class="modal-card">' +
+        '<h3 style="margin:0 0 16px">Assign Supervisors — ' + esc(regNumber) + '</h3>' +
+        '<form id="assign-form" data-id="' + esc(regNumber) + '">' +
+          '<div class="field"><label>Main Supervisor</label><select name="mainSupervisorId">' + staffOpts + '</select></div>' +
+          '<div class="field"><label>Co-Supervisor</label><select name="coSupervisorId">' + staffOpts + '</select></div>' +
+          '<div class="row"><button class="btn btn-primary" type="submit">Save</button><button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></div>' +
+        '</form></div>';
+      document.body.appendChild(modal);
+    }
+    function closeModal() { var m = document.getElementById('modal'); if (m) m.remove(); }
+
+    /* ================= BOOT ================= */
+    function start() {
+      if (state.token) {
+        state.busy = true; render();
+        call('api_me', state.token).then(function (u) {
+          state.user = u; state.busy = false;
+          if (u.firstLogin) { state.view = 'pwchange'; render(); return; }
+          var target = INITIAL_VIEW && roleAllowed(INITIAL_VIEW) ? INITIAL_VIEW : defaultView_();
+          navigate(target);
+        }).catch(function () {
+          state.token = ''; state.user = null; state.busy = false;
+          sessionStorage.removeItem('pgs_token');
+          render();
+        });
+      } else {
+        render();
+      }
+    }
+    start();
+  </script>
+</body>
+</html>
