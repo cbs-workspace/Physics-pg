@@ -18,7 +18,7 @@ var DEFAULT_SPREADSHEET_ID = '1cybEF_Fjhyazj4SIH5HnSht6KD31UWftT5fQyGi29uc';
 var DEFAULT_PASSPORT_FOLDER_ID = '1Bz3EtP8euZF3W2L4oLY_EoHHXxLLZl2Y';
 var PROP_SHEET_ID = 'SPREADSHEET_ID';
 var PROP_DRIVE_ID = 'DRIVE_FOLDER_ID';
-var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+var EMAIL_RE = /^[a-z0-9]+(?:[._%+\-][a-z0-9]+)*@[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$/i;
 
 var SENDER_DISPLAY_NAME = 'Physics Postgraduate Journey (No-Reply)';
 var ENQUIRIES_EMAIL = 'abel.osagie@uniabuja.edu.ng';
@@ -71,6 +71,13 @@ var HEADERS = {
   Announcements: ['id', 'title', 'body', 'active', 'createdBy', 'createdAt'],
   Config: ['key', 'value', 'updatedAt'],
   AuditLog: ['id', 'at', 'actorId', 'actorUsername', 'action', 'target', 'detail']
+};
+
+/** Upload/link columns: the sheet cell shows a clickable label; the real URL lives in the cell's hyperlink.
+ *  Code reads the URL back out of the hyperlink, so the rest of the app keeps working with plain URLs. */
+var LINK_COLUMNS = {
+  Students: { passportUrl: 'View passport' },
+  Submissions: { driveFileUrls: 'View file' }
 };
 
 var ID_PREFIXES = {
@@ -134,6 +141,7 @@ function safeJson_(v) {
 function cellSafe_(v) {
   if (typeof v !== 'string') return v;
   if (/^=/.test(v) || (/^[+\-@][A-Za-z(]/.test(v))) return "'" + v;
+  if (/^0\d{10}$/.test(v)) return "'" + v;   // phone numbers: stay text so the leading 0 survives
   return v;
 }
 function fullNameOf_(rec) { return [rec.firstName, rec.otherNames, rec.surname].filter(Boolean).join(' '); }
@@ -218,6 +226,20 @@ function readTableFromSheet_(name) {
       for (var c = 0; c < headers.length; c++) obj[headers[c]] = sheetCellValue_(values[i][c]);
       rows.push(obj);
     }
+    // Link columns: the cell shows a label, so recover the real URL(s) from the hyperlink.
+    var lc = LINK_COLUMNS[name];
+    if (lc && rows.length) {
+      var sheet = getSheet_(name);
+      Object.keys(lc).forEach(function (field) {
+        var ci = values[0].indexOf(field);
+        if (ci < 0) return;
+        var rts = sheet.getRange(2, ci + 1, values.length - 1, 1).getRichTextValues();
+        rows.forEach(function (r) {
+          var urls = richTextUrls_(rts[r._row - 2] && rts[r._row - 2][0]);
+          if (urls.length) r[field] = urls.join('\n');   // legacy plain-URL cells keep their text
+        });
+      });
+    }
   }
   return rows;
 }
@@ -226,6 +248,42 @@ function sheetCellValue_(v) {
   var tz = Session.getScriptTimeZone();
   var hasTime = Utilities.formatDate(v, tz, 'HH:mm:ss') !== '00:00:00';
   return Utilities.formatDate(v, tz, hasTime ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd');
+}
+/** URLs found in free text (space / comma / newline separated). */
+function urlsFromText_(v) {
+  return String(v === undefined || v === null ? '' : v).split(/[\s,]+/).filter(function (u) { return /^https?:\/\//i.test(u); });
+}
+/** Hyperlink URLs inside a RichTextValue, in order. */
+function richTextUrls_(rt) {
+  var urls = [];
+  if (!rt) return urls;
+  var add = function (u) { if (u && urls.indexOf(u) === -1) urls.push(u); };
+  add(rt.getLinkUrl());
+  rt.getRuns().forEach(function (run) { add(run.getLinkUrl()); });
+  return urls;
+}
+/** Build a "View passport" style rich-text cell from one or more URLs. */
+function linkRichText_(urls, label) {
+  if (urls.length === 1) {
+    return SpreadsheetApp.newRichTextValue().setText(label).setLinkUrl(urls[0]).build();
+  }
+  var text = '', spans = [];
+  urls.forEach(function (u, i) {
+    var t = label + ' ' + (i + 1);
+    if (i) text += '\n';
+    spans.push({ start: text.length, end: text.length + t.length, url: u });
+    text += t;
+  });
+  var b = SpreadsheetApp.newRichTextValue().setText(text);
+  spans.forEach(function (sp) { b.setLinkUrl(sp.start, sp.end, sp.url); });
+  return b.build();
+}
+/** Write URL(s) into a link cell as a clickable label (blank clears the cell). */
+function writeLinkCell_(sheet, rowNum, colIdx, rawUrls, label) {
+  var urls = urlsFromText_(rawUrls);
+  var cell = sheet.getRange(rowNum, colIdx + 1);
+  if (!urls.length) { cell.setValue(''); return; }
+  cell.setRichTextValue(linkRichText_(urls, label));
 }
 function readTable_(name) {
   if (__tables[name]) return __tables[name];
@@ -242,7 +300,13 @@ function appendRow_(name, obj) {
   return withScriptLock_(function () {
     if (ID_PREFIXES[name] && (!obj.id || UUID_RE.test(String(obj.id)))) obj.id = nextId_(name);
     var headers = sheetHeaders_(name), sheet = getSheet_(name);
-    sheet.appendRow(headers.map(function (h) { return obj[h] === undefined || obj[h] === null ? '' : cellSafe_(obj[h]); }));
+    var lc = LINK_COLUMNS[name] || {};
+    sheet.appendRow(headers.map(function (h) {
+      if (lc[h] && urlsFromText_(obj[h]).length) return lc[h];   // label now; hyperlink set just below
+      return obj[h] === undefined || obj[h] === null ? '' : cellSafe_(obj[h]);
+    }));
+    var newRow = sheet.getLastRow();
+    headers.forEach(function (h, ci) { if (lc[h] && urlsFromText_(obj[h]).length) writeLinkCell_(sheet, newRow, ci, obj[h], lc[h]); });
     invalidateTable_(name);
     return obj;
   }, 30000);
@@ -264,8 +328,13 @@ function updateRowByField_(name, keyField, keyValue, patch) {
 /** Write a {field: value} patch into ONE physical sheet row (by row number),
  *  coalescing adjacent columns into single setValues calls. */
 function writeRowPatch_(sheet, headers, rowNum, patch) {
-  var cols = [];
-  headers.forEach(function (h, ci) { if (Object.prototype.hasOwnProperty.call(patch, h)) cols.push(ci); });
+  var lc = LINK_COLUMNS[sheet.getName()] || {};
+  var cols = [], linkCols = [];
+  headers.forEach(function (h, ci) {
+    if (!Object.prototype.hasOwnProperty.call(patch, h)) return;
+    if (lc[h]) linkCols.push(ci); else cols.push(ci);
+  });
+  linkCols.forEach(function (ci) { writeLinkCell_(sheet, rowNum, ci, patch[headers[ci]], lc[headers[ci]]); });
   var run = null, runs = [];
   cols.forEach(function (ci) {
     if (run && ci === run.end + 1) run.end = ci; else { run = { start: ci, end: ci }; runs.push(run); }
@@ -275,7 +344,7 @@ function writeRowPatch_(sheet, headers, rowNum, patch) {
     for (var ci = r.start; ci <= r.end; ci++) { var v = patch[headers[ci]]; vals.push(v === null || v === undefined ? '' : cellSafe_(v)); }
     sheet.getRange(rowNum, r.start + 1, 1, vals.length).setValues([vals]);
   });
-  return cols.length;
+  return cols.length + linkCols.length;
 }
 function updateRow_(name, id, patch) { return updateRowByField_(name, 'id', id, patch); }
 function stripRow_(obj) { var c = {}; Object.keys(obj).forEach(function (k) { if (k !== '_row') c[k] = obj[k]; }); return c; }
@@ -439,25 +508,36 @@ function validateRegNumber_(reg) { return REG_RE_1.test(reg) || REG_RE_2.test(re
 /** Staff IDs: three uppercase letters "ACA" + 3 or 4 digits (e.g. ACA1335). */
 var STAFF_ID_RE = /^ACA\d{3,4}$/;
 function validateStaffId_(id) { return STAFF_ID_RE.test(String(id || '').trim().toUpperCase()); }
-function validateEmail_(email) { return EMAIL_RE.test(email); }
+function validateEmail_(email) { var e = String(email || '').trim(); return e.length <= 254 && EMAIL_RE.test(e); }
+function cleanEmail_(email) { return String(email || '').replace(/\s+/g, '').toLowerCase(); }
+/** Nigerian mobile: returns 11-digit local format (08012345678) or null. Accepts +234 / 234 / missing leading 0. */
 function validatePhone_(phone) {
-  phone = String(phone || '').replace(/\D/g, '');
-  if (phone.length === 10) phone = '0' + phone;
-  return phone.length === 11 ? phone : null;
+  var s = String(phone || '').replace(/[\s\-().]/g, '');
+  if (/^\+?234/.test(s)) s = '0' + s.replace(/^\+?234/, '').replace(/^0/, '');
+  else if (/^[789]\d{9}$/.test(s)) s = '0' + s;
+  return /^0[789][01]\d{8}$/.test(s) ? s : null;
 }
 function validateName_(name) { var s = String(name || '').trim(); return s.length >= 2 && /^[A-Za-z\s'\-]+$/.test(s); }
+/** "jOHN  mary-jane o'brien" -> "John Mary-Jane O'Brien". */
+function toTitleCase_(v) {
+  return String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018`]/g, "'").replace(/\s+/g, ' ').trim()
+    .toLowerCase().replace(/(^|[\s'\-])([a-z])/g, function (m, p, c) { return p + c.toUpperCase(); });
+}
 
 /** Serialised wrapper: one writer at a time so read-check-write cannot interleave. */
 function api_register_locked_(payload) {
   if (!payload) throw new Error('Missing form data.');
   var reg = String(payload.regNumber || '').trim();
   if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531 or 26/408PHYX/040.');
+  payload.firstName = toTitleCase_(payload.firstName);
+  payload.otherNames = toTitleCase_(payload.otherNames);
   if (!validateName_(payload.surname)) throw new Error('Surname must be at least 2 letters.');
-  if (!validateName_(payload.firstName)) throw new Error('First name must be at least 2 letters.');
-  var email = String(payload.email || '').trim();
-  if (!validateEmail_(email)) throw new Error('Invalid email address.');
+  if (!validateName_(payload.firstName)) throw new Error('First name must be at least 2 letters (letters, hyphen and apostrophe only).');
+  if (payload.otherNames && !validateName_(payload.otherNames)) throw new Error('Other names may contain letters, spaces, hyphens and apostrophes only.');
+  var email = cleanEmail_(payload.email);
+  if (!validateEmail_(email)) throw new Error('Invalid email address. Use the form name@example.com.');
   var phone = validatePhone_(payload.phoneNumber);
-  if (!phone) throw new Error('Phone must be exactly 11 digits.');
+  if (!phone) throw new Error('Invalid phone number. Use a Nigerian mobile number such as 08012345678.');
   if (CFG.PROGRAMMES.indexOf(payload.programme) === -1) throw new Error('Invalid programme.');
   if (CFG.SPECIALISATIONS.indexOf(payload.specialisation) === -1) throw new Error('Invalid specialisation.');
   if (['Male', 'Female'].indexOf(payload.gender) === -1) throw new Error('Gender must be Male or Female.');
@@ -608,9 +688,57 @@ function notifyStudentAccountCreated_(p) {
   sendPortalMail_({ to: p.email, subject: 'Portal account created — ' + p.regNumber + ' (' + CFG.APP_NAME + ')', body: text, htmlBody: html });
 }
 
-function savePassportPhoto_(filePayload, regNumber) {
+/**
+ * RUN THIS ONCE from the Apps Script editor (select "authorizeServices" in the
+ * function dropdown -> Run) and accept every permission prompt. This grants the
+ * script its Drive / Sheets / Mail / Cache scopes. Without it, the web app throws
+ * "Exception: Access denied: DriveApp" when a registration tries to upload a photo.
+ * After authorising, redeploy: Deploy -> Manage deployments -> Edit -> Version: New version.
+ */
+function authorizeServices() {
   var folderId = getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID);
-  var folder = DriveApp.getFolderById(folderId);
+  var folder = DriveApp.getFolderById(folderId);          // forces the Drive scope prompt
+  var probe = folder.createFile('authorize-check.txt', 'ok');   // forces WRITE access
+  try { probe.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
+  catch (e) {
+    Logger.log('WARNING: per-file link sharing is blocked (' + e.message + '). Uploads will still work. ' +
+      'Share the passport FOLDER itself (Anyone with the link: Viewer) so photos are visible, or ask your Workspace admin to allow link sharing.');
+  }
+  probe.setTrashed(true);
+  getSpreadsheet_().getName();                            // Sheets scope
+  MailApp.getRemainingDailyQuota();                       // Mail scope
+  Logger.log('Authorised OK. Drive folder: ' + folder.getName() + '. Now redeploy as a NEW VERSION.');
+}
+
+/**
+ * RUN ONCE from the Apps Script editor to convert EXISTING rows: every raw URL in
+ * Students.passportUrl / Submissions.driveFileUrls becomes a clickable "View passport" / "View file".
+ * Safe to re-run (cells that are already links are skipped).
+ */
+function formatLinkColumns() {
+  var converted = 0;
+  Object.keys(LINK_COLUMNS).forEach(function (name) {
+    var sheet = getSheet_(name), headers = sheetHeaders_(name), last = sheet.getLastRow();
+    if (last < 2) return;
+    Object.keys(LINK_COLUMNS[name]).forEach(function (field) {
+      var ci = headers.indexOf(field);
+      if (ci < 0) return;
+      var rng = sheet.getRange(2, ci + 1, last - 1, 1);
+      var vals = rng.getValues(), rts = rng.getRichTextValues();
+      for (var i = 0; i < vals.length; i++) {
+        if (richTextUrls_(rts[i][0]).length) continue;           // already a link
+        var urls = urlsFromText_(vals[i][0]);
+        if (!urls.length) continue;
+        writeLinkCell_(sheet, i + 2, ci, urls.join(' '), LINK_COLUMNS[name][field]);
+        converted++;
+      }
+    });
+  });
+  invalidateTable_('Students'); invalidateTable_('Submissions');
+  Logger.log('formatLinkColumns: converted ' + converted + ' cell(s).');
+}
+
+function savePassportPhoto_(filePayload, regNumber) {
   var parts = String(filePayload.dataUrl).split(',');
   var mimeMatch = parts[0].match(/data:(.*?);/);
   var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
@@ -618,10 +746,23 @@ function savePassportPhoto_(filePayload, regNumber) {
   var bytes = Utilities.base64Decode(parts[1]);
   if (bytes.length > CFG.UPLOAD_MAX_BYTES) throw new Error('Passport photo must be under 1 MB.');
   var ext = mime === 'image/png' ? 'png' : 'jpg';
-  var blob = Utilities.newBlob(bytes, mime, regNumber + '_passport_' + new Date().getTime() + '.' + ext);
-  var file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return { id: file.getId(), url: file.getUrl() };
+  var blob = Utilities.newBlob(bytes, mime, regNumber.replace(/[\/\\]/g, '-') + '_passport_' + new Date().getTime() + '.' + ext);
+  try {
+    var folderId = getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID);
+    var folder = DriveApp.getFolderById(folderId);
+    var file = folder.createFile(blob);
+    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
+    catch (shareErr) { Logger.log('Passport sharing failed (file still saved): ' + shareErr); }
+    return { id: file.getId(), url: file.getUrl() };
+  } catch (e) {
+    Logger.log('savePassportPhoto_ failed: ' + e);
+    var m = String((e && e.message) || e);
+    if (/access denied|authori[sz]ation|permission/i.test(m)) {
+      throw new Error('Passport upload is not available right now (the portal\u2019s Drive permission has not been authorised). ' +
+        'Please contact ' + mailEnquiriesAddress_() + ' and try again later.');
+    }
+    throw new Error('Could not save the passport photo: ' + m);
+  }
 }
 
 /* =========================== 7. STAFF & SUPERVISORS =========================== */
@@ -637,9 +778,11 @@ function api_saveStaff_locked_(token, payload) {
   var user = requireUser_(token);
   assertRole_(user, ['PG_Coordinator', 'HoD'], 'You cannot manage staff.');
   if (!payload || !payload.fullName) throw new Error('Full name is required.');
+  var staffEmail = cleanEmail_(payload.email);
+  if (staffEmail && !validateEmail_(staffEmail)) throw new Error('Invalid email address. Use the form name@example.com.');
   var fields = {
     fullName: String(payload.fullName).trim(),
-    email: String(payload.email || '').trim(),
+    email: staffEmail,
     rank: String(payload.rank || '').trim(),
     specialisation: String(payload.specialisation || '').trim(),
     active: payload.active !== false
@@ -708,12 +851,15 @@ function api_addStudent_locked_(token, payload) {
   if (!payload) throw new Error('Missing form data.');
   var reg = String(payload.regNumber || '').trim();
   if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531 or 26/408PHYX/040.');
+  payload.firstName = toTitleCase_(payload.firstName);
+  payload.otherNames = toTitleCase_(payload.otherNames);
   if (!validateName_(payload.surname)) throw new Error('Surname must be at least 2 letters.');
-  if (!validateName_(payload.firstName)) throw new Error('First name must be at least 2 letters.');
-  var email = String(payload.email || '').trim();
-  if (!validateEmail_(email)) throw new Error('Invalid email address.');
+  if (!validateName_(payload.firstName)) throw new Error('First name must be at least 2 letters (letters, hyphen and apostrophe only).');
+  if (payload.otherNames && !validateName_(payload.otherNames)) throw new Error('Other names may contain letters, spaces, hyphens and apostrophes only.');
+  var email = cleanEmail_(payload.email);
+  if (!validateEmail_(email)) throw new Error('Invalid email address. Use the form name@example.com.');
   var phone = validatePhone_(payload.phoneNumber);
-  if (!phone) throw new Error('Phone must be exactly 11 digits.');
+  if (!phone) throw new Error('Invalid phone number. Use a Nigerian mobile number such as 08012345678.');
   if (CFG.PROGRAMMES.indexOf(payload.programme) === -1) throw new Error('Invalid programme.');
   if (CFG.SPECIALISATIONS.indexOf(payload.specialisation) === -1) throw new Error('Invalid specialisation.');
   if (['Male', 'Female'].indexOf(payload.gender) === -1) throw new Error('Gender must be Male or Female.');
@@ -1482,10 +1628,10 @@ function coordinatorEmail_() {
 /** Enquiry from the public Contact page — emailed to the PG Coordinator. */
 function api_publicEnquiry(name, email, message) {
   var n = String(name || '').trim();
-  var em = String(email || '').trim();
+  var em = cleanEmail_(email);
   var msg = String(message || '').trim();
   if (!validateName_(n)) throw new Error('Please enter your name (at least 2 letters).');
-  if (!validateEmail_(em)) throw new Error('Please enter a valid email address.');
+  if (!validateEmail_(em)) throw new Error('Please enter a valid email address, e.g. name@example.com.');
   if (msg.length < 10 || msg.length > 2000) throw new Error('Message must be between 10 and 2000 characters.');
   var cache = CacheService.getScriptCache();
   var key = 'pg_enq_' + em.toLowerCase();

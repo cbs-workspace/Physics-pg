@@ -353,6 +353,82 @@
       .card-grid > .card:hover, .info-card:hover, .phase-card:hover { transform: none; }
       .pub-hero { animation: none; }
     }
+    /* ================= MOBILE OPTIMISATION ================= */
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body { overflow-wrap: break-word; -webkit-tap-highlight-color: rgba(5, 150, 105, .15); }
+    img, svg, video { max-width: 100%; }
+    button, a, label, select, input[type=file] { touch-action: manipulation; }
+    input[type=url], input[type=search] { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--field-bg); color: var(--text); outline: none; }
+    input[type=url]:focus, input[type=search]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+    .modal-card { max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); overflow-y: auto; }
+    .topbar { gap: 8px; }
+    .topbar > .row { min-width: 0; flex: 1; }
+    .topbar .who, .topbar .mail { overflow-wrap: anywhere; }
+    #reg-review td { overflow-wrap: anywhere; }
+
+    /* touch screens: 16px text (stops iOS zoom-on-focus) and 44px tap targets */
+    @media (pointer: coarse) {
+      input[type=text], input[type=email], input[type=password], input[type=date], input[type=number], input[type=tel], input[type=url], input[type=search], select, textarea { font-size: 16px; min-height: 46px; }
+      textarea { min-height: 96px; }
+      .btn { min-height: 44px; justify-content: center; }
+      .btn-sm { min-height: 40px; padding: 8px 12px; }
+      .nav button, .tabs button { min-height: 44px; }
+      .p-tabs a { min-height: 44px; display: inline-flex; align-items: center; }
+      .pw-toggle { width: 42px; height: 42px; }
+      input[type=file]::file-selector-button { padding: 9px 14px; }
+      .fab { width: 46px; height: 46px; }
+    }
+
+    @media (max-width: 640px) {
+      /* public header: brand + actions on one row, tabs scroll on the next */
+      .pt-inner { gap: 6px 10px; padding: 8px 14px; }
+      .p-brand { flex: 1; min-width: 0; }
+      .p-brand .name { font-size: 12px; overflow-wrap: normal; }
+      .p-brand img { width: 34px; height: 34px; }
+      .p-actions { margin-left: auto; }
+      .p-tabs { flex: 0 0 calc(100% + 28px); order: 3; min-width: 0; flex-wrap: nowrap; margin: 0 -14px; padding: 0 14px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+      .p-tabs::-webkit-scrollbar { display: none; }
+      .p-tabs a { padding: 8px 14px; }
+
+      /* floating buttons: tuck into the bottom-right corner, out of the form fields */
+      .fab-rail, .fab-rail.ready { top: auto; bottom: calc(12px + env(safe-area-inset-bottom)); right: calc(12px + env(safe-area-inset-right)); flex-direction: row; gap: 8px; transform: none; }
+      .fab-rail { opacity: 0; transition: opacity .45s ease; }
+      .fab-rail.ready { opacity: 1; }
+      .fab { width: 44px; height: 44px; box-shadow: 0 6px 14px rgba(15, 23, 42, .3); }
+      .music-controls { bottom: calc(68px + env(safe-area-inset-bottom)); }
+      body:has(.fab-rail) { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+
+      /* cards, stats */
+      .card { padding: 16px; }
+      .stat { padding: 14px; }
+      .stat .value { font-size: 24px; }
+      .grid.cols-3:has(> .stat), .grid.cols-4:has(> .stat) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .grid.cols-3 > .stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+      .content { padding: 14px; }
+      h2 { font-size: 21px; }
+
+      /* form buttons: full width, easy to hit */
+      #reg-review-card .btn, #reg-done-card .btn, #register-form .btn, #enquiry-form .btn { flex: 1 1 100%; justify-content: center; }
+      .toolbar > * { flex: 1 1 100%; }
+
+      /* tables become stacked cards: no sideways scrolling */
+      .table-wrap { overflow: visible; border: 0; background: transparent; }
+      .table-wrap table, .table-wrap tbody, .table-wrap tr, .table-wrap td { display: block; width: 100%; }
+      .table-wrap thead { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+      .table-wrap tr { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
+      .table-wrap tbody tr:hover { background: var(--surface); }
+      .table-wrap td { padding: 8px 0; border-bottom: 1px solid var(--border-soft); overflow-wrap: anywhere; }
+      .table-wrap td:last-child { border-bottom: 0; }
+      .table-wrap td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+    }
+    @media (max-width: 480px) {
+      .topbar { flex-wrap: wrap; }
+      .tb-actions { width: 100%; }
+      .tb-actions .btn { flex: 1; }
+      .tb-actions .theme-btn { flex: 0 0 auto; }
+      .modal-overlay { padding: 12px; align-items: flex-end; }
+      .modal-card { padding: 18px; border-radius: 16px; }
+    }
 </style>
 <script>
   (function () {
@@ -526,16 +602,16 @@
             <div class="card" id="reg-form-card">
               <div id="reg-msg"></div>
               <form id="register-form">
-                <div class="field"><label>Registration Number *</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531 or 26/408PHYX/040"></div>
+                <div class="field"><label>Registration Number *</label><input type="text" name="regNumber" required placeholder="e.g. UA/pg2026/003531" autocapitalize="off" autocomplete="off" spellcheck="false"><div class="small muted" style="margin-top:4px">Or the 26/408PHYX/040 format.</div></div>
                 <div class="row-cols" style="--cols:3">
                   <div class="field"><label>Surname *</label><input type="text" name="surname" required></div>
-                  <div class="field"><label>First Name *</label><input type="text" name="firstName" required></div>
-                  <div class="field"><label>Other Names</label><input type="text" name="otherNames"></div>
+                  <div class="field"><label>First Name *</label><input type="text" name="firstName" required autocomplete="given-name" autocapitalize="words"></div>
+                  <div class="field"><label>Other Names</label><input type="text" name="otherNames" autocomplete="additional-name" autocapitalize="words"></div>
                 </div>
                 <div class="row-cols" style="--cols:3">
                   <div class="field"><label>Gender *</label><select name="gender" required><option value="">Select</option><option>Male</option><option>Female</option></select></div>
-                  <div class="field"><label>Phone Number *</label><input type="tel" name="phoneNumber" required placeholder="08012345678"></div>
-                  <div class="field"><label>Email *</label><input type="email" name="email" required></div>
+                  <div class="field"><label>Phone Number *</label><input type="tel" name="phoneNumber" required placeholder="08012345678" inputmode="tel" autocomplete="tel" maxlength="17" title="Nigerian mobile number, e.g. 08012345678 (+234 also accepted)"></div>
+                  <div class="field"><label>Email *</label><input type="email" name="email" required inputmode="email" autocomplete="email" maxlength="254"></div>
                 </div>
                 <div class="row-cols" style="--cols:2">
                   <div class="field"><label>Faculty *</label><input type="text" name="faculty" value="Faculty of Science" required></div>
@@ -561,7 +637,7 @@
                     </select>
                   </div>
                 </div>
-                <div class="field"><label>Passport Photo * (JPG/PNG, max 1 MB)</label><input type="file" name="passportPhoto" accept="image/jpeg,image/png" required></div>
+                <div class="field"><label>Passport Photo * <span class="muted" style="font-weight:400">(JPG/PNG &mdash; large photos are resized for you)</span></label><input type="file" name="passportPhoto" accept="image/jpeg,image/png" required></div>
                 <button class="btn btn-primary btn-block" type="submit" id="reg-submit">Review Details</button>
               </form>
               <p class="small muted" style="text-align:center;margin-top:16px">Already registered? <a href="?page=login">Login here</a></p>
@@ -645,7 +721,7 @@
             <div id="enq-msg"></div>
             <form id="enquiry-form">
               <div class="field"><label>Your Name *</label><input type="text" name="name" required minlength="2"></div>
-              <div class="field"><label>Email Address *</label><input type="email" name="email" required></div>
+              <div class="field"><label>Email Address *</label><input type="email" name="email" required inputmode="email" autocomplete="email" maxlength="254"></div>
               <div class="field"><label>Message * <span class="muted">(10&ndash;2000 characters)</span></label><textarea name="message" required minlength="10" maxlength="2000" rows="6" placeholder="How can we help?"></textarea></div>
               <button class="btn btn-primary btn-block" type="submit" id="enq-submit">Send Enquiry</button>
             </form>
@@ -700,17 +776,141 @@
         r[fn].apply(r, args);
       });
     }
+    var MAX_UPLOAD_BYTES = 1024 * 1024;
+    function dataUrlBytes(u) { var i = u.indexOf(','), b64 = u.slice(i + 1); return Math.floor(b64.length * 3 / 4) - (b64.slice(-2) === '==' ? 2 : b64.slice(-1) === '=' ? 1 : 0); }
+    /** Phone cameras produce 2-6 MB photos: shrink to a <1 MB JPEG in the browser so the upload never fails on a size check. */
+    function compressImage(file) {
+      return new Promise(function (resolve, reject) {
+        var url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          var scale = Math.min(1, 1000 / Math.max(img.naturalWidth, img.naturalHeight));
+          var w = Math.max(1, Math.round(img.naturalWidth * scale)), h = Math.max(1, Math.round(img.naturalHeight * scale));
+          var q = 0.9, out = '', c = document.createElement('canvas');
+          for (var i = 0; i < 10; i++) {
+            c.width = w; c.height = h;
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            out = c.toDataURL('image/jpeg', q);
+            if (dataUrlBytes(out) <= MAX_UPLOAD_BYTES * 0.95) break;
+            if (q > 0.55) q -= 0.1; else { w = Math.round(w * 0.8); h = Math.round(h * 0.8); }
+          }
+          if (dataUrlBytes(out) > MAX_UPLOAD_BYTES) reject(new Error('That photo is too large to shrink automatically. Please choose a smaller one.'));
+          else resolve({ name: String(file.name || 'passport').replace(/\.\w+$/, '') + '.jpg', mimeType: 'image/jpeg', dataUrl: out });
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That file could not be read as an image.')); };
+        img.src = url;
+      });
+    }
     function readFileInput(input) {
       return new Promise(function (resolve, reject) {
         var file = input.files[0];
         if (!file) { reject(new Error('Please choose a file.')); return; }
-        if (file.size > 1024 * 1024) { reject(new Error('File must be under 1 MB.')); return; }
+        if (file.size > 25 * 1024 * 1024) { reject(new Error('That file is too large. Please choose a photo under 25 MB.')); return; }
         if (['image/jpeg', 'image/png'].indexOf(file.type) === -1) { reject(new Error('Only JPG or PNG allowed.')); return; }
-        var reader = new FileReader();
-        reader.onload = function () { resolve({ name: file.name, mimeType: file.type, dataUrl: reader.result }); };
-        reader.onerror = function () { reject(new Error('Could not read file.')); };
-        reader.readAsDataURL(file);
+        if (file.size <= MAX_UPLOAD_BYTES) {
+          var reader = new FileReader();
+          reader.onload = function () { resolve({ name: file.name, mimeType: file.type, dataUrl: reader.result }); };
+          reader.onerror = function () { reject(new Error('Could not read file.')); };
+          reader.readAsDataURL(file);
+        } else {
+          compressImage(file).then(resolve, reject);
+        }
       });
+    }
+
+    /* Mobile: label each table cell with its column heading so rows can stack as cards (see CSS). */
+    function labelTables() {
+      document.querySelectorAll('.table-wrap table').forEach(function (t) {
+        var heads = [].map.call(t.querySelectorAll('thead th'), function (th) { return th.textContent.trim(); });
+        if (!heads.length) return;
+        t.querySelectorAll('tbody tr').forEach(function (tr) {
+          [].forEach.call(tr.children, function (td, i) {
+            if (td.tagName === 'TD' && !td.hasAttribute('data-label') && heads[i] && !td.hasAttribute('colspan')) td.setAttribute('data-label', heads[i]);
+          });
+        });
+      });
+    }
+    var labelTimer = 0;
+    new MutationObserver(function () {
+      if (labelTimer) return;
+      labelTimer = requestAnimationFrame(function () { labelTimer = 0; labelTables(); });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+
+    /* ================= INPUT ENFORCEMENT (names, Nigerian phone, email) ================= */
+    var EMAIL_PATTERN = /^[a-z0-9]+(?:[._%+\-][a-z0-9]+)*@[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$/;
+    var ENFORCED_FIELDS = { firstName: 'title', otherNames: 'title', phoneNumber: 'phone', email: 'email' };
+    var PHONE_HINT = 'Enter a valid Nigerian mobile number, e.g. 08012345678 (+234 8012345678 is also accepted).';
+    var EMAIL_HINT = 'Enter a valid email address, e.g. name@example.com.';
+
+    /** "jOHN  mary-jane o'brien" -> "John Mary-Jane O'Brien". live=true keeps spaces so typing is not disturbed. */
+    function toTitleCase(v, live) {
+      var s = String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018`]/g, "'").replace(/[^A-Za-z\s'\-]/g, '');
+      s = s.toLowerCase().replace(/(^|[\s'\-])([a-z])/g, function (m, p, c) { return p + c.toUpperCase(); });
+      if (!live) s = s.replace(/\s+/g, ' ').replace(/^[\s'\-]+|[\s'\-]+$/g, '');
+      return s;
+    }
+    /** Returns 11-digit local format (08012345678) or null. Accepts +234 / 234 / missing leading 0. */
+    function normalizeNgPhone(v) {
+      var s = String(v === undefined || v === null ? '' : v).replace(/[\s\-().]/g, '');
+      if (/^\+?234/.test(s)) s = '0' + s.replace(/^\+?234/, '').replace(/^0/, '');
+      else if (/^[789]\d{9}$/.test(s)) s = '0' + s;
+      return /^0[789][01]\d{8}$/.test(s) ? s : null;
+    }
+    function cleanEmail(v) { return String(v === undefined || v === null ? '' : v).replace(/\s+/g, '').toLowerCase(); }
+    function isValidEmail(v) { var e = cleanEmail(v); return e.length <= 254 && EMAIL_PATTERN.test(e); }
+
+    function enforcedKind(el) {
+      return el && el.tagName === 'INPUT' && el.name && Object.prototype.hasOwnProperty.call(ENFORCED_FIELDS, el.name) ? ENFORCED_FIELDS[el.name] : '';
+    }
+    function liveTransform(kind, v) {
+      if (kind === 'title') return toTitleCase(v, true);
+      if (kind === 'email') return cleanEmail(v);
+      if (kind === 'phone') return String(v).replace(/[^0-9+\s\-().]/g, '');
+      return v;
+    }
+    function fieldProblem(el, kind) {
+      var v = el.value;
+      if (!String(v).trim()) return '';   // empty: the "required" attribute decides
+      if (kind === 'phone') return normalizeNgPhone(v) ? '' : PHONE_HINT;
+      if (kind === 'email') return isValidEmail(v) ? '' : EMAIL_HINT;
+      if (kind === 'title') return toTitleCase(v).length >= 2 ? '' : 'Use letters only (at least 2), e.g. Mary-Jane.';
+      return '';
+    }
+    /** Commit the final normalised value into the field and update its validity state. */
+    function finalizeField(el, kind) {
+      if (kind === 'title') el.value = toTitleCase(el.value);
+      else if (kind === 'email') el.value = cleanEmail(el.value);
+      else if (kind === 'phone') { var n = normalizeNgPhone(el.value); if (n) el.value = n; else el.value = String(el.value).trim(); }
+      var msg = fieldProblem(el, kind);
+      el.setCustomValidity(msg);
+      return msg;
+    }
+    document.addEventListener('input', function (e) {
+      var el = e.target, kind = enforcedKind(el);
+      if (!kind) return;
+      var pos = el.selectionStart, before = el.value, after = liveTransform(kind, before);
+      if (after !== before) {
+        var newPos = pos === null || pos === undefined ? null : liveTransform(kind, before.slice(0, pos)).length;
+        el.value = after;
+        if (newPos !== null) { try { el.setSelectionRange(newPos, newPos); } catch (err) {} }
+      }
+      el.setCustomValidity(fieldProblem(el, kind));
+    });
+    document.addEventListener('focusout', function (e) {
+      var kind = enforcedKind(e.target);
+      if (kind) finalizeField(e.target, kind);
+    });
+    /** Normalise + validate every enforced field of a form; shows the browser's own bubble on the first bad one. */
+    function enforceForm(form) {
+      var ok = true;
+      form.querySelectorAll('input[name]').forEach(function (el) {
+        var kind = enforcedKind(el);
+        if (!kind) return;
+        if (finalizeField(el, kind) && ok) { ok = false; el.reportValidity(); }
+      });
+      return ok;
     }
 
     /* ================= THEME (light / dark) ================= */
@@ -1570,10 +1770,12 @@
         act(authed('api_createSubmission', d), 'Submission created.', function () { loadView('dashboard'); });
       }
       else if (form.id === 'staff-form') {
+        if (!enforceForm(form)) return;
         var sd = collect(form);
         act(authed('api_saveStaff', sd), 'Staff added.', function () { loadView('coordinator'); });
       }
       else if (form.id === 'addstudent-form') {
+        if (!enforceForm(form)) return;
         var ns = collect(form);
         act(authed('api_addStudent', ns), 'Student added. Sign-in details emailed.', function () { loadView('coordinator'); });
       }
@@ -1728,6 +1930,7 @@
     document.getElementById('register-form').addEventListener('submit', function (e) {
       e.preventDefault();
       var form = e.target;
+      if (!enforceForm(form)) return;
       var d = {};
       form.querySelectorAll('[name]').forEach(function (el) { if (el.type !== 'file') d[el.getAttribute('name')] = el.value; });
       var regRe1 = /^UA\/pg20\d{2}\/\d{6}$/;
@@ -1810,6 +2013,7 @@
     document.getElementById('enquiry-form').addEventListener('submit', function (e) {
       e.preventDefault();
       var form = e.target;
+      if (!enforceForm(form)) return;
       var d = {};
       form.querySelectorAll('[name]').forEach(function (el) { d[el.getAttribute('name')] = el.value; });
       var msgEl = document.getElementById('enq-msg');
