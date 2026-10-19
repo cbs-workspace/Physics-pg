@@ -10,7 +10,7 @@ with its own mechanism:
 | **Apps Script portal** `/exec` | 2 pasted files + Spreadsheet | manual paste + *New version* |
 
 Live URLs — site: `https://physics-pg.pages.dev` · portal:
-`https://script.google.com/macros/s/AKfycbwx761QoVvu1MxMMPTctO0ILKNJXY44dpaq-eM3KtWPbIYAOV8LaxCvAj9zzn_3e2y05g/exec`
+`https://script.google.com/macros/s/AKfycbxOubqD0Dd46th37J-AKeeuO1BQPsAlx-hFmtRnkvcfmC5kLYzihJPA2qLunVojl75v_A/exec`
 (the portal URL also lives in `tools/build-pg.js` → `GAS_EXEC`).
 
 ## 1. Everyday site change (GitHub → Cloudflare, fully automatic)

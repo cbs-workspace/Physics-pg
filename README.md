@@ -173,7 +173,7 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 ## Step 4 — Deploy as Web App
 
 **Live deployment (v1):**
-`https://script.google.com/macros/s/AKfycbwx761QoVvu1MxMMPTctO0ILKNJXY44dpaq-eM3KtWPbIYAOV8LaxCvAj9zzn_3e2y05g/exec`
+`https://script.google.com/macros/s/AKfycbxOubqD0Dd46th37J-AKeeuO1BQPsAlx-hFmtRnkvcfmC5kLYzihJPA2qLunVojl75v_A/exec`
 
 1. **Deploy → New deployment → Type: Web app**.
 2. **Execute as: Me** · **Who has access: Anyone**.

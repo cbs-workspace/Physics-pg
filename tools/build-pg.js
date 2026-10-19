@@ -35,7 +35,7 @@ const OUT = path.join(ROOT, "dist");
 
 /** Live Apps Script Web App — the authoritative portal. */
 const GAS_EXEC =
-  "https://script.google.com/macros/s/AKfycbwx761QoVvu1MxMMPTctO0ILKNJXY44dpaq-eM3KtWPbIYAOV8LaxCvAj9zzn_3e2y05g/exec";
+  "https://script.google.com/macros/s/AKfycbxOubqD0Dd46th37J-AKeeuO1BQPsAlx-hFmtRnkvcfmC5kLYzihJPA2qLunVojl75v_A/exec";
 
 const BRAND = {
   execUrl: GAS_EXEC,
