@@ -26,7 +26,7 @@ Three pieces, each with one job:
 
 | Piece | Holds | Serves |
 |-------|-------|--------|
-| **GitHub `Physics-pg`** (this repo) | source of truth | history only — pushes don't deploy by themselves |
+| **GitHub `Physics-pg`** (this repo) | source of truth | pushes to `main` build & deploy automatically (Cloudflare Git integration) |
 | **Cloudflare Pages `physics-pg`** | `dist/` built by `npm run build` | the public site: home, about, programmes, contact |
 | **Apps Script `/exec`** | the 5 pasted files + Spreadsheet | the portal: register, status check, login, dashboards |
 
@@ -48,7 +48,11 @@ Three pieces, each with one job:
 - Root directory: repository root (no monorepo path)
 - Node: any recent LTS (the build script uses Node built-ins only)
 
-Every push to `main` then redeploys the site automatically.
+Every push to `main` then redeploys the site automatically. The Git connection
+is already established in the dashboard (project `physics-pg` ← GitHub repo
+`cbs-workspace/Physics-pg`, branch `main`), and the fields above are exactly
+what Cloudflare runs on each push. Manual fallback if ever needed:
+`npx wrangler pages deploy dist --project-name physics-pg --branch main`.
 
 ## Folder contents
 
