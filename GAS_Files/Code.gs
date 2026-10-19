@@ -1034,14 +1034,26 @@ function template_(name) {
   };
 }
 
-/** GAS include pattern: <?!= include('styles') ?> etc. */
+/** GAS include pattern: <?!= include('styles') ?> etc.
+ *  Included files must be evaluated as TEMPLATES with the same bindings the
+ *  parent page gets. createHtmlOutputFromFile().getContent() does NOT run
+ *  scriptlets, so common.html's `var BRAND = <?!= brandJson ?>` used to land
+ *  in the page verbatim → JS syntax error → every helper in common.html
+ *  (esc, call, themeFabHtml, MUSIC…) is undefined and the login page dies
+ *  with "ReferenceError: themeFabHtml is not defined".
+ *  KMSS avoids this class of bug by having zero includes (single index.html);
+ *  this is the 5-file equivalent of that rule: scriptlets only ever evaluate. */
 function include(filename) {
-  try { return HtmlService.createHtmlOutputFromFile(filename).getContent(); } catch (err) {
+  var t = null;
+  try { t = HtmlService.createTemplateFromFile(filename); } catch (err) { t = null; }
+  if (!t) {
     return '<div style="font-family:sans-serif;padding:40px;max-width:560px;margin:auto">' +
       '<h2 style="color:#14532d">Setup needed</h2><p>No HTML file named "' + escHtml_(filename) + '". ' +
       'In the Apps Script editor: File → New → HTML file, name it exactly "' + escHtml_(filename) + '", ' +
-      'then paste PG_Portal/GAS_Files/' + escHtml_(filename) + '.html.</p></div>';
+      'then paste Physics-pg/GAS_Files/' + escHtml_(filename) + '.html.</p></div>';
   }
+  t.brandJson = safeJson_(brand_());
+  return t.evaluate().getContent();
 }
 
 function publicAnnouncementsJsonp_(p) {
