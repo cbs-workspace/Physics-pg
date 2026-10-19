@@ -733,6 +733,11 @@
       var el = e.target && e.target.closest ? e.target.closest('[data-action="toggle-theme"]') : null;
       if (el) toggleTheme();
     });
+    /* Keep navigation deterministic: never restore a previous scroll offset when
+       moving between pages (e.g. login → "Back to public site" must land at the
+       top of Home, not wherever the user last scrolled). */
+    if (window.history && 'scrollRestoration' in history) history.scrollRestoration = 'manual';
+    window.addEventListener('beforeunload', function () { window.scrollTo(0, 0); });
     document.addEventListener('DOMContentLoaded', refreshThemeIcons);
     if (document.readyState !== 'loading') refreshThemeIcons();
 
