@@ -112,6 +112,15 @@
     @media (max-width: 900px) { .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; } }
     label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
     .field { margin-bottom: 14px; }
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 40px; }
+    .pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 34px; height: 34px; padding: 0; border: 0; border-radius: 6px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; color: var(--text-muted); }
+    .pw-toggle:hover { color: var(--text-strong); background: var(--surface-2); }
+    .pw-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .pw-toggle svg { width: 18px; height: 18px; }
     input[type=text], input[type=email], input[type=password], input[type=date], input[type=number], input[type=tel], select, textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--field-bg); color: var(--text); outline: none; }
     input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: .75; }
     input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
@@ -737,7 +746,9 @@
         contact: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 3z"/><path d="M8 9h8M8 12h5"/></svg>',
         register: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"/><path d="M8 8l4-4 4 4"/><path d="M5 16v3h14v-3"/></svg>',
         portal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
-        top: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6"/><path d="M6 12l6-6 6 6"/></svg>'
+        top: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6"/><path d="M6 12l6-6 6 6"/></svg>',
+        eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+        eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.6 10.6 0 0 1 12 19c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-4.94"/><path d="M9.9 4.24A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M2 2l20 20"/></svg>'
       };
       var rail = document.createElement('nav');
       rail.className = 'fab-rail';
@@ -1168,7 +1179,7 @@
         headerHtml() +
         '<form id="login-form">' +
           '<div class="field"><label>Registration Number / Staff ID</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531 or ACA1335"></div>' +
-          '<div class="field"><label>Password</label><input type="password" name="password" required></div>' +
+          '<div class="field"><label>Password</label><div class="pw-wrap"><input type="password" name="password" required><button type="button" class="pw-toggle" data-action="toggle-pw" aria-label="Show password" aria-pressed="false">' + icons.eye + '</button></div></div>' +
           '<button class="btn btn-primary btn-block" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? '<span class="spinner"></span>' : 'Sign In') + '</button>' +
         '</form>' +
         '<p class="small muted" style="text-align:center;margin-top:16px">New student? <a href="?page=register">Register here</a></p>' +
@@ -1476,6 +1487,18 @@
       switch (a) {
         case 'signout': doLogout(); break;
         case 'toggle-nav': document.body.classList.toggle('nav-open'); break;
+        case 'toggle-pw': {
+          var wrap = el.closest('.pw-wrap');
+          var input = wrap && wrap.querySelector('input');
+          if (input) {
+            var show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            el.innerHTML = show ? icons.eyeOff : icons.eye;
+            el.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            el.setAttribute('aria-pressed', show ? 'true' : 'false');
+          }
+          break;
+        }
         case 'close-nav': document.body.classList.remove('nav-open'); break;
         case 'pwchange': state.view = 'pwchange'; clearMsgs(); render(); break;
         case 'approve':

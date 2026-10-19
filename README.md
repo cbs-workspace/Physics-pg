@@ -214,6 +214,8 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 
 - Login by `regNumber` + password → session token in `CacheService` (`sess_<token>`),
   epoch invalidation on password change; token kept in `sessionStorage` client-side.
+- The sign-in form's password field has a show/hide eye toggle (same pattern as the
+  KMSS site); it starts masked and reveals on click.
 - Passwords: SHA-256 of `password:salt` via `hashPassword_`; default `PhysicsPG2026!`
   banned from reuse (`assertStrongPassword_`).
 - All mutating APIs run inside `_locked_` (`withScriptLock_`) and pass `requireUser_(token, roles…)`.
