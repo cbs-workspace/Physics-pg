@@ -83,10 +83,16 @@ Physics-pg/
 │   └── Staff.xlsx          ← internal staff roster (local only, never committed)
 ├── README.md
 ├── SeedData.md              ← seed rows + hash generator for demo accounts
+├── audit.md                 ← forensic audit (architecture, data, security, bugs)
+├── AGENT-GUIDE.md           ← runbook for the next agent
+├── Guide-Student.docx       ← student guide (task-based)
+├── Guide-Staff.docx         ← staff guide (task-based)
+├── Admin.docx               ← admin/technical guide (roles, deploy, data model)
 └── tools/
     ├── pg-template.js       ← shared template renderer (doGet semantics)
     ├── serve-pg.js          ← npm run pg — local preview with demo backend
-    └── build-pg.js          ← npm run build — static site into dist/ (Cloudflare)
+    ├── build-pg.js          ← npm run build — static site into dist/ (Cloudflare)
+    └── make-guides.ps1      ← regenerates the three .docx guides (Word COM)
 ```
 
 > Apps Script page URLs: `…/exec` (Home) · `…/exec?page=register|contact|login`.
