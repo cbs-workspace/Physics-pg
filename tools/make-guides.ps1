@@ -25,7 +25,7 @@ function Save-Doc($path) {
     $script:doc.Close()
 }
 
-$out = "C:\Users\Abel U. Osagie\Desktop\Website Projects\Physics-pg"
+$out = "C:\Users\Abel U. Osagie\Desktop\Website Projects\Physics-pg\docs"
 
 # ================= STUDENT =================
 New-Doc
