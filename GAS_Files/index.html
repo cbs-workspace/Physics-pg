@@ -498,11 +498,21 @@
         <div class="kicker">Department of Physics &middot; Faculty of Physical Sciences &middot; University of Abuja</div>
         <h1>Postgraduate Journey</h1>
         <p>Follow your postgraduate progress from admission to completion — registration, supervisor
-           allocation, proposals, submissions and compliance checks — all in one place, alongside the
-           University's main portal.</p>
+           allocation, proposals, submissions and compliance checks — all in one place.</p>
         <div class="cta">
           <a class="btn btn-primary" href="?page=register">Register Now</a>
           <a class="btn btn-outline-light" href="?page=login">Student Login</a>
+        </div>
+      </section>
+
+      <section class="pub-section" id="notice">
+        <div class="card caveat-card">
+          <h4>Please note — what this site is for</h4>
+          <p>This site is developed strictly to assist students in navigating their postgraduate journey, and
+            to facilitate departmental PG coordination, progress monitoring and documentation.</p>
+          <p>It does not replace official University processes. For any other matter — including anything
+            requiring referral to the School of Postgraduate Studies (SPGS) — please contact the
+            <strong>Head, Department of Physics</strong> or the <strong>PG Coordinator</strong>.</p>
         </div>
       </section>
 
@@ -513,14 +523,7 @@
           physicists across MPhil, MSc and PhD programmes, with research strengths spanning experimental and
           theoretical solid-state, nuclear and solar physics and applied geophysics.</p>
         <div class="card">
-          <p>This is the department's own postgraduate journey platform — an addition to the University's central
-            portal, focused only on how our students progress. It manages everything before the transcript:
-            admission status, lecture attendance checkpoints, supervisor allocation, proposal milestones,
-            submissions, inspections and final compliance.</p>
-          <p style="margin-top:8px">Built for coordination: the <strong>PG Coordinator</strong> approves
-            registrations, allocates supervisors and reviews submissions; the <strong>Head of Department</strong>
-            has a read-only overview; <strong>staff</strong> record supervisory notes and stage updates; and
-            <strong>students</strong> always see exactly where they stand.</p>
+          <p>This is the department's own postgraduate journey platform built for coordination</p>
         </div>
       </section>
 
@@ -534,9 +537,6 @@
 
       <section class="pub-section" id="journey">
         <h2>Your Postgraduate Journey</h2>
-        <p class="lead">Five phases and fifteen steps, from admission to completion — exactly as set out
-          in the department's <em>Postgraduate Journey Roadmap</em>. Five steps are <strong>decision
-          gates</strong>: you must pass before moving on.</p>
         <div class="card" style="padding:14px">
           <img class="journey-img" src="images/PG_Journey_Infographic.png" loading="lazy"
                alt="Postgraduate Journey infographic — 5 phases and 15 steps"
@@ -604,16 +604,6 @@
         </div>
       </section>
 
-      <section class="pub-section" id="notice">
-        <div class="card caveat-card">
-          <h4>Please note — what this site is for</h4>
-          <p>This site is developed strictly to assist students in navigating their postgraduate journey, and
-            to facilitate departmental PG coordination, progress monitoring and documentation.</p>
-          <p>It does not replace official University processes. For any other matter — including anything
-            requiring referral to the School of Postgraduate Studies (SPGS) — please contact the
-            <strong>Head, Department of Physics</strong> or the <strong>PG Coordinator</strong>.</p>
-        </div>
-      </section>
     </div>
 
     <!-- ==================== REGISTER ==================== -->
@@ -758,8 +748,6 @@
     </div>
 
   </main>
-
-  <p class="footer-note">This site assists journey navigation and departmental PG coordination only — for SPGS matters contact the Head of Department or the PG Coordinator.</p>
 
   <footer class="footer pub-footer">
     <img src="https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ" alt="CBS">
@@ -3071,6 +3059,14 @@
     try {
       (function () {
         var el = document.getElementById('ann-list');
+        /* Safety net: the spinner must never stay up. If the request has not
+           settled within 20s, clear it anyway. */
+        setTimeout(function () {
+          if (el && el.className && el.className.indexOf('page-loading') !== -1) {
+            el.className = '';
+            el.innerHTML = '<p class="small muted" style="margin:0">Could not load announcements right now. Please try again later.</p>';
+          }
+        }, 20000);
         call('api_publicAnnouncements').then(function (r) {
           var items = (r && r.items) || [];
           if (!items.length) {

@@ -126,24 +126,32 @@ const SHIM = `
       });
     }
   };
-  var success = null, failure = null;
-  function fail(e) { if (failure) failure(e); else console.error(e); }
-  var runner = {};
-  var proxy = new Proxy(runner, {
-    get: function (t, prop) {
-      if (prop in t) return t[prop];
-      return function () {
-        var fn = PUBLIC_APIS[prop];
-        if (!fn) {
-          fail(new Error("This feature runs on the official portal. Please continue there."));
-          return;
-        }
-        fn.apply(null, arguments).then(function (r) { if (success) success(r); }, fail);
-      };
-    }
-  });
-  runner.withSuccessHandler = function (fn) { success = fn; return proxy; };
-  runner.withFailureHandler = function (fn) { failure = fn; return proxy; };
+  /* Each withSuccessHandler/withFailureHandler chain gets its OWN proxy, so a
+     later call() can never clobber an earlier call's handlers (that orphaned
+     the announcements promise and left the home-page spinner running). */
+  function makeRunner(success, failure) {
+    var runner = {
+      withSuccessHandler: function (fn) { return makeRunner(fn, failure); },
+      withFailureHandler: function (fn) { return makeRunner(success, fn); }
+    };
+    return new Proxy(runner, {
+      get: function (t, prop) {
+        if (prop in t) return t[prop];
+        return function () {
+          var fn = PUBLIC_APIS[prop];
+          if (!fn) {
+            if (failure) failure(new Error("This feature runs on the official portal. Please continue there."));
+            else console.error(new Error("This feature runs on the official portal. Please continue there."));
+            return;
+          }
+          fn.apply(null, arguments).then(function (r) { if (success) success(r); }, function (e) {
+            if (failure) failure(e); else console.error(e);
+          });
+        };
+      }
+    });
+  }
+  var proxy = makeRunner(null, null);
   window.google = { script: { run: proxy } };
 })();
 </script>
