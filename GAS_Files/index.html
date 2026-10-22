@@ -293,6 +293,23 @@
     .ann-item .ann-title { font-weight: 700; color: var(--text-strong); }
     .ann-item .ann-body { color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-top: 3px; white-space: pre-wrap; }
     .ann-item .when { color: var(--text-muted); font-size: 11.5px; margin-top: 4px; }
+    /* ---- Announcements marquee: a continuously moving ticker ---- */
+    .ann-marquee { overflow: hidden; border-radius: 12px; background: var(--primary-soft); -webkit-mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent); mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent); }
+    .ann-marquee-track { display: flex; align-items: center; width: max-content; animation: ann-marquee var(--ann-marquee-duration, 48s) linear infinite; will-change: transform; }
+    .ann-marquee:hover .ann-marquee-track { animation-play-state: paused; }
+    .ann-marquee-group { display: flex; align-items: center; gap: 26px; padding: 0 13px; }
+    .ann-marquee-item { display: flex; align-items: center; gap: 9px; white-space: nowrap; flex: 0 0 auto; padding: 11px 2px; border-radius: 8px; }
+    .ann-marquee-item .tag { background: var(--primary); color: var(--primary-contrast); border-radius: 999px; padding: 3px 11px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; line-height: 1.6; }
+    .ann-marquee-item .t { font-weight: 700; font-size: 14px; color: var(--text-strong); }
+    .ann-marquee-item .b { font-size: 13px; color: var(--text-muted); }
+    .ann-marquee-item .w { font-size: 11.5px; color: var(--text-muted); }
+    @keyframes ann-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    @media (prefers-reduced-motion: reduce) {
+      .ann-marquee-track { animation: none; width: 100%; flex-wrap: wrap; }
+      .ann-marquee-group { flex-wrap: wrap; white-space: normal; padding: 2px 14px; }
+      .ann-marquee-group + .ann-marquee-group { display: none; }
+      .ann-marquee-item { white-space: normal; }
+    }
     .contact-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; align-items: start; }
     @media (max-width: 800px) { .contact-grid { grid-template-columns: 1fr; } }
     .reg-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
@@ -530,7 +547,7 @@
       <section class="pub-section">
         <h2>Latest Announcements</h2>
         <p class="lead">News from the PG Coordinator and the Department of Physics.</p>
-        <div class="card">
+        <div class="card" style="padding:0;overflow:hidden">
           <div id="ann-list" class="page-loading"><span class="spinner"></span> Loading announcements…</div>
         </div>
       </section>
@@ -3052,51 +3069,62 @@
        public site") must show the topbar and the hero, not a stale offset. */
     window.scrollTo(0, 0);
 
-    /* ================= HOME: announcements =================
+    /* ================= HOME: announcements (moving marquee) =================
        try/catch so a failure here can never stop the listeners below from
        attaching (a dead listener is what let forms fall through to a native
        submit and land on Google's userCodeAppPanel URL). */
+    function annMarqueeItem_(a) {
+      var when = '';
+      if (a.createdAt) {
+        var d = new Date(a.createdAt);
+        if (!isNaN(d)) when = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+      var body = String(a.body || '').replace(/\s+/g, ' ').trim();
+      if (body.length > 150) body = body.slice(0, 150).replace(/\s+\S*$/, '') + '…';
+      return '<div class="ann-marquee-item">' +
+        '<span class="tag">Announcement</span>' +
+        '<span class="t">' + esc(a.title) + '</span>' +
+        (body ? '<span class="b">' + esc(body) + '</span>' : '') +
+        (when ? '<span class="w">' + esc(when) + '</span>' : '') +
+      '</div>';
+    }
     try {
       (function () {
         var el = document.getElementById('ann-list');
+        if (!el) return;
+        var emptyMsg = function (text) {
+          el.className = '';
+          el.innerHTML = '<p class="small muted" style="margin:0;padding:16px">' + esc(text) + '</p>';
+        };
         /* Safety net: the spinner must never stay up. If the request has not
            settled within 20s, clear it anyway. */
         setTimeout(function () {
-          if (el && el.className && el.className.indexOf('page-loading') !== -1) {
-            el.className = '';
-            el.innerHTML = '<p class="small muted" style="margin:0">Could not load announcements right now. Please try again later.</p>';
+          if (el.className && el.className.indexOf('page-loading') !== -1) {
+            emptyMsg('Could not load announcements right now. Please try again later.');
           }
         }, 20000);
         call('api_publicAnnouncements').then(function (r) {
           var items = (r && r.items) || [];
-          if (!items.length) {
-            el.className = '';
-            el.innerHTML = '<p class="small muted" style="margin:0">No announcements yet. Check back soon.</p>';
-            return;
-          }
-          el.className = '';
-          el.innerHTML = items.map(function (a) {
-            var when = '';
-            if (a.createdAt) {
-              var d = new Date(a.createdAt);
-              if (!isNaN(d)) when = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-            }
-            return '<div class="ann-item">' +
-              '<div class="ann-title">' + esc(a.title) + '</div>' +
-              (a.body ? '<div class="ann-body">' + esc(a.body) + '</div>' : '') +
-              (when ? '<div class="when">' + when + '</div>' : '') +
+          if (!items.length) { emptyMsg('No announcements yet. Check back soon.'); return; }
+          /* The list is rendered twice inside a moving track: the CSS animation
+             slides it -50%, so the second copy takes over seamlessly. */
+          var group = items.map(annMarqueeItem_).join('');
+          var duration = Math.max(items.length * 12, 40);
+          el.className = 'ann-marquee';
+          el.innerHTML =
+            '<div class="ann-marquee-track" style="--ann-marquee-duration:' + duration + 's">' +
+              '<div class="ann-marquee-group">' + group + '</div>' +
+              '<div class="ann-marquee-group" aria-hidden="true">' + group + '</div>' +
             '</div>';
-          }).join('');
         }).catch(function () {
-          el.className = '';
-          el.innerHTML = '<p class="small muted" style="margin:0">Could not load announcements right now. Please try again later.</p>';
+          emptyMsg('Could not load announcements right now. Please try again later.');
         });
       })();
     } catch (err) {
       var annFallback = document.getElementById('ann-list');
       if (annFallback) {
         annFallback.className = '';
-        annFallback.innerHTML = '<p class="small muted" style="margin:0">Could not load announcements right now. Please try again later.</p>';
+        annFallback.innerHTML = '<p class="small muted" style="margin:0;padding:16px">Could not load announcements right now. Please try again later.</p>';
       }
     }
 
