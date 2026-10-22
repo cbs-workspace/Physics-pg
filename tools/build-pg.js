@@ -161,6 +161,7 @@ function buildView(view) {
     initialPageJson: JSON.stringify(view),
     initialViewJson: JSON.stringify(""),
     embedJson: JSON.stringify(false),
+    backJson: JSON.stringify(""),
   });
 
   // 2. register/login are in-site pages on the static host: keep the
@@ -194,7 +195,10 @@ function buildView(view) {
  *  portal drops its own chrome), so the site stays in the address bar. The raw
  *  /exec URL is never linked from the site. Used for both /login/ and /register/. */
 function portalFramePage(opts) {
-  const embedUrl = GAS_EXEC + "?page=" + opts.view + "&embed=1";
+  // ?back=%2F tells the portal where the public site's home is, so "Back to
+  // public site" leaves the frame and opens the real home page (with its
+  // topbar and hero) instead of re-rendering a chrome-less home in-frame.
+  const embedUrl = GAS_EXEC + "?page=" + opts.view + "&embed=1&back=%2F";
   const cross = opts.cross
     ? '      <a href="' + opts.cross.href + '">' + opts.cross.label + "</a>\n"
     : "";

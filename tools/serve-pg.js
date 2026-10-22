@@ -71,9 +71,9 @@ function seedDb() {
     { id: "Usr07", regNumber: "UA/pg2026/000013", email: "demo.inspector@gmail.com", role: "Submission_Inspector", fullName: "Dr. Samuel Eze", firstLogin: false, active: true, status: "Approved", createdAt: now },
   ];
   const students = [
-    { id: "Stu01", regNumber: "UA/pg2026/000001", surname: "Okafor", firstName: "Chinedu", otherNames: "Emeka", gender: "Male", phoneNumber: "08012345678", email: "demo.student1@gmail.com", faculty: "Faculty of Science", department: "Physics", programme: "MSc", specialisation: "Experimental Solid-State Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "Stf02", currentStage: "4 - Proposal Submission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
-    { id: "Stu02", regNumber: "UA/pg2026/000002", surname: "Adamu", firstName: "Fatima", otherNames: "Yusuf", gender: "Female", phoneNumber: "08098765432", email: "demo.student2@gmail.com", faculty: "Faculty of Science", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "", coSupervisorId: "", currentStage: "1 - Admission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
-    { id: "Stu03", regNumber: "26/408PHYX/040", surname: "Eze", firstName: "Blessing", otherNames: "Chidi", gender: "Female", phoneNumber: "08055556666", email: "demo.student4@gmail.com", faculty: "Faculty of Science", department: "Physics", programme: "PhD", specialisation: "Solar Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", currentStage: "8 - Progress Report", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
+    { id: "Stu01", regNumber: "UA/pg2026/000001", surname: "Okafor", firstName: "Chinedu", otherNames: "Emeka", gender: "Male", phoneNumber: "08012345678", email: "demo.student1@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "MSc", specialisation: "Experimental Solid-State Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "Stf02", currentStage: "4 - Proposal Submission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
+    { id: "Stu02", regNumber: "UA/pg2026/000002", surname: "Adamu", firstName: "Fatima", otherNames: "Yusuf", gender: "Female", phoneNumber: "08098765432", email: "demo.student2@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "", coSupervisorId: "", currentStage: "1 - Admission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
+    { id: "Stu03", regNumber: "26/408PHYX/040", surname: "Eze", firstName: "Blessing", otherNames: "Chidi", gender: "Female", phoneNumber: "08055556666", email: "demo.student4@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Solar Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", currentStage: "8 - Progress Report", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
   ];
   const staff = [
     { id: "Stf01", fullName: "Dr. Bala Ahmed", email: "bala.ahmed@uniabuja.edu.ng", rank: "Senior Lecturer", specialisation: "Solid-State Physics", active: true, createdAt: now },
@@ -148,7 +148,7 @@ const API = {
       id: nextId("Stu"), regNumber: reg,
       surname: payload.surname || "", firstName: payload.firstName || "", otherNames: payload.otherNames || "",
       gender: payload.gender || "", phoneNumber: payload.phoneNumber || "", email: payload.email || "",
-      faculty: payload.faculty || "Faculty of Science", department: payload.department || "Physics",
+      faculty: payload.faculty || "Faculty of Physical Sciences", department: payload.department || "Physics",
       programme: payload.programme || "MSc", specialisation: payload.specialisation || "",
       passportFileId: "local", passportUrl: (payload.passportPhoto && payload.passportPhoto.dataUrl) || "",
       mainSupervisorId: "", coSupervisorId: "", currentStage: "1 - Admission",
@@ -295,7 +295,7 @@ const API = {
       id: nextId("Stu"), regNumber: reg,
       surname: payload.surname || "", firstName: payload.firstName || "", otherNames: payload.otherNames || "",
       gender: payload.gender || "", phoneNumber: payload.phoneNumber || "", email: payload.email || "",
-      faculty: payload.faculty || "Faculty of Science", department: payload.department || "Physics",
+      faculty: payload.faculty || "Faculty of Physical Sciences", department: payload.department || "Physics",
       programme: payload.programme || "MSc", specialisation: payload.specialisation || "",
       passportFileId: "", passportUrl: "",
       mainSupervisorId: "", coSupervisorId: "", currentStage: "1 - Admission",
@@ -512,7 +512,7 @@ window.__PG_MOCK_API__ = (function () {
         id: nextId('Stu'), regNumber: reg,
         surname: payload.surname || '', firstName: payload.firstName || '', otherNames: payload.otherNames || '',
         gender: payload.gender || '', phoneNumber: payload.phoneNumber || '', email: payload.email || '',
-        faculty: payload.faculty || 'Faculty of Science', department: payload.department || 'Physics',
+        faculty: payload.faculty || 'Faculty of Physical Sciences', department: payload.department || 'Physics',
         programme: payload.programme || 'MSc', specialisation: payload.specialisation || '',
         passportFileId: 'local', passportUrl: (payload.passportPhoto && payload.passportPhoto.dataUrl) || '',
         mainSupervisorId: '', coSupervisorId: '', currentStage: '1 - Admission',
@@ -663,7 +663,7 @@ window.__PG_MOCK_API__ = (function () {
         id: nextId('Stu'), regNumber: reg,
         surname: payload.surname || '', firstName: payload.firstName || '', otherNames: payload.otherNames || '',
         gender: payload.gender || '', phoneNumber: payload.phoneNumber || '', email: payload.email || '',
-        faculty: payload.faculty || 'Faculty of Science', department: payload.department || 'Physics',
+        faculty: payload.faculty || 'Faculty of Physical Sciences', department: payload.department || 'Physics',
         programme: payload.programme || 'MSc', specialisation: payload.specialisation || '',
         passportFileId: '', passportUrl: '',
         mainSupervisorId: '', coSupervisorId: '', currentStage: '1 - Admission',
@@ -821,8 +821,8 @@ function readGas(name) {
   return fs.readFileSync(path.join(GAS_DIR, name + ".html"), "utf8");
 }
 
-function buildPage(pageName, embed) {
-  const cacheKey = pageName + (embed ? "?embed=1" : "");
+function buildPage(pageName, embed, back) {
+  const cacheKey = pageName + (embed ? "?embed=1" : "") + (back ? "?back=" + back : "");
   if (pageCache.has(cacheKey)) return pageCache.get(cacheKey);
   let html = renderTemplate(readGas("index"), {
     page: pageName,
@@ -831,6 +831,7 @@ function buildPage(pageName, embed) {
     initialPageJson: JSON.stringify(pageName === "login" ? "home" : pageName),
     initialViewJson: JSON.stringify(""),
     embedJson: JSON.stringify(!!embed),
+    backJson: JSON.stringify(back || ""),
   });
   if (html.match(/<\?/g)) console.warn("warning: unreplaced scriptlet(s) in index.html");
   // inject the mocks right after <body> so every page script can use them
@@ -868,8 +869,11 @@ http
     if (LEGACY[key]) key = LEGACY[key]; // /about/ and /programmes/ → home
     if (PAGES.indexOf(key) !== -1) {
       const embed = query.get("embed") === "1" || query.get("embed") === "true";
+      // mirrors doGet/safeBackPath_: same-origin paths only
+      let back = String(query.get("back") || "").trim();
+      if (!/^\/[A-Za-z0-9\-._~\/]*$/.test(back) || back.indexOf("//") === 0) back = "";
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(buildPage(key || "home", embed));
+      return res.end(buildPage(key || "home", embed, back));
     }
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Not found. Pages: / (home), /?page=register|contact|login");

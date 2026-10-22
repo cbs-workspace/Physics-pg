@@ -54,9 +54,9 @@ All demo accounts share the password **`PhysicsPG2026!`**.
 
 | id | regNumber | surname | firstName | otherNames | gender | phoneNumber | email | faculty | department | programme | specialisation | passportFileId | passportUrl | mainSupervisorId | coSupervisorId | currentStage | yearOfAdmission | createdAt | updatedAt |
 |----|-----------|---------|-----------|------------|--------|-------------|-------|---------|------------|-----------|----------------|----------------|-------------|-----------------|----------------|--------------|-----------------|-----------|-----------|
-| Stu01 | UA/pg2026/000001 | Okafor | Chinedu | Emeka | Male | 08012345678 | demo.student1@gmail.com | Faculty of Science | Physics | MSc | Experimental Solid-State Physics | | | Stf01 | Stf02 | 4 - Proposal Submission | 2026 | 2026-10-01 08:00:00 | 2026-10-01 08:00:00 |
-| Stu02 | UA/pg2026/000002 | Adamu | Fatima | Yusuf | Female | 08098765432 | demo.student2@gmail.com | Faculty of Science | Physics | PhD | Nuclear Physics | | | | | 1 - Admission | 2026 | 2026-10-01 08:00:00 | 2026-10-01 08:00:00 |
-| Stu03 | 26/408PHYX/040 | Eze | Blessing | Chidi | Female | 08055556666 | demo.student4@gmail.com | Faculty of Science | Physics | PhD | Solar Physics | | | Stf01 | | 8 - Progress Report | 2026 | 2026-10-01 08:00:00 | 2026-10-01 08:00:00 |
+| Stu01 | UA/pg2026/000001 | Okafor | Chinedu | Emeka | Male | 08012345678 | demo.student1@gmail.com | Faculty of Physical Sciences | Physics | MSc | Experimental Solid-State Physics | | | Stf01 | Stf02 | 4 - Proposal Submission | 2026 | 2026-10-01 08:00:00 | 2026-10-01 08:00:00 |
+| Stu02 | UA/pg2026/000002 | Adamu | Fatima | Yusuf | Female | 08098765432 | demo.student2@gmail.com | Faculty of Physical Sciences | Physics | PhD | Nuclear Physics | | | | | 1 - Admission | 2026 | 2026-10-01 08:00:00 | 2026-10-01 08:00:00 |
+| Stu03 | 26/408PHYX/040 | Eze | Blessing | Chidi | Female | 08055556666 | demo.student4@gmail.com | Faculty of Physical Sciences | Physics | PhD | Solar Physics | | | Stf01 | | 8 - Progress Report | 2026 | 2026-10-01 08:00:00 | 2026-10-01 08:00:00 |
 
 ---
 
