@@ -1174,6 +1174,23 @@
       if (EMBED) query += '&embed=1';   // keep the destination framable (stays in the wrapper)
       return base + (base.indexOf('?') === -1 ? '?' : '&') + query;
     }
+    /** Origin of the page the visitor is actually on. Apps Script serves the
+     *  portal inside its own sandboxed frames, so document.referrer points at
+     *  Google's wrapper, not at the site that embedded us. ancestorOrigins
+     *  lists the real frame chain (own origin first, top-most page last), so
+     *  the last entry is the public site we must go back to. */
+    function embedBaseOrigin_() {
+      try {
+        var ao = window.location.ancestorOrigins;
+        if (ao && ao.length) {
+          for (var i = ao.length - 1; i >= 0; i--) {
+            var o = String(ao[i] || '');
+            if (/^https?:\/\//i.test(o) && o !== window.location.origin) return o;
+          }
+        }
+      } catch (e) { /* not available — fall back to the referrer */ }
+      return document.referrer || '';
+    }
     /** "Back to public site" — always lands on the TOP of the public home page.
      *  Inside the static site's /login/ frame the portal must not re-render the
      *  public home without its chrome (embed mode hides the topbar and the
@@ -1188,8 +1205,9 @@
         try {
           if (window.top && window.top !== window.self) {
             var abs = '';
-            if (back.charAt(0) === '/' && document.referrer) {
-              try { abs = new URL(back, document.referrer).href; } catch (err) { abs = ''; }
+            if (back.charAt(0) === '/') {
+              var base = embedBaseOrigin_();
+              if (base) { try { abs = new URL(back, base).href; } catch (err) { abs = ''; } }
             }
             if (/^https?:\/\//i.test(abs)) { window.top.location.href = abs; return; }
           }

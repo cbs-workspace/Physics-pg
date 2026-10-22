@@ -110,14 +110,23 @@ npm run build    # static site -> dist/  (this IS the Cloudflare build command)
 - `history.scrollRestoration = 'manual'` (set in `<head>`, index.html:467) +
   the `beforeunload` scroll-to-top (index.html:999) are load-bearing: without
   them "Back to public site" lands mid-page.
-- "Back to public site" (`goPublicHome_()`, index.html:1172) has two paths:
+- "Back to public site" (`goPublicHome_()`, index.html:1177) has two paths:
   standalone → the portal's public home; inside the static `/login/` iframe →
   it must **leave the frame**, because embed mode hides the topbar and hero.
   The static wrapper passes `&back=%2F` on the iframe src; the portal resolves
-  that path against `document.referrer` (the embedding page's origin) and
-  assigns it to `window.top.location`. A relative path assigned to
-  `window.top.location` resolves against the *frame's* origin, not the top's —
-  never assign a bare `/…` there.
+  that path against the embedding page's origin and assigns it to
+  `window.top.location`. A relative path assigned to `window.top.location`
+  resolves against the *frame's* origin, not the top's — never assign a bare
+  `/…` there.
+  **Do not use `document.referrer` for that origin.** Apps Script serves the
+  portal inside its own sandbox chain
+  (`script.google.com` → `…-script.googleusercontent.com/userCodeAppPanel`),
+  so the portal's referrer is Google's panel, not the site that embedded it —
+  resolving against it sent the top window to a `googleusercontent.com` URL
+  that 404s. `embedBaseOrigin_()` (index.html:1177) reads
+  `location.ancestorOrigins` instead: own origin first, **top-most ancestor
+  last**, so the last entry is the real public site. `document.referrer` is
+  only the fallback.
 - `showView()` exists only in the public branch. On the login page `?page=`
   links do a full navigation by design.
 - Every native form `submit` is `preventDefault()`-ed (index.html:1225). A
