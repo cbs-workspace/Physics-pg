@@ -1084,6 +1084,31 @@ function restrictExistingPassports() {
   Logger.log('Passport photos made private: ' + n);
   return n;
 }
+/** RUN ONCE before go-live: deactivates every demo.* login (the seeded accounts
+ *  that all share the default password). active=FALSE makes api_login refuse
+ *  them, and the session-epoch bump kills any session they still hold. The
+ *  Staff tab is left alone — only the logins are switched off.
+ *  Dry run first: deactivateDemoLogins(true) writes nothing. */
+function deactivateDemoLogins(dryRun) {
+  var targets = readTable_('Users').filter(function (u) { return /^demo\./i.test(String(u.email || '').trim()); });
+  var on = [], off = [];
+  targets.forEach(function (u) {
+    if (toBool_(u.active)) {
+      on.push(u.email);
+      if (!dryRun) {
+        updateRow_('Users', u.id, { active: false });
+        bumpSessionEpoch_(u.id);
+        logAudit_('', 'go-live', 'DEACTIVATE_DEMO_LOGIN', u.regNumber, u.email);
+      }
+    } else off.push(u.email);
+  });
+  var msg = 'deactivateDemoLogins' + (dryRun ? ' (dry run)' : '') + ': ' + targets.length + ' demo account(s) found, ' +
+    on.length + (dryRun ? ' would be deactivated' : ' deactivated') + ', ' + off.length + ' already inactive [' +
+    targets.map(function (u) { return u.email; }).join(', ') + ']';
+  Logger.log(msg);
+  return { found: targets.length, deactivated: on.length, alreadyInactive: off.length, emails: targets.map(function (u) { return u.email; }) };
+}
+
 
 
 function savePassportPhoto_(filePayload, regNumber) {
