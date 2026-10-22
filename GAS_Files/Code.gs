@@ -1084,29 +1084,61 @@ function restrictExistingPassports() {
   Logger.log('Passport photos made private: ' + n);
   return n;
 }
-/** RUN ONCE before go-live: deactivates every demo.* login (the seeded accounts
- *  that all share the default password). active=FALSE makes api_login refuse
- *  them, and the session-epoch bump kills any session they still hold. The
- *  Staff tab is left alone — only the logins are switched off.
- *  Dry run first: deactivateDemoLogins(true) writes nothing. */
-function deactivateDemoLogins(dryRun) {
-  var targets = readTable_('Users').filter(function (u) { return /^demo\./i.test(String(u.email || '').trim()); });
-  var on = [], off = [];
-  targets.forEach(function (u) {
-    if (toBool_(u.active)) {
-      on.push(u.email);
-      if (!dryRun) {
-        updateRow_('Users', u.id, { active: false });
-        bumpSessionEpoch_(u.id);
-        logAudit_('', 'go-live', 'DEACTIVATE_DEMO_LOGIN', u.regNumber, u.email);
-      }
-    } else off.push(u.email);
+/** RUN ONCE before go-live: removes the seeded demo accounts from the sheet.
+ *  Accounts are matched on the EMAIL only (demo.*@…), never on the password:
+ *  real logins can still sit on the default password, and deleting those would
+ *  destroy live accounts.
+ *    removeDemoAccounts()              -> DRY RUN, nothing is written (default)
+ *    removeDemoAccounts(false)         -> deletes the logins + demo students
+ *    removeDemoAccounts(false, false)  -> deletes the logins only
+ *  The demo student rows (Students tab) go with the accounts; the Staff tab is
+ *  never touched (its rows carry real @uniabuja.edu.ng addresses). Submissions,
+ *  announcements and the other tabs are left alone — they are only reported. */
+function removeDemoAccounts(dryRun, withStudents) {
+  if (dryRun === undefined) dryRun = true;
+  if (withStudents === undefined) withStudents = true;
+  var isDemo = function (v) { return /^demo[._-]/i.test(String(v || '').trim().split('@')[0]); };
+
+  var plan = [];
+  (withStudents ? ['Users', 'Students'] : ['Users']).forEach(function (tab) {
+    readTableSafe_(tab).forEach(function (r) {
+      if (isDemo(r.email)) plan.push({ tab: tab, row: r._row, id: r.id, reg: String(r.regNumber || ''), email: String(r.email || ''), role: String(r.role || '') });
+    });
   });
-  var msg = 'deactivateDemoLogins' + (dryRun ? ' (dry run)' : '') + ': ' + targets.length + ' demo account(s) found, ' +
-    on.length + (dryRun ? ' would be deactivated' : ' deactivated') + ', ' + off.length + ' already inactive [' +
-    targets.map(function (u) { return u.email; }).join(', ') + ']';
+  var removedIds = {}, removedRegs = {};
+  plan.forEach(function (p) { removedIds[p.id] = 1; if (p.reg) removedRegs[p.reg] = 1; });
+
+  if (plan.length && !dryRun) {
+    withScriptLock_(function () {
+      plan.slice().sort(function (a, b) { return a.tab === b.tab ? b.row - a.row : (a.tab < b.tab ? -1 : 1); })
+        .forEach(function (p) {
+          getSheet_(p.tab).deleteRow(p.row);
+          invalidateTable_(p.tab);
+          logAudit_('', 'go-live', 'REMOVE_DEMO_ACCOUNT', p.reg || p.id, p.tab + ': ' + p.email);
+        });
+    }, 30000);
+  }
+
+  // anything else that still points at the removed accounts — reported, not deleted
+  var others = [];
+  Object.keys(HEADERS).forEach(function (tab) {
+    if (plan.some(function (p) { return p.tab === tab; })) return;
+    readTableSafe_(tab).forEach(function (r) {
+      Object.keys(r).forEach(function (k) {
+        if (k === '_row') return;
+        var v = String(r[k] === undefined || r[k] === null ? '' : r[k]);
+        if (!v) return;
+        if (removedIds[v] || (removedRegs[v] && /reg/i.test(k))) others.push(tab + '.' + k + '=' + v);
+      });
+    });
+  });
+  others = others.filter(function (o) { return o.indexOf('AuditLog.action=REMOVE_DEMO_ACCOUNT') === -1; });
+
+  var msg = 'removeDemoAccounts' + (dryRun ? ' (DRY RUN — nothing written)' : '') + ': ' + plan.length + ' row(s) matched — ' +
+    (plan.map(function (p) { return p.tab + ':' + p.email; }).join(', ') || 'none') +
+    (others.length ? '. Still referencing them (left alone): ' + others.join(', ') : '. Nothing else references them.');
   Logger.log(msg);
-  return { found: targets.length, deactivated: on.length, alreadyInactive: off.length, emails: targets.map(function (u) { return u.email; }) };
+  return { dryRun: !!dryRun, matched: plan.map(function (p) { return p.tab + ':' + p.email; }), stillReferenced: others };
 }
 
 
