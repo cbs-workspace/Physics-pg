@@ -104,13 +104,17 @@ npm run build    # static site → dist/ (Cloudflare)
 | Staff | `demo.staff` | `UA/pg2026/000012` |
 | Submission Inspector | `demo.inspector` | `UA/pg2026/000013` |
 
-**Deactivate every `demo.*` account before go-live** (set `active=FALSE` on the Users tab).
+**These are gone from the live sheet** (deleted 2026-10-22 with
+`removeDemoAccounts()`); the rows above only describe what the local preview
+(`npm run pg`) and `SeedData.md` seed. **Never re-seed the live sheet.**
+The live site is tested with a real HoD account — the site owner holds the
+credentials, they are not in this repo.
 
 ---
 
 ## 8. Before go-live checklist
 
-- [ ] Deactivate all `demo.*` accounts.
+- [x] Remove all `demo.*` accounts (done 2026-10-22).
 - [ ] Change `DEFAULT_PASSWORD` if seeding real accounts.
 - [ ] Verify Sheet + Drive folder sharing is restricted (PII).
 - [ ] Confirm Script Properties (`SPREADSHEET_ID`, `DRIVE_FOLDER_ID`, branding).

@@ -325,5 +325,8 @@ server works).
 
 ## Before go-live
 
-- Deactivate every `demo.*` account on the Users tab (password `PhysicsPG2026!`).
+- ~~Deactivate every `demo.*` account~~ — **done 2026-10-22**: the seeded demo
+  accounts were deleted from the live sheet with `removeDemoAccounts()`. All
+  seven demo logins now refuse to sign in.
 - Change Config `DEFAULT_PASSWORD` if seeding more real accounts.
+- Restrict Sheet/Drive sharing to the coordinator/SuperAdmin.

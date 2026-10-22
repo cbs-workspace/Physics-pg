@@ -4,6 +4,11 @@ Sheet ID: `1cybEF_Fjhyazj4SIH5HnSht6KD31UWftT5fQyGi29uc`
 
 Paste the rows below into the Google Sheet after the `setUp()` function creates the tabs.
 
+> **Local/dev only.** These demo rows were deleted from the live sheet on
+> 2026-10-22 with `removeDemoAccounts()` — never re-seed the live sheet. They
+> still feed the local preview (`npm run pg`), which mocks the backend from
+> these rows.
+
 > **PasswordHash note:** The hashes below are SHA-256 of `PhysicsPG2026!:<salt>`.
 > To generate them, paste this into the Apps Script editor and run `generateSeedHashes()`:
 > ```js

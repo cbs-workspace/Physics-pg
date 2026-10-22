@@ -157,8 +157,14 @@ npm run build    # static site -> dist/  (this IS the Cloudflare build command)
 - Stage explicit paths; **never `git add -A`**.
 - Server-only changes (a new JSONP endpoint) are live immediately with no
   static rebuild, since the static site calls `/exec` at runtime.
-- Before go-live: deactivate every `demo.*` account on the Users tab
-  (password `PhysicsPG2026!`), and restrict Sheet/Drive sharing.
+- Go-live state (updated 2026-10-22): the seeded `demo.*` accounts have been
+  **deleted from the live sheet** with `removeDemoAccounts()` (it matches on
+  the email `demo.*`, never on the password, and removes the matching Students
+  rows too). All seven demo logins now answer *"Invalid registration number /
+  staff ID or password."* `SeedData.md` is kept only for local/dev seeding —
+  never re-seed the live sheet. The live site is tested with a real HoD
+  account; **credentials live with the site owner, never in this repo.**
+- Before go-live: restrict Sheet/Drive sharing to the coordinator/SuperAdmin.
 
 ## Reference docs (read before large changes)
 
