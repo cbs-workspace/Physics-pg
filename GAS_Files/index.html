@@ -310,6 +310,11 @@
       .ann-marquee-group + .ann-marquee-group { display: none; }
       .ann-marquee-item { white-space: normal; }
     }
+    /* ---- Announcements ticker: full-bleed strip directly under the top bar ---- */
+    .ann-strip { background: var(--primary-soft); border-bottom: 1px solid var(--border); }
+    .ann-strip-inner { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+    .ann-strip-inner.ann-marquee { border-radius: 0; background: transparent; }
+    .ann-strip .page-loading { padding: 12px 0; }
     .contact-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; align-items: start; }
     @media (max-width: 800px) { .contact-grid { grid-template-columns: 1fr; } }
     .reg-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
@@ -507,6 +512,11 @@
     </div>
   </header>
 
+  <!-- Announcements ticker: directly under the top bar, on every public page -->
+  <div class="ann-strip">
+    <div id="ann-list" class="ann-strip-inner page-loading"><span class="spinner"></span> Loading announcements&hellip;</div>
+  </div>
+
   <main class="pub-main">
 
     <!-- ==================== HOME ==================== -->
@@ -541,14 +551,6 @@
           theoretical solid-state, nuclear and solar physics and applied geophysics.</p>
         <div class="card">
           <p>This is the department's own postgraduate journey platform built for coordination</p>
-        </div>
-      </section>
-
-      <section class="pub-section">
-        <h2>Latest Announcements</h2>
-        <p class="lead">News from the PG Coordinator and the Department of Physics.</p>
-        <div class="card" style="padding:0;overflow:hidden">
-          <div id="ann-list" class="page-loading"><span class="spinner"></span> Loading announcements…</div>
         </div>
       </section>
 
@@ -3115,7 +3117,7 @@
         var el = document.getElementById('ann-list');
         if (!el) return;
         var emptyMsg = function (text) {
-          el.className = '';
+          el.className = 'ann-strip-inner';
           el.innerHTML = '<p class="small muted" style="margin:0;padding:16px">' + esc(text) + '</p>';
         };
         /* Safety net: the spinner must never stay up. If the request has not
@@ -3132,7 +3134,7 @@
              slides it -50%, so the second copy takes over seamlessly. */
           var group = items.map(annMarqueeItem_).join('');
           var duration = Math.max(items.length * 12, 40);
-          el.className = 'ann-marquee';
+          el.className = 'ann-strip-inner ann-marquee';
           el.innerHTML =
             '<div class="ann-marquee-track" style="--ann-marquee-duration:' + duration + 's">' +
               '<div class="ann-marquee-group">' + group + '</div>' +
@@ -3145,7 +3147,7 @@
     } catch (err) {
       var annFallback = document.getElementById('ann-list');
       if (annFallback) {
-        annFallback.className = '';
+        annFallback.className = 'ann-strip-inner';
         annFallback.innerHTML = '<p class="small muted" style="margin:0;padding:16px">Could not load announcements right now. Please try again later.</p>';
       }
     }
