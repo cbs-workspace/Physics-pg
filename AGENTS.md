@@ -168,7 +168,11 @@ npm run build    # static site -> dist/  (this IS the Cloudflare build command)
   staff ID or password."* `SeedData.md` is kept only for local/dev seeding —
   never re-seed the live sheet. The live site is tested with a real HoD
   account; **credentials live with the site owner, never in this repo.**
-- Before go-live: restrict Sheet/Drive sharing to the coordinator/SuperAdmin.
+- Sheet/Drive sharing: the site owner **is** both the PG Coordinator and the
+  Super Admin, so unrestricted access for those two roles is accepted by
+  design (owner decision, 2026-10-22). Share the sheet and the passport
+  folder with the coordinator only — no other departmental account needs
+  write access.
 
 ## Reference docs (read before large changes)
 

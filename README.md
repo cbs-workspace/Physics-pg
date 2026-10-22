@@ -329,4 +329,7 @@ server works).
   accounts were deleted from the live sheet with `removeDemoAccounts()`. All
   seven demo logins now refuse to sign in.
 - Change Config `DEFAULT_PASSWORD` if seeding more real accounts.
-- Restrict Sheet/Drive sharing to the coordinator/SuperAdmin.
+- Sheet/Drive sharing: the site owner **is** both the PG Coordinator and the
+  Super Admin, so unrestricted access for those two roles is accepted by
+  design — share the sheet and the passport folder with the coordinator only
+  and no other departmental account needs write access.
