@@ -796,6 +796,10 @@
        ?page= link navigating INSIDE the frame instead of escaping to top. */
     var EMBED = <?!= embedJson ?>;
     if (EMBED) document.body.classList.add('embed');
+    /* Where "Back to public site" should land: the public site's home path,
+       passed by the static wrapper as ?back=/. Empty when the portal serves
+       itself (then the portal's own public home is used instead). */
+    var BACK = <?!= backJson ?>;
 
     /* ================= SHARED HELPERS ================= */
     function esc(v) { return String(v === undefined || v === null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
