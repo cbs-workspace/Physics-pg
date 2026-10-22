@@ -85,9 +85,9 @@ Physics-pg/
 ├── SeedData.md              ← seed rows + hash generator for demo accounts
 ├── audit.md                 ← forensic audit (architecture, data, security, bugs)
 ├── AGENT-GUIDE.md           ← runbook for the next agent
-├── Guide-Student.docx       ← student guide (task-based)
-├── Guide-Staff.docx         ← staff guide (task-based)
-├── Admin.docx               ← admin/technical guide (roles, deploy, data model)
+├── student_guide.docx        ← student guide (task-based)
+├── staff_guide.docx          ← staff guide (task-based)
+├── admin_guide.docx          ← admin/technical guide (roles, deploy, data model)
 └── tools/
     ├── pg-template.js       ← shared template renderer (doGet semantics)
     ├── serve-pg.js          ← npm run pg — local preview with demo backend

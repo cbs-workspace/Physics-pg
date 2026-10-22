@@ -72,8 +72,8 @@ Set-Normal "On the login form, click the eye icon next to the Password field to 
 Set-Heading "8. Getting Help"
 Set-Normal "For enquiries, use the Contact page on the public site. Enquiries go to the PG Coordinator."
 Set-Normal "If your registration is rejected or you cannot sign in, contact the PG Coordinator or the Head of Department."
-Save-Doc "$out\Guide-Student.docx"
-"saved Guide-Student.docx"
+Save-Doc "$out\student_guide.docx"
+"saved student_guide.docx"
 
 # ================= STAFF =================
 New-Doc
@@ -114,8 +114,8 @@ Set-Normal "On the login form, click the eye icon next to the Password field to 
 Set-Heading "7. Getting Help"
 Set-Normal "For technical issues, contact the PG Coordinator."
 Set-Normal "For student-related matters, contact the PG Coordinator or the Head of Department."
-Save-Doc "$out\Guide-Staff.docx"
-"saved Guide-Staff.docx"
+Save-Doc "$out\staff_guide.docx"
+"saved staff_guide.docx"
 
 # ================= ADMIN =================
 New-Doc
@@ -199,8 +199,8 @@ Set-Bullet "docs/Staff.xlsx is PII - never commit."
 Set-Bullet "icons is page-level (common script) - do not reference the publicUi() copy from the login branch."
 Set-Bullet "scrollRestoration=manual + beforeunload scroll-to-top - do not remove."
 Set-Bullet "showView is public-branch only - login ?page= links do a full navigation."
-Save-Doc "$out\Admin.docx"
-"saved Admin.docx"
+Save-Doc "$out\admin_guide.docx"
+"saved admin_guide.docx"
 
 $word.Quit()
 "done"

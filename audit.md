@@ -172,9 +172,9 @@ Physics-pg/
 ├── dist/                  ← build output (gitignored)
 ├── audit.md               ← this file
 ├── AGENT-GUIDE.md         ← runbook for the next agent
-├── Guide-Student.docx     ← student guide
-├── Guide-Staff.docx       ← staff guide
-├── Admin.docx             ← admin/technical guide
+├── student_guide.docx        ← student guide
+├── staff_guide.docx          ← staff guide
+├── admin_guide.docx          ← admin/technical guide
 ├── README.md
 └── package.json           ← scripts: pg, build
 ```
