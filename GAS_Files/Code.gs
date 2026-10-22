@@ -21,7 +21,7 @@ var PROP_DRIVE_ID = 'DRIVE_FOLDER_ID';
 var EMAIL_RE = /^[a-z0-9]+(?:[._%+\-][a-z0-9]+)*@[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$/i;
 
 var SENDER_DISPLAY_NAME = 'Physics Postgraduate Journey (No-Reply)';
-var ENQUIRIES_EMAIL = 'cbs4u4me@gmail.com';
+var ENQUIRIES_EMAIL = 'abel.osagie@uniabuja.edu.ng';
 var NOREPLY_FROM_ALIAS = '';
 var DEPT_ADDRESS = 'Department of Physics, University of Abuja';
 var DEPT_PHONE = '';

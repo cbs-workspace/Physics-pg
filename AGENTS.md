@@ -99,8 +99,12 @@ npm run build    # static site -> dist/  (this IS the Cloudflare build command)
   `SIMILARITY_LIMIT`, `REQUIRE_SIMILARITY`, `EXAMINER_APPROVAL_REQUIRED`,
   `PASSPORT_PRIVACY`, `TIME_LIMITS_ENABLED`, `LIMIT_MONTHS_*`, `TIME_ALERT_MONTHS`,
   `ENDORSE_REMIND_DAYS`, `NUDGE_DAYS`.
-- `ENQUIRIES_EMAIL` defaults to `cbs4u4me@gmail.com` in code (Code.gs:24);
-  `README.md`/`audit.md` still say `abel.osagie@uniabuja.edu.ng`.
+- `ENQUIRIES_EMAIL` defaults to `abel.osagie@uniabuja.edu.ng` in code
+  (Code.gs:24) and the same address is published on the contact page
+  (index.html:742). The Script Property `ENQUIRIES_EMAIL` overrides both the
+  mail reply-to (`mailEnquiriesAddress_`, Code.gs:512) and the enquiry
+  recipient — **set it to the same address or delete it**, otherwise the
+  published text and the actual inbox drift apart again.
 
 ## Gotchas (learned the hard way — do not "clean these up")
 
