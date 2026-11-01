@@ -16,13 +16,123 @@ Live URLs — site: `https://physics-pg.pages.dev` · portal:
 ## 0. Agent runbook — commit to GitHub & ship to Cloudflare Pages
 
 This section is written for an automated agent (or anyone executing it as a
-checklist). Run everything from the repo root on `main`. **An agent never
-invents, harvests, or stores credentials** — the human owner supplies them
-out-of-band (browser OAuth or an environment variable in the same shell).
-Never ask the owner to paste a secret into the chat, and never write one into
-a file.
+checklist) on **any computer**, including one where nothing is installed yet.
+It assumes you are in the repo root on `main`. **An agent never invents,
+harvests, or stores credentials** — the human owner supplies them out-of-band
+(browser OAuth or an environment variable in the same shell). Never ask the
+owner to paste a secret into the chat, and never write one into a file.
 
-### 0.1 What the agent may stage
+> **Normal path needs only Git + Node.js.** Wrangler is *not* required to ship
+> a site change — pushing to `main` is the deployment. Wrangler is only for the
+> manual fallback in § 2. The Apps Script portal (§ 4) is always manual and
+> needs no Git tooling.
+
+### 0.1 Check what is installed
+
+Run this first; do not assume any tool is present.
+
+```powershell
+git --version; node --version; npm --version; npx --version; gh --version
+```
+
+```bash
+git --version && node --version && npm --version && npx --version && gh --version
+```
+
+| Tool | Needed for | Check | If missing |
+|---|---|---|---|
+| **Git** | clone, commit, push | `git --version` | § 0.2 |
+| **Node.js + npm** | `npm run build`; running Wrangler via `npx` | `node --version`, `npm --version` | § 0.2 |
+| **GitHub CLI** (`gh`) | easier GitHub auth (optional) | `gh --version` | § 0.2 |
+| **Wrangler** | manual Cloudflare upload only (optional) | `npx --yes wrangler@latest --version` | § 0.2 — run via `npx`, no install required |
+| **Google account** | portal paste only | — | § 4 (owner only) |
+
+The build has **no npm dependencies**: `package.json` declares only two Node
+scripts and there is no lockfile. Do not run `npm install` / `npm ci`; it adds
+nothing and `node_modules/` is gitignored.
+
+If a tool is missing, install it (§ 0.2) when the session allows it. If the
+install needs elevation, a package manager the machine lacks, or a reboot,
+**stop and hand the command back to the owner** — never silently elevate or
+change global machine config.
+
+### 0.2 Install Git, Node.js, GitHub CLI (and optionally Wrangler)
+
+Install **Git** and **Node.js 20 LTS or newer** first. `gh` is optional but is
+the smoothest way to authenticate. Reopen the terminal after installing so
+`PATH` refreshes, then repeat the checks in § 0.1.
+
+#### Windows (PowerShell; `winget` ships with Windows 10/11)
+
+```powershell
+winget install --id Git.Git -e --source winget
+winget install --id OpenJS.NodeJS.LTS -e --source winget
+winget install --id GitHub.cli -e --source winget    # optional
+```
+
+If `winget` is unavailable, install *App Installer* from the Microsoft Store,
+or download Git from `https://git-scm.com/download/win` and Node LTS from
+`https://nodejs.org/`. Git for Windows bundles **Git Credential Manager**, which
+handles the GitHub browser sign-in.
+
+#### macOS
+
+```bash
+xcode-select --install      # installs Git (or: brew install git)
+brew install node gh        # gh optional; nodejs.org .pkg also works
+```
+
+#### Linux
+
+```bash
+# Debian / Ubuntu
+sudo apt-get update && sudo apt-get install -y git
+# Fedora
+sudo dnf install -y git
+# Arch
+sudo pacman -S git
+```
+
+Install **Node 20+** from `https://nodejs.org/`, via your distro (if it ships a
+current version), or via nvm (`nvm install --lts`). Verify with
+`node --version` — v20 or newer.
+
+#### Wrangler — no global install needed
+
+Use it through `npx`, which downloads it on demand (Node required):
+
+```bash
+npx --yes wrangler@latest --version
+npx --yes wrangler@latest whoami
+```
+
+Only if the owner prefers a global binary: `npm install -g wrangler`, then use
+`wrangler …` directly. Nothing about the normal GitHub → Cloudflare flow
+requires this.
+
+### 0.3 Get the repo and set the commit identity
+
+```bash
+git clone https://github.com/cbs-workspace/Physics-pg.git
+cd Physics-pg
+git remote -v                    # origin must be cbs-workspace/Physics-pg.git
+git branch --show-current        # main
+git pull --ff-only origin main   # bring an existing clone up to date
+```
+
+A `403`/`404` on clone means the machine has no GitHub credential yet — do
+§ 0.5 first. On a machine that has never committed before, confirm an author
+identity exists (the owner sets it if not):
+
+```bash
+git config user.name
+git config user.email
+# owner, once per machine:
+git config --global user.name  "Owner Name"
+git config --global user.email "owner@example.com"
+```
+
+### 0.4 What the agent may stage
 
 Commit source only: `GAS_Files/Code.gs`, `GAS_Files/index.html`, `tools/*.js`,
 `package.json`, `*.md`, and the files the specific task touched.
@@ -33,31 +143,69 @@ asks for them. Never use `git add -A` / `git add .` — stage explicit paths.
 Never force-push, amend a pushed commit, commit with `--no-verify`, or rewrite
 `main`.
 
-### 0.2 Credentials — where they come from (the agent cannot fetch these itself)
+### 0.5 Credentials — where they come from (the agent cannot fetch these itself)
 
 | Target | Credential | How the owner provides it | How the agent verifies |
 |---|---|---|---|
-| **GitHub** (push) | Git push access to `cbs-workspace/Physics-pg` | Preferred: owner runs `gh auth login` and approves the device code in a browser. Alternative: a **fine-grained PAT** scoped to that repo with permission **Contents: Read and write**, exported as `$env:GITHUB_TOKEN` or stored by Windows Credential Manager. | `gh auth status` — or `git ls-remote origin -h refs/heads/main` (asks for credentials once, then succeeds) |
-| **Cloudflare** (normal path) | **None** | A push to `main` triggers the Pages build; the dashboard GIT connection already holds the GitHub authorization. | § 0.5 |
-| **Cloudflare** (manual fallback only, § 2) | OAuth session, or API token + account ID | Owner runs `npx --yes wrangler@latest login` and approves in the browser, **or** creates a token at `dash.cloudflare.com` → **My Profile → API Tokens → Create Token** → template *Cloudflare Pages: Edit*, scoped to the account, then exports `$env:CLOUDFLARE_API_TOKEN` and `$env:CLOUDFLARE_ACCOUNT_ID` (account ID is on the Workers & Pages overview). | `npx --yes wrangler@latest whoami` |
+| **GitHub** (push) | Git push access to `cbs-workspace/Physics-pg` | Preferred: owner runs `gh auth login --web --git-protocol https`, then `gh auth setup-git`, and approves the device code in a browser. Alternative: a **fine-grained PAT** (repo `cbs-workspace/Physics-pg`, permission **Contents: Read and write**) supplied via `GH_TOKEN`; or a plain `git push` that opens Git Credential Manager. | `gh auth status` — or `git ls-remote origin -h refs/heads/main` (succeeds after sign-in) |
+| **Cloudflare** (normal path) | **None** | A push to `main` triggers the Pages build; the dashboard Git connection already holds the GitHub authorization. | § 0.8 |
+| **Cloudflare** (manual fallback only, § 2) | OAuth session, or API token + account ID | Owner runs `npx --yes wrangler@latest login` and approves in the browser, **or** creates a token (below) and exports `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`. | `npx --yes wrangler@latest whoami` |
 | **Apps Script** portal (§ 4) | Google account with edit access to the Apps Script project and ownership of the Sheet | Owner signs in at `script.google.com`; there is no CLI/agent path. | Manual only |
 
-Rules when a credential is missing:
+**GitHub sign-in — pick one, in this order**
 
-- Stop and report which of these the owner must do: `gh auth login`,
-  `wrangler login`, or exporting the token variables in **this** shell session.
-- Do not attempt workarounds — no generating SSH keys, scraping token files,
-  copying another user's credential store, or "just trying" a password.
-- Credentials live with the site owner, never in this repo (see § 6).
+1. **`gh` (best):**
 
-GitHub sign-in without `gh` already installed: the owner runs
-`winget install --id GitHub.cli`, then `gh auth login --web --git-protocol https`
-followed by `gh auth setup-git`. Without `gh` at all, a plain `git push` opens
-**Windows Git Credential Manager** in a browser window — the owner signs in
-there, and the token is cached in Windows Credential Manager. In both cases
-nothing secret is typed to or stored by the agent.
+   ```bash
+   gh auth login --web --git-protocol https   # owner approves in the browser
+   gh auth setup-git                          # makes `git push` use gh
+   gh auth status
+   ```
 
-### 0.3 Pre-commit gate
+2. **No `gh`:** a plain `git push` opens **Git Credential Manager** (Windows) or
+   the Keychain/`libsecret` prompt (macOS/Linux). The owner signs in there; the
+   token is cached by the OS credential store — never by this repo.
+
+3. **Headless / no browser:** the owner creates a fine-grained PAT at
+   `https://github.com/settings/personal-access-tokens/new` (Repository access:
+   only `cbs-workspace/Physics-pg`; Permissions → Contents: **Read and write**),
+   exports it as `GH_TOKEN` (PowerShell: `$env:GH_TOKEN="…"`; bash:
+   `export GH_TOKEN=…`) **in the same shell**, then runs `gh auth setup-git`.
+   The agent never reads, echoes, or writes the value.
+
+**Cloudflare credentials (manual fallback only)**
+
+- Interactive: `npx --yes wrangler@latest login` → owner approves in the
+  browser. On a headless/remote machine this cannot work — use a token.
+- Token: `dash.cloudflare.com` → **My Profile → API Tokens → Create Token** →
+  Custom token with **Account → Cloudflare Pages → Edit** (and Account: Read)
+  scoped to the owner's account. Copy it once (it is shown only once). The
+  account ID is on the **Workers & Pages** overview page. Owner exports both:
+
+  ```powershell
+  $env:CLOUDFLARE_API_TOKEN = "…"   # owner types this, not the agent
+  $env:CLOUDFLARE_ACCOUNT_ID = "…"
+  ```
+
+  ```bash
+  export CLOUDFLARE_API_TOKEN="…"
+  export CLOUDFLARE_ACCOUNT_ID="…"
+  ```
+
+  Then verify: `npx --yes wrangler@latest whoami` (prints the account; if it
+  hangs waiting for a browser, the token variables were not set).
+
+**Rules when a credential is missing**
+
+- Stop and report exactly which step the owner must perform (`gh auth login`,
+  a PAT via `GH_TOKEN`, `wrangler login`, or exporting the Cloudflare variables
+  in **this** shell session). Do not proceed on guesswork.
+- Do not attempt workarounds — no generating SSH keys, scraping credential
+  files, copying another user's credential store, or "just trying" a password.
+- Never commit, print, or log a token. Credentials live with the site owner,
+  never in this repo (see § 6).
+
+### 0.6 Pre-commit gate
 
 ```powershell
 git status                      # review EVERY change; untracked files are not automatically wanted
@@ -71,7 +219,7 @@ npm run build                   # MUST pass:
 
 If the build fails, fix it — never commit a broken build or skip the gate.
 
-### 0.4 Commit and push
+### 0.7 Commit and push
 
 ```powershell
 git add <path> <path>           # only the files you actually touched, never -A / .
@@ -83,22 +231,53 @@ git push origin main
 If the push is rejected because the remote moved: `git pull --rebase origin main`,
 resolve, re-run `npm run build`, then push again. Never force-push `main`.
 
-### 0.5 Confirm Cloudflare deployed
+If the push fails with authentication/`403`/`could not read Username`, the
+machine has no valid GitHub credential — stop and follow § 0.5. Do not retry
+passwords or invent tokens.
 
-A push to `main` is the deployment — there is nothing else to run.
+### 0.8 Confirm Cloudflare deployed
 
-1. Wait ~30–60 s.
-2. `dash.cloudflare.com` → **Workers & Pages** → *physics-pg* →
-   **Deployments**: newest entry shows your commit, trigger `github:push`,
-   status **Success**.
-3. `curl -I https://physics-pg.pages.dev/` → HTTP 200, and spot-check the
-   changed content in a private window.
+A push to `main` is the deployment — there is nothing else to run, and no
+Cloudflare credential is needed to *trigger* it.
+
+1. Confirm the commit actually reached GitHub (works without any dashboard):
+
+   ```bash
+   git ls-remote origin refs/heads/main   # must equal: git rev-parse HEAD
+   ```
+
+2. Wait ~30–60 s.
+3. Strong, tool-free check: build from that exact commit and compare the live
+   HTML byte-for-byte with your local `dist/index.html`.
+
+   ```powershell
+   npm run build
+   "local $((Get-FileHash dist/index.html -Algorithm SHA256).Hash)"
+   $r = Invoke-WebRequest https://physics-pg.pages.dev/ -UseBasicParsing
+   $tmp = Join-Path $env:TEMP "pg-live.html"
+   [IO.File]::WriteAllText($tmp, $r.Content)
+   "live  $((Get-FileHash $tmp -Algorithm SHA256).Hash)"
+   ```
+
+   ```bash
+   npm run build
+   sha256sum dist/index.html
+   curl -s https://physics-pg.pages.dev/ | sha256sum
+   ```
+
+   Equal hashes mean the live site is serving the build you just pushed. If
+   they differ, wait another minute and repeat — Cloudflare may still be
+   building.
+4. If the owner is signed in to the dashboard: `dash.cloudflare.com` →
+   **Workers & Pages** → *physics-pg* → **Deployments** — newest entry shows
+   your commit, trigger `github:push`, status **Success**.
 
 Pushes to any other branch create *preview* deployments only; merge to `main`
-to ship. If nothing appears under Deployments, the Git connection is broken —
-follow § 3, do not switch to manual uploads as a workaround.
+to ship. If nothing appears after several minutes and the hash never matches,
+the Git connection is broken — follow § 3, do not switch to manual uploads as a
+workaround.
 
-### 0.6 Portal hand-off
+### 0.9 Portal hand-off
 
 A GitHub push does **not** deploy the Apps Script portal. If the task changed
 `GAS_Files/Code.gs` or `GAS_Files/index.html`, tell the owner to follow § 4
@@ -108,7 +287,8 @@ cannot do this without the owner's Google session.
 ## 1. Everyday site change (GitHub → Cloudflare, fully automatic)
 
 Intended for a human at the keyboard. **Agents should follow § 0 instead** — it
-adds the credential, staging, and pre-commit-gate rules.
+adds machine setup (Git/Node/Wrangler), credentials, staging, and the
+pre-commit-gate rules.
 
 Sources: all views and the portal SPA live in the single `GAS_Files/index.html`
 template (the `page` scriptlet picks the branch); `tools/build-pg.js` renders
@@ -153,9 +333,10 @@ Change these only if the build script or the output folder is ever renamed.
 ## 2. Manual fallback (if auto-deploy ever stops)
 
 Direct upload still works even though the repo is connected. Credentials for
-this path come from § 0.2 (OAuth session from `wrangler login`, or
+this path come from § 0.5 (OAuth session from `wrangler login`, or
 `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`); confirm with `wrangler whoami`
-first.
+first. If Wrangler is not installed, `npx --yes wrangler@latest …` works — see
+§ 0.2.
 
 ```
 npm run build
@@ -210,7 +391,7 @@ changes:
   `docs/Staff.xlsx` (PII), or any token, password, or secret. Auth lives in
   wrangler's OAuth login, Windows Credential Manager / `gh`, the Cloudflare
   dashboard Git connection, and the site owner's Google account — **never in
-  this repo** (see § 0.2).
+  this repo** (see § 0.5).
 - Never `git add -A` — stage only the paths your change touched.
 - Never create a *New deployment* on the portal — always *New version* on the
   existing one.
