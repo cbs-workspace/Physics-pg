@@ -1170,8 +1170,12 @@
         if (started) return; started = true;
         var muted = null;
         try { muted = localStorage.getItem(MUTE_KEY); } catch (err) {}
+		// Allow music to play on page load if not previously muted and controls are visible
         if (muted === '1') { audio.muted = true; reflect(); return; }
-        if (controls && controls.classList.contains('show')) play();
+        if (controls && controls.classList.contains('show')) {
+		  play();
+		  try { localStorage.setItem(MUTE_KEY, '0'); } catch (err) {}
+		}
       }
       audio.addEventListener('ended', advance);
       audio.addEventListener('playing', function () { consecutiveErrors = 0; });
