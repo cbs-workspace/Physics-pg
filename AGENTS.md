@@ -8,12 +8,12 @@ Google Sheet (one tab per table).
 
 | Target | Holds | How it updates |
 |---|---|---|
-| GitHub `cbs-workspace/Physics-pg` | source of truth | you push |
+| GitHub `cbs-workspace/Physics-pg` | source of truth | you push to `main` |
 | Cloudflare Pages `physics-pg` | static site built from `dist/` | **automatic** on push to `main` |
-| Apps Script `/exec` | portal: `GAS_Files/Code.gs` + `GAS_Files/index.html` | **manual paste** into the Apps Script editor |
+| Apps Script `/exec` | portal: `GAS_Files/Code.gs` + `GAS_Files/index.html` | **manual paste** + *New version* → Deploy |
 
-Pushing to GitHub does **not** deploy the portal, and editing `Code.gs` does
-**not** rebuild the static site. See `DEPLOYMENT.md`.
+- Pushing to GitHub does **not** deploy the portal, and editing `Code.gs` does
+  **not** rebuild the static site. See `DEPLOYMENT.md`.
 
 ## Commands
 
@@ -22,38 +22,34 @@ npm run pg       # local preview, http://localhost:8081 (mock backend, demo data
 npm run build    # static site -> dist/  (this IS the Cloudflare build command)
 ```
 
-- Port override: `node tools/serve-pg.js 8082` (the `PORT=8082 npm run pg` form
-  in `AGENT-GUIDE.md` does **not** work in PowerShell; use
-  `$env:PORT=8082; npm run pg`).
-- Preview the static output: `npx serve dist`.
+- Port override: `node tools/serve-pg.js 8082` (PowerShell: `$env:PORT=8082; npm run pg`).
+- Preview static output: `npx serve dist`.
 - **No test suite, no linter, no typecheck.** The only automated gate is
-  `npm run build` — it throws if a template scriptlet is left unrendered, if
-  the `PUBLIC_PAGES` rewrite fails, or if the demo mock (`__PG_MOCK_API__`)
-  leaks into the static output. Add `node --check tools/<file>.js` for a syntax
-  check on JS you touched. Anything else is manual smoke testing.
+  `npm run build` — it throws on unrendered scriptlets, `PUBLIC_PAGES` drift,
+  or the demo mock leaking into `dist/`. Run `node --check tools/<file>.js` for
+  syntax checks on JS you touched. Anything else is manual smoke testing.
 
-## Architecture (the parts that aren't obvious from the filenames)
+## Architecture (not obvious from filenames)
 
-- `GAS_Files/index.html` (~3.2k lines) is **one** combined template that serves
-  both the portal SPA and the public site. The `<? if (page === 'login') { ?>`
+- `GAS_Files/index.html` (~3.2k lines) is **one** combined template serving both
+  the portal SPA and the public site. The `<? if (page === 'login') { ?>`
   scriptlet branches it; `doGet` injects `brandJson`, `initialPageJson`,
-  `initialViewJson`, `embedJson`. There are no `include()` files — every HTML
-  file in the Apps Script project other than `index` must be deleted.
+  `initialViewJson`, `embedJson`. No `include()` files — every other HTML file
+  in the Apps Script project must be deleted.
 - `GAS_Files/Code.gs` (~3.9k lines) holds **all** server logic. One tab per
   table; column order in `HEADERS` (Code.gs:70) is authoritative.
 - `tools/pg-template.js` reproduces Apps Script's `template_()` semantics so
-  the local preview and the static build render identically to production.
+  the local preview and static build render identically to production.
 - `tools/build-pg.js` pre-renders the public views from that same template into
   `dist/`, rewrites `?page=X` links to in-site paths, and injects a JSONP
   bridge (`google.script.run` -> `?public=announcements` / `?public=enquiry`)
   against the live `/exec`.
 - `tools/serve-pg.js` mocks `google.script.run` in memory (SeedData accounts,
-  password `PhysicsPG2026!`). It is **not** a faithful mock of `Code.gs` — it
-  implements 26 of the ~149 `api_*` endpoints; anything it lacks 404s at runtime.
+  password `PhysicsPG2026!`). It implements 26 of the ~149 `api_*` endpoints;
+  anything it lacks 404s at runtime.
 - Public `/login/` and `/register/` are in-site pages that iframe
-  `…/exec?page=…&embed=1`. In embed mode the portal drops its own chrome.
-  `GAS_EXEC` (build-pg.js:40) is the live deployment URL and must stay in sync
-  with the actual deployment.
+  `…/exec?page=…&embed=1`. `GAS_EXEC` (build-pg.js:40) is the live deployment
+  URL and must stay in sync with the actual deployment.
 - `dist/` is gitignored — never commit it; Cloudflare builds it from source.
 
 ## Adding a public page (5 files, easy to miss one)
@@ -69,7 +65,7 @@ npm run build    # static site -> dist/  (this IS the Cloudflare build command)
 5. Legacy page names (`about`, `programmes`) are still accepted and fall back
    to Home; `dist/_redirects` 301s them.
 
-## Code.gs conventions
+## Code.gs conventions (critical gotchas)
 
 - Auth: `requireUser_(token)` takes **only** a token; the role check is a
   separate `assertRole_(user, ['Role'], message)`. (`audit.md` and
@@ -122,17 +118,16 @@ npm run build    # static site -> dist/  (this IS the Cloudflare build command)
   `window.top.location`. A relative path assigned to `window.top.location`
   resolves against the *frame's* origin, not the top's — never assign a bare
   `/…` there.
-  **Do not use `document.referrer` for that origin.** Apps Script serves the
-  portal inside its own sandbox chain
-  (`script.google.com` → `…-script.googleusercontent.com/userCodeAppPanel`),
-  so the portal's referrer is Google's panel, not the site that embedded it —
-  resolving against it sent the top window to a `googleusercontent.com` URL
-  that 404s. `embedBaseOrigin_()` (index.html:1177) reads
-  `location.ancestorOrigins` instead: own origin first, **top-most ancestor
-  last**, so the last entry is the real public site. `document.referrer` is
-  only the fallback.
-- `showView()` exists only in the public branch. On the login page `?page=`
-  links do a full navigation by design.
+- **Do not use `document.referrer` for that origin.** Apps Script serves the
+  portal inside its own sandbox chain (`script.google.com` →
+  `…-script.googleusercontent.com/userCodeAppPanel`), so the portal's referrer
+  is Google's panel, not the site that embedded it — resolving against it sent
+  the top window to a `googleusercontent.com` URL that 404s. `embedBaseOrigin_()`
+  (index.html:1177) reads `location.ancestorOrigins` instead: own origin first,
+  **top-most ancestor last**, so the last entry is the real public site.
+  `document.referrer` is only the fallback.
+- `showView()` exists only in the public branch. On the login page `?page=` links
+  do a full navigation by design.
 - Every native form `submit` is `preventDefault()`-ed (index.html:1225). A
   listener that fails to attach lets the form submit natively and land on
   Google's internal `userCodeAppPanel` URL.
@@ -178,9 +173,8 @@ npm run build    # static site -> dist/  (this IS the Cloudflare build command)
 
 - `README.md` — conventions, setup, roles, journey stages, theming.
 - `DEPLOYMENT.md` — step-by-step deploy for both targets.
-- `AGENT-GUIDE.md` — practical runbook (mostly accurate; its
-  `npm run deploy:preview`, "section 12a migration" and `requireUser_` role
-  signature references are stale).
+- `AGENT-GUIDE.md` — practical runbook (its `npm run deploy:preview`,
+  "section 12a migration" and `requireUser_` role signature references are stale).
 - `audit.md` — forensic audit (architecture, data model, security). Its ID
   prefix list (`U`/`S`/`F`) and `GAS_Files/Admission.html` are stale.
 - `SeedData.md` — demo rows + the hash generator to run in Apps Script.

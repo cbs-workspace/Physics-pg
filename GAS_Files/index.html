@@ -1170,12 +1170,8 @@
         if (started) return; started = true;
         var muted = null;
         try { muted = localStorage.getItem(MUTE_KEY); } catch (err) {}
-		// Allow music to play on page load if not previously muted and controls are visible
         if (muted === '1') { audio.muted = true; reflect(); return; }
-        if (controls && controls.classList.contains('show')) {
-		  play();
-		  try { localStorage.setItem(MUTE_KEY, '0'); } catch (err) {}
-		}
+        if (controls && controls.classList.contains('show')) play();
       }
       audio.addEventListener('ended', advance);
       audio.addEventListener('playing', function () { consecutiveErrors = 0; });
@@ -1866,7 +1862,7 @@
         '<form id="sub-form">' +
           '<div class="field"><label>Type</label><select name="type" required>' + optionsHtml(SUBMISSION_TYPES, null, '') + '</select>' +
           '<p class="small muted" style="margin:6px 0 0">Current stage: <strong>' + esc(state.dashboard.student.currentStage || 'not set') + '</strong>. Internal Examiner and Other Observations must be submitted before stage 11 (External Defence/final presentation). Final Correction and both Comment-by-Comment Responses are accepted from stage 12 (Examiners Comments) onward, after the presentation. The server checks this rule; request a stage update and wait for PG Coordinator approval if your stage is wrong.</p></div>' +
-          '<div class="field"><label>Upload file (PDF/DOC/DOCX, max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx" style="margin-bottom:8px"></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
+          '<div class="field"><label>Upload file (PDF/DOC/DOCX, max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
           '<button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button> <button class="btn btn-outline" type="submit" data-draft="1"' + (state.busy ? ' disabled' : '') + '>Save as draft</button>' +
           '<p class="small muted" style="margin:8px 0 0">A draft is private to you. It is not sent to reviewers until you press Submit for review in My Submissions.</p>' +
         '</form></div>';
@@ -1881,7 +1877,7 @@
       if (!state.submissions.length) return out + '<div class="empty">No submissions yet.</div>';
       out += '<div class="table-wrap"><table><thead><tr><th>Type</th><th>Status</th><th>Date</th><th>Inspector Comments</th><th>Supervisor Notes</th><th></th></tr></thead><tbody>';
       state.submissions.forEach(function (s) {
-        out += '<tr><td>' + esc(s.type) + (s.status === 'Draft' && fileLinks(s.driveFileUrls) ? '<br><span class="small">' + fileLinks(s.driveFileUrls) + '</span>' : '') + '</td><td>' + statusBadge(s.status) + '</td><td class="small">' + esc(s.createdAt) + '</td><td class="small pre">' + esc(s.inspectorComments || '—') + '</td><td class="small">' + esc(s.supervisorNotes || '—') + '</td><td>' + (s.status === 'Rejected' || s.status === 'Changes Requested' ? '<button class="btn btn-outline btn-sm" data-action="resubmit" data-id="' + esc(s.id) + '">Resubmit</button>' : s.status === 'Draft' ? '<button class="btn btn-primary btn-sm" data-action="draft-submit" data-id="' + esc(s.id) + '">Submit for review</button> <button class="btn btn-danger btn-sm" data-action="draft-delete" data-id="' + esc(s.id) + '">Delete</button>' : '') + '</td></tr>';
+        out += '<tr><td>' + esc(s.type) + (s.status === 'Draft' && fileLinks(s.driveFileUrls) ? '<br><span class="small">' + fileLinks(s.driveFileUrls) + '</span>' : '') + '</td><td>' + statusBadge(s.status) + '</td><td class="small">' + esc(s.createdAt) + '</td><td class="small pre">' + esc(s.inspectorComments || '—') + '</td><td class="small">' + esc(s.supervisorNotes || '—') + '</td><td>' + (s.status === 'Rejected' || s.status === 'Changes Requested' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<label class="btn btn-outline btn-sm" style="cursor:pointer">Resubmit file<input type="file" accept=".pdf,.doc,.docx" data-resubmit="' + esc(s.id) + '" style="display:none"></label> <button class="btn btn-outline btn-sm" data-action="resubmit" data-id="' + esc(s.id) + '">Use a link</button>' : s.status === 'Draft' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<button class="btn btn-primary btn-sm" data-action="draft-submit" data-id="' + esc(s.id) + '">Submit for review</button> <button class="btn btn-danger btn-sm" data-action="draft-delete" data-id="' + esc(s.id) + '">Delete</button>' : '') + '</td></tr>';
       });
       out += '</tbody></table></div>';
       return out;
@@ -1941,16 +1937,224 @@
       var r = state.user && state.user.role, label = (r === 'Staff' || r === 'PG_Coordinator') ? 'Read / Edit' : 'Read files';
       return '<button class="btn btn-primary btn-sm" data-action="read-files" data-id="' + esc(sub.id) + '">' + label + '</button>';
     }
+    var SF_CATS = ['Margins', 'Typography', 'Line spacing', 'Page numbering', 'Preliminary pages', 'Abstract', 'Headings & numbering', 'Mathematics & units', 'Citations & references', 'Appendices', 'Other'];
+    var SF_COVERS = { full: 'margins, font and size, line spacing, page numbering, preliminary pages, abstract, headings, units, appendices and APA 6th references', light: 'margins, font and size, line spacing, page numbering, headings, units, appendices and APA 6th references' };
+    var SF_MANUAL = ['Title is specific, informative and brief, with no abbreviations', 'Every figure has a footnote / source note', 'Equations: variables in italic, vectors and matrices in bold, fraction bars full length, brackets in the order {[( )]}', 'Appendix equations are numbered separately (A1, A2, \u2026)', 'Abstract fits on one page', 'Declaration is signed; long tables, quotations, notes and footnotes are single-spaced', 'All narratives, tables and graphs are typeset (nothing handwritten)'];
+    function sevBadge(s) { return s === 'high' ? '<span class="badge bad">Must fix</span> ' : s === 'medium' ? '<span class="badge warn">Should fix</span> ' : '<span class="badge info">Note</span> '; }
     function complianceBlock(sub) {
       if (COMPLIANCE_TYPES.indexOf(sub.type) === -1) return '';
-      var c = sub.compliance, btn = '<button class="btn btn-outline btn-sm" data-action="run-check" data-id="' + esc(sub.id) + '">' + (c ? 'Re-run format check' : 'Run format check') + '</button>';
+      var c = sub.compliance, btn = '<button class="btn btn-outline btn-sm" data-action="run-check" data-id="' + esc(sub.id) + '">' + (c ? 'Re-run format check' : 'Run format check') + '</button>' + (c && c.pdf && c.pdf.length ? ' <button class="btn btn-primary btn-sm" data-action="pdf-check" data-id="' + esc(sub.id) + '" data-file="' + esc(c.pdf[0].id) + '">' + (c.source === 'pdf' ? 'Re-analyse PDF' : 'Analyse PDF in browser') + '</button>' : '');
       if (!c) return '<div class="small" style="margin:8px 0"><strong>Format check</strong> <span class="muted">not run yet</span> ' + btn + '</div>';
-      var cls = c.status === 'Pass' ? 'ok' : c.status === 'Flagged' ? 'bad' : 'warn';
-      var rows = (c.issues || []).map(function (i) { return '<li>' + (i.severity === 'high' ? '<strong>' + esc(i.message) + '</strong>' : esc(i.message)) + '</li>'; }).join('');
-      return '<div class="small" style="margin:8px 0"><strong>Format check</strong> <span class="badge ' + cls + '">' + esc(c.status) + '</span> <span class="muted">' + esc(c.checkedAt || '') + (c.style && c.style !== 'none' ? ' &middot; ' + esc(c.style) + ' citations' : '') + '</span> ' + btn +
-        (rows ? '<ul style="margin:6px 0 0 18px;padding:0">' + rows + '</ul>' : (c.status === 'Pass' ? '<div class="muted" style="margin-top:4px">Margins (4.0 cm left; 2.5 cm top, right, bottom) and citation/reference matching look consistent.</div>' : '')) +
-        '<div class="muted" style="margin-top:4px">Automatic checks are a guide &mdash; confirm in the reader.</div></div>';
+      var cls = c.status === 'Pass' ? 'ok' : c.status === 'Flagged' ? 'bad' : 'warn', issues = c.issues || [];
+      var hi = issues.filter(function (i) { return i.severity === 'high'; }).length, med = issues.filter(function (i) { return i.severity === 'medium'; }).length, st = c.stats || {};
+      var tier = c.tier === 'full' ? 'Full template check' : c.tier === 'light' ? 'Core format check' : '';
+      var out = '<div class="small" style="margin:8px 0"><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"><strong>Format check</strong> <span class="badge ' + cls + '">' + esc(c.status) + '</span>' +
+        (hi ? ' <span class="badge bad">' + hi + ' must fix</span>' : '') + (med ? ' <span class="badge warn">' + med + ' should fix</span>' : '') +
+        ' <span class="muted">' + esc(c.checkedAt || '') + (tier ? ' &middot; ' + tier : '') + (c.level ? ' &middot; ' + esc(c.level) : '') + (c.style && c.style !== 'none' ? ' &middot; ' + esc(c.style) + ' citations' : '') + '</span> ' + btn +
+        (hi + med ? ' <button class="btn btn-outline btn-sm" data-action="issues-to-comments" data-id="' + esc(sub.id) + '">Add issues to comments</button>' : '') + '</div>';
+      if (!c.version || c.version < 2) out += '<div style="margin-top:4px"><span class="badge warn">Older check</span> <span class="muted">Re-run it to apply the full SFRRP template rules (fonts, spacing, page numbers, abstract, preliminary pages).</span></div>';
+      var bits = [];
+      if (st.abstractWords !== undefined) bits.push('Abstract: ' + st.abstractWords + ' words' + (st.abstractLimit ? ' (limit ' + st.abstractLimit + ')' : ''));
+      if (st.figures !== undefined) bits.push(st.figures + ' figure' + (st.figures === 1 ? '' : 's')); if (st.tables !== undefined) bits.push(st.tables + ' table' + (st.tables === 1 ? '' : 's'));
+      if (st.references) bits.push(st.references + ' references');
+      if (bits.length) out += '<div class="muted" style="margin-top:4px">' + esc(bits.join(' \u00B7 ')) + '</div>';
+      var cats = SF_CATS.slice(); issues.forEach(function (i) { var k = i.category || 'Other'; if (cats.indexOf(k) === -1) cats.push(k); });
+      cats.forEach(function (cat) {
+        var list = issues.filter(function (i) { return (i.category || 'Other') === cat; }); if (!list.length) return;
+        var worst = list.some(function (i) { return i.severity === 'high'; }) ? 'bad' : list.some(function (i) { return i.severity === 'medium'; }) ? 'warn' : 'info', act = worst !== 'info';
+        out += '<details' + (act ? ' open' : '') + ' style="margin-top:8px"><summary style="cursor:pointer"><strong>' + esc(cat) + '</strong> <span class="badge ' + worst + '">' + list.length + '</span></summary><ul style="margin:6px 0 0 18px;padding:0">' +
+          list.map(function (i) { return '<li style="margin-bottom:4px">' + sevBadge(i.severity) + esc(i.message) + '</li>'; }).join('') + '</ul></details>';
+      });
+      if (c.status === 'Pass') out += '<div class="muted" style="margin-top:6px">&#10003; No automatic problems found (' + (SF_COVERS[c.tier] || SF_COVERS.light) + ').</div>';
+      out += '<details style="margin-top:8px"><summary class="muted" style="cursor:pointer">Still confirm manually in the reader</summary><ul class="muted" style="margin:6px 0 0 18px;padding:0">' + SF_MANUAL.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul></details>';
+      return out + '<div class="muted" style="margin-top:6px">Automatic checks are a guide &mdash; confirm in the reader. Rules follow the SFRRP template guide.</div></div>';
     }
+    /* ---- PDF analysis in the browser (pdf.js): measures margins, fonts, spacing and page numbers, rebuilds paragraphs for the text rules ---- */
+    var PDFJS_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+    function pdfMedian(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+    function pdfPageList(nums) { var o = nums.slice(0, 8).join(', '); return nums.length > 8 ? o + ' \u2026 +' + (nums.length - 8) + ' more' : o; }
+    function pdfLinesOf(pg) {
+      var its = pg.items.filter(function (i) { return i.str && i.str.trim(); }).sort(function (a, b) { return b.y - a.y || a.x - b.x; }), lines = [];
+      its.forEach(function (i) {
+        var L = null; for (var k = lines.length - 1; k >= 0 && k >= lines.length - 4; k--) if (Math.abs(lines[k].y - i.y) <= 2.5) { L = lines[k]; break; }
+        if (!L) { L = { y: i.y, items: [] }; lines.push(L); } L.items.push(i);
+      });
+      lines.forEach(function (L) {
+        L.items.sort(function (a, b) { return a.x - b.x; }); L.text = ''; L.fonts = {}; L.sizes = {}; L.chars = 0; L.x = L.items[0].x; L.endX = 0; var prevEnd = null;
+        L.items.forEach(function (i) {
+          if (prevEnd !== null && i.x - prevEnd > i.size * 0.15 && !/\s$/.test(L.text) && !/^\s/.test(i.str)) L.text += ' ';
+          L.text += i.str; prevEnd = i.x + i.w; L.endX = Math.max(L.endX, prevEnd);
+          var n = i.str.replace(/\s/g, '').length; L.chars += n; L.fonts[i.font] = (L.fonts[i.font] || 0) + n; L.sizes[i.size] = (L.sizes[i.size] || 0) + n;
+        });
+        L.text = L.text.replace(/\s+/g, ' ').trim();
+        var best = 0; Object.keys(L.sizes).forEach(function (z) { if (L.sizes[z] > best) { best = L.sizes[z]; L.size = parseFloat(z); } });
+      });
+      lines.sort(function (a, b) { return b.y - a.y; });
+      return lines;
+    }
+    function pdfAnalysePages(pages) {
+      var CM = 28.3465, issues = [], stats = { pages: pages.length }, LOOSE = /^[\s\-\u2013\u2014.(\[]*(?:page\s*)?([ivxlcIVXLC]+|\d{1,4})[\s\-\u2013\u2014.)\]]*$/i, PLAIN = /^(?:[ivxlc]+|[IVXLC]+|\d{1,4})$/;
+      var add = function (sev, cat, msg) { issues.push({ severity: sev, category: cat, message: msg }); };
+      var pl = pages.map(function (pg) {
+        var lines = pdfLinesOf(pg), label = null, i;
+        for (i = lines.length - 1; i >= 0; i--) { if (lines[i].y >= 2.4 * CM) break; if (lines[i].text.length <= 14 && LOOSE.test(lines[i].text)) { label = lines[i]; lines.splice(i, 1); break; } }
+        return { w: pg.w, h: pg.h, lines: lines, label: label };
+      });
+      var med = function (arr) { return pdfMedian(arr); };
+      // ---- margins ----
+      var L = [], R = [], T = [], B = [], rawL = [], rawR = [];
+      pl.forEach(function (pg, k) {
+        if (k === 0 || pg.lines.length < 8) return;
+        rawL.push(Math.min.apply(null, pg.lines.map(function (l) { return l.x; }))); rawR.push(Math.max.apply(null, pg.lines.map(function (l) { return l.endX; }))); L.push(rawL[rawL.length - 1] / CM); R.push((pg.w - Math.max.apply(null, pg.lines.map(function (l) { return l.endX; }))) / CM);
+        T.push((pg.h - (pg.lines[0].y + pg.lines[0].size * 0.75)) / CM); B.push(Math.min.apply(null, pg.lines.map(function (l) { return l.y; })) / CM);
+      });
+      var ml = med(L), mr = med(R), mt = med(T), mb = med(B), bad = [];
+      if (ml !== null && Math.abs(ml - 4.0) > 0.25) bad.push('left ' + ml.toFixed(2) + ' cm (needs 4.0)');
+      if (mr !== null && mr < 2.2) bad.push('right ' + mr.toFixed(2) + ' cm (needs at least 2.5)');
+      if (mt !== null && (mt < 2.1 || mt > 3.2)) bad.push('top ' + mt.toFixed(2) + ' cm (needs 2.5)');
+      if (mb !== null && mb < 2.0) bad.push('bottom ' + mb.toFixed(2) + ' cm (needs 2.5)');
+      if (bad.length) add('high', 'Margins', 'Incorrect margins (measured from the text on typical pages): ' + bad.join('; ') + '.');
+      // ---- fonts and sizes (title page excluded) ----
+      var tf = {}, tot = 0, bs = {}, st = 0, unreadable = 0;
+      pl.forEach(function (pg, k) { if (k === 0) return; pg.lines.forEach(function (l) {
+        Object.keys(l.fonts).forEach(function (f) { tot += l.fonts[f]; if (!/times/i.test(f.replace(/[\s_-]/g, ''))) { if (/^g_d\d|^f\d+$/i.test(f)) unreadable += l.fonts[f]; else tf[f] = (tf[f] || 0) + l.fonts[f]; } });
+        Object.keys(l.sizes).forEach(function (z) { st += l.sizes[z]; if (Math.abs(parseFloat(z) - 12) > 0.6) bs[z] = (bs[z] || 0) + l.sizes[z]; });
+      }); });
+      var tfb = 0, bsb = 0, topf = function (m, n, f) { return Object.keys(m).sort(function (a, b) { return m[b] - m[a]; }).slice(0, 3).map(function (k) { return f(k) + ' ' + Math.round(100 * m[k] / n) + '%'; }).join(', '); };
+      Object.keys(tf).forEach(function (k) { tfb += tf[k]; }); Object.keys(bs).forEach(function (k) { bsb += bs[k]; });
+      if (tot && unreadable / tot > 0.5) add('info', 'Typography', 'Font names could not be read from this PDF, so the font rule was not checked.');
+      else if (tot && tfb / tot > 0.03) add('high', 'Typography', 'Font: ' + Math.round(100 * tfb / tot) + '% of the text is not Times New Roman (' + topf(tf, tot, function (k) { return k; }) + '). The template requires Times New Roman throughout.');
+      if (st && bsb / st > 0.03) add('high', 'Typography', 'Font size: ' + Math.round(100 * bsb / st) + '% of the text is not 12 pt (' + topf(bs, st, function (k) { return k + ' pt'; }) + '). The template requires size 12 (the title page is not counted).');
+      // ---- page numbers ----
+      var firstAr = -1, labels = [];
+      pl.forEach(function (pg, k) { var lb = pg.label, m = lb && LOOSE.exec(lb.text); labels.push(m ? { text: m[1], plain: PLAIN.test(lb.text), centred: Math.abs((lb.x + lb.endX) / 2 - pg.w / 2) <= 1.5 * CM, dist: lb.y / CM } : null); });
+      var refPage = -1, appPage = 1e9;
+      pl.forEach(function (pg, k) { pg.lines.forEach(function (l) { if (/^(?:references|reference list|bibliography)$/i.test(l.text)) refPage = k; if (k > 2 && l.text.length < 60 && /^appendix\s+[A-Z]\b/.test(l.text) && appPage === 1e9 && (refPage < 0 || k >= refPage)) appPage = k; }); });
+      var missing = [], extra = [], off = [], dist = [];
+      labels.forEach(function (lb, k) {
+        if (k === 0) return; if (!lb) { if (k < appPage) missing.push(k + 1); return; }
+        if (!lb.plain) extra.push(k + 1); if (!lb.centred) off.push(k + 1); if (lb.dist < 0.5 || lb.dist > 1.9) dist.push(k + 1);
+      });
+      if (labels.slice(1).every(function (x) { return !x; })) add('high', 'Page numbering', 'No page numbers were found. Every page must be numbered, centred, 1 cm from the bottom.');
+      else {
+        if (missing.length) add('high', 'Page numbering', 'No page number on ' + (missing.length > 1 ? 'pages ' : 'page ') + pdfPageList(missing) + '. All pages, including those with diagrams and tables, must be numbered.');
+        if (off.length) add('high', 'Page numbering', 'Page number is not at the bottom centre on ' + pdfPageList(off) + '.');
+        if (extra.length) add('medium', 'Page numbering', 'Page number has extra text or punctuation on ' + pdfPageList(extra) + '. Page numbers must be plain, without punctuation.');
+        if (dist.length) add('medium', 'Page numbering', 'Page number is not about 1 cm from the bottom edge on ' + pdfPageList(dist) + '.');
+        if (labels[0]) add('high', 'Page numbering', 'The title page shows a page number. It counts as page (i) but the number must not be typed.');
+        var rom = [], ara = [], up = false;
+        labels.forEach(function (lb, k) { if (!lb || k === 0) return; if (/^\d+$/.test(lb.text)) ara.push({ k: k, n: parseInt(lb.text, 10) }); else if (/^[ivxlc]+$/.test(lb.text)) rom.push(k); else up = true; });
+        if (up) add('high', 'Page numbering', 'Capital Roman numerals are used. Preliminary pages must use lower-case Roman numerals (i, ii, iii).');
+        if (!rom.length && !up) add('high', 'Page numbering', 'Preliminary pages are not numbered in lower-case Roman numerals (i, ii, iii).');
+        if (!ara.length) add('high', 'Page numbering', 'The main text is not numbered in Arabic numerals.');
+        else {
+          if (ara[0].n !== 1) add('high', 'Page numbering', 'Arabic page numbering does not start at 1 (first Arabic number is ' + ara[0].n + ').');
+          for (var q = 1; q < ara.length; q++) if (ara[q].k === ara[q - 1].k + 1 && ara[q].n !== ara[q - 1].n + 1) { add('medium', 'Page numbering', 'Page numbers jump from ' + ara[q - 1].n + ' to ' + ara[q].n + ' (PDF page ' + (ara[q].k + 1) + ').'); break; }
+          if (rom.length && rom[rom.length - 1] > ara[0].k) add('medium', 'Page numbering', 'Roman and Arabic numbering are mixed; all Roman-numbered pages must come before the Arabic-numbered text.');
+        }
+      }
+      // ---- line spacing ----
+      var from = 1, to = pl.length; labels.forEach(function (lb, k) { if (from === 1 && lb && /^1$/.test(lb.text)) from = k; }); if (refPage > from) to = refPage;
+      var d = { dbl: 0, onehalf: 0, single: 0 }, rd = 0, rt = 0;
+      pl.forEach(function (pg, k) { for (var i = 1; i < pg.lines.length; i++) {
+        var a = pg.lines[i - 1], b = pg.lines[i], gap = a.y - b.y; if (gap < 9 || gap > 31 || Math.abs(a.size - 12) > 0.6 || Math.abs(b.size - 12) > 0.6) continue;
+        if (k >= from && k < to) { if (gap >= 24.5) d.dbl++; else if (gap >= 19) d.onehalf++; else d.single++; }
+        if (refPage >= 0 && k > refPage && k < appPage) { rt++; if (gap >= 24.5) rd++; }
+      } });
+      var dt = d.dbl + d.onehalf + d.single;
+      if (dt >= 40 && d.dbl / dt < 0.6) add('high', 'Line spacing', 'Text does not look double-spaced: about ' + Math.round(100 * d.dbl / dt) + '% of line gaps are double (single ' + Math.round(100 * d.single / dt) + '%, 1.5 spacing ' + Math.round(100 * d.onehalf / dt) + '%).');
+      if (rt >= 30 && rd / rt >= 0.5) add('medium', 'Line spacing', 'The reference list looks double-spaced; the template requires single spacing for bibliography entries.');
+      // ---- paragraphs for the text rules ----
+      var gaps = []; pl.forEach(function (pg) { for (var i = 1; i < pg.lines.length; i++) { var g = pg.lines[i - 1].y - pg.lines[i].y; if (g > 8 && g < 45) gaps.push(g); } });
+      var typ = med(gaps) || 14, paras = [], buf = '', prev = null, inRefs = false, HEAD = /^(?:chapter\s+\S+|\d+(?:\.\d+)*\.?\s+\S.*|appendi\w+.*|abstract|declaration|dedication|certification|acknowledg\w+|references|bibliography|table of contents|contents|list of (?:figures|tables)|definitions? of terms?)$/i;
+      pl.forEach(function (pg) {
+        var left = rawL.length ? med(rawL) : (pg.lines.length ? Math.min.apply(null, pg.lines.map(function (l) { return l.x; })) : 0), width = rawR.length ? med(rawR) - left : (pg.lines.length ? Math.max.apply(null, pg.lines.map(function (l) { return l.endX; })) - left : 0);
+        pg.lines.forEach(function (ln, i) {
+          var head = ln.text.length <= 90 && !/[.;,]$/.test(ln.text) && HEAD.test(ln.text), indent = ln.x - left > 14, short = prev && (prev.endX - left) < 0.8 * width, brk = !prev || head || prev.head;
+          if (!brk && prev) { var pi = prev.x - left > 14; brk = short || (inRefs ? (!indent && pi) : indent && !pi) || (prev.y - ln.y > 1.6 * typ && prev.pg === pg); }
+          if (brk && buf) { paras.push(buf); buf = ''; }
+          buf += (buf ? ' ' : '') + ln.text; if (/^(?:references|reference list|bibliography)$/i.test(ln.text)) inRefs = true; if (/^appendi/i.test(ln.text)) inRefs = false;
+          ln.head = head; ln.pg = pg; prev = ln;
+        });
+      });
+      if (buf) paras.push(buf);
+      return { issues: issues, paras: paras, stats: stats };
+    }
+    function loadPdfJs() {
+      if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+      return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = PDFJS_BASE + 'pdf.min.js'; s.onload = res; s.onerror = function () { rej(new Error('Could not load the PDF reader. Check the internet connection.')); }; document.head.appendChild(s); })
+        .then(function () { return fetch(PDFJS_BASE + 'pdf.worker.min.js'); }).then(function (r) { return r.blob(); })
+        .then(function (b) { window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(b); return window.pdfjsLib; });
+    }
+    function fetchPdfBytes(subId, fileId, onProg) {
+      var parts = [], off = 0;
+      function next() {
+        return authed('api_pdfChunk', subId, fileId, off).then(function (r) {
+          var bin = atob(r.b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+          parts.push(u); off += u.length; onProg('Downloading the PDF\u2026 ' + Math.min(99, Math.round(100 * off / Math.max(r.total, 1))) + '%');
+          return off < r.total && u.length ? next() : null;
+        });
+      }
+      return next().then(function () { var t = 0; parts.forEach(function (p) { t += p.length; }); var all = new Uint8Array(t), o = 0; parts.forEach(function (p) { all.set(p, o); o += p.length; }); return all; });
+    }
+    function runPdfCheck(subId, fileId) {
+      var say = function (t) { showModal('<p style="margin:0"><span class="spinner"></span> ' + esc(t) + '</p><p class="small muted" style="margin:8px 0 0">Keep this page open. Large PDFs can take a minute or two.</p>'); };
+      say('Preparing the PDF reader\u2026'); var lib, name = 'PDF';
+      loadPdfJs().then(function (l) { lib = l; return fetchPdfBytes(subId, fileId, say); })
+        .then(function (bytes) { return lib.getDocument({ data: bytes }).promise; })
+        .then(function (doc) {
+          var pages = [], n = doc.numPages;
+          function one(p) {
+            if (p > n) return Promise.resolve();
+            say('Reading page ' + p + ' of ' + n + '\u2026');
+            return doc.getPage(p).then(function (page) {
+              var vp = page.getViewport({ scale: 1 });
+              return page.getTextContent().then(function (tc) { return page.getOperatorList().catch(function () {}).then(function () { return tc; }); }).then(function (tc) {
+                pages.push({ w: vp.width, h: vp.height, items: tc.items.filter(function (it) { return it.str !== undefined && it.transform; }).map(function (it) {
+                  var t = it.transform, nm = ''; try { var fo = page.commonObjs.has(it.fontName) ? page.commonObjs.get(it.fontName) : null; nm = fo && fo.name ? fo.name : ''; } catch (e) {}
+                  return { str: it.str, x: t[4], y: t[5], w: it.width, size: Math.round(Math.hypot(t[0], t[1]) * 2) / 2, font: nm.replace(/^[A-Z]{6}\+/, '') || it.fontName }; }) });
+                page.cleanup(); return one(p + 1);
+              });
+            });
+          }
+          return one(1).then(function () { say('Analysing\u2026'); return pdfAnalysePages(pages); });
+        })
+        .then(function (r) { return authed('api_savePdfCheck', subId, JSON.stringify({ paras: r.paras, layout: r.issues, pages: r.stats.pages, name: name }), fileId); })
+        .then(function (res) { closeModal(); if (state.user.role === 'Student') showStudentCheck(res, subId); else loadView('inspector'); })
+        .catch(function (e) { closeModal(); setError(e); });
+    }
+    function approveBlocked(sub) { return sub.blockOnFormat !== false && COMPLIANCE_TYPES.indexOf(sub.type) !== -1 && !!(sub.compliance && sub.compliance.issues && sub.compliance.issues.some(function (i) { return i.severity === 'high'; })); }
+    function showStudentCheck(r, subId) {
+      var cls = r.status === 'Pass' ? 'ok' : r.status === 'Flagged' ? 'bad' : 'warn', items = r.items || [];
+      var must = items.filter(function (i) { return i.severity === 'high'; }).length, should = items.filter(function (i) { return i.severity === 'medium'; }).length;
+      var html = '<h3 style="margin:0 0 8px">Format self-check</h3><p class="small" style="margin:0 0 8px"><span class="badge ' + cls + '">' + esc(r.status) + '</span> <span class="muted">' + (r.tier === 'full' ? 'Full template check' : 'Core format check') + ' &middot; ' + esc(r.checkedAt || '') + (r.level ? ' &middot; ' + esc(r.level) : '') + '</span></p>';
+      if (r.status === 'Pass') html += '<p>Your file passed the automatic checks. Your inspector will still read it.</p>';
+      else if (must + should) html += '<p class="small">Fix these in your Word file (edit the same file on Drive, or replace the link), then check again. <strong>Must fix</strong> items will stop your submission from being approved.</p>';
+      var st = r.stats || [], bits = []; st = r.stats || {};
+      if (st.abstractWords !== undefined) bits.push('Abstract: ' + st.abstractWords + ' words' + (st.abstractLimit ? ' (limit ' + st.abstractLimit + ')' : '')); if (st.figures !== undefined) bits.push(st.figures + ' figures'); if (st.tables !== undefined) bits.push(st.tables + ' tables'); if (st.references) bits.push(st.references + ' references');
+      if (bits.length) html += '<p class="small muted" style="margin:0 0 8px">' + esc(bits.join(' \u00B7 ')) + '</p>';
+      html += '<div style="max-height:52vh;overflow:auto">';
+      var cats = SF_CATS.slice(); items.forEach(function (i) { if (cats.indexOf(i.category) === -1) cats.push(i.category); });
+      cats.forEach(function (cat) { var list = items.filter(function (i) { return i.category === cat; }); if (!list.length) return; html += '<p style="margin:10px 0 2px"><strong>' + esc(cat) + '</strong></p><ul style="margin:0 0 0 18px;padding:0">' + list.map(function (i) { return '<li style="margin-bottom:4px">' + sevBadge(i.severity) + esc(i.message) + '</li>'; }).join('') + '</ul>'; });
+      html += '</div><div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' + (r.pdf && r.pdf.length ? '<button class="btn btn-primary btn-sm" data-action="pdf-check" data-id="' + esc(subId) + '" data-file="' + esc(r.pdf[0].id) + '">' + (r.source === 'pdf' ? 'Re-analyse PDF' : 'Analyse PDF in browser') + '</button>' : '') + '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(subId) + '">Check again</button><button class="btn btn-outline btn-sm" data-action="close-modal">Close</button></div>';
+      showModal(html);
+    }
+    document.addEventListener('change', function (e) {   // student resubmits a corrected file: uploads to Drive straight away, then resubmits
+      var rsId = e.target && e.target.getAttribute && e.target.getAttribute('data-resubmit'); if (!rsId) return;
+      var rsF = e.target.files && e.target.files[0], rsSub = (state.submissions || []).filter(function (x) { return String(x.id) === String(rsId); })[0];
+      e.target.value = ''; if (!rsF) return;
+      act(uploadDoc_(rsF, rsSub && rsSub.type).then(function (url) { return authed('api_resubmit', rsId, url); }).then(function () { authed('api_runComplianceCheck', rsId).catch(function () {}); }), 'Resubmitted for review.', function () { loadView('submissions'); });
+    });
+    document.addEventListener('change', function (e) {   // upload starts the moment the file is chosen, so Submit has almost nothing left to do
+      var t = e.target; if (!t || t.name !== 'docFile' || !t.form || t.form.id !== 'sub-form') return;
+      var f = t.files && t.files[0], ty = t.form.querySelector('[name=type]'), say = function (m) { var el = document.getElementById('pre-up-status'); if (el) el.textContent = m; };
+      state.preUpload = null; say(''); if (!f) return;
+      var pu = { file: f, failed: false };
+      say('Uploading\u2026 0%');
+      pu.promise = uploadDoc_(f, ty && ty.value, function (p) { say('Uploading\u2026 ' + p + '%'); }).then(function (url) { say('\u2713 Uploaded to the repository \u2014 ready to submit.'); return url; }, function (err) { pu.failed = true; say('Upload failed (' + ((err && err.message) || err) + '). It will be retried when you submit.'); throw err; });
+      pu.promise.catch(function () {});
+      state.preUpload = pu;
+    });
     function widenModal() { var c = document.querySelector('#modal .modal-card'); if (c) { c.style.maxWidth = '1100px'; c.style.width = '96vw'; } }
     function openViewer(subId) {
       showModal('<p class="muted" style="margin:0">Opening files&hellip;</p>');
@@ -2600,19 +2804,19 @@
     var DOC_MIME = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
     var DOC_MAX = 50 * 1024 * 1024, DOC_SMALL = 8 * 1024 * 1024;
     /** PDF / Word up to 50 MB. Up to 8 MB goes in one call; bigger files are sent in 3 MB pieces. Resolves to the Drive URL. */
-    function uploadDoc_(f) {
+    function uploadDoc_(f, type, onProg) {
       var ext = String(f.name || '').split('.').pop().toLowerCase();
       if (!DOC_MIME[ext]) return Promise.reject(new Error('Upload a PDF, DOC or DOCX file.'));
       if (f.size > DOC_MAX) return Promise.reject(new Error('That file is larger than 50 MB.'));
       var typed = f.slice(0, f.size, DOC_MIME[ext]);
-      if (f.size <= DOC_SMALL) return readDataUrl(typed).then(function (u) { return authed('api_uploadSubmissionFile', { name: f.name, dataUrl: u }); }).then(function (r) { return r.url; });
-      return authed('api_beginLargeUpload', { name: f.name, size: f.size }).then(function (b) {
+      if (f.size <= DOC_SMALL) return readDataUrl(typed).then(function (u) { return authed('api_uploadSubmissionFile', { name: f.name, dataUrl: u, type: type }); }).then(function (r) { return r.url; });
+      return authed('api_beginLargeUpload', { name: f.name, size: f.size, type: type }).then(function (b) {
         var chunk = b.chunkBytes || 3145728, pos = 0;
         function next() {
           var end = Math.min(pos + chunk, typed.size);
           return readDataUrl(typed.slice(pos, end)).then(function (u) { return authed('api_uploadLargeChunk', b.uploadId, pos, u.slice(u.indexOf(',') + 1)); }).then(function (r) {
             if (r.done) return r.url;
-            pos = r.next; state.notice = 'Uploading\u2026 ' + Math.round(pos * 100 / typed.size) + '%'; render();
+            pos = r.next; if (onProg) onProg(Math.round(pos * 100 / typed.size)); else { state.notice = 'Uploading\u2026 ' + Math.round(pos * 100 / typed.size) + '%'; render(); }
             return next();
           });
         }
@@ -2987,8 +3191,8 @@
           (sub.endorsedBy ? '<p class="small" style="margin:0 0 8px">&#10003; Endorsed by ' + esc(sub.endorsedBy) + '</p>' : '<p class="small muted" style="margin:0 0 8px">Not yet endorsed by supervisor</p>') +
           (sub.reviewedBy ? '<p class="small muted" style="margin:0 0 8px">Last action by ' + esc(sub.reviewedBy) + ' on ' + esc(sub.reviewedAt) + '</p>' : '') +
           extraInfo(sub) + complianceBlock(sub) + simBlock(sub) + chk(sub) + tplPicker('comment', 'cmt-' + sub.id) + '<div class="field" style="margin:12px 0 8px"><label>Comments</label><textarea id="cmt-' + esc(sub.id) + '" rows="2" placeholder="One issue per line (numbered automatically). Required for Reject / Request Changes">' + esc(sub.inspectorComments || '') + '</textarea></div>' +
-          '<div class="row">' + [['Approved', 'btn-primary', 'Approve'], ['Rejected', 'btn-danger', 'Reject'], ['Changes Requested', 'btn-outline', 'Request Changes'], ['Under Review', 'btn-outline', 'Under Review']].map(function (b) {
-            return '<button class="btn ' + b[1] + ' btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="' + b[0] + '">' + (done && b[0] === 'Approved' ? 'Re-approve' : b[2]) + '</button>'; }).join('') +
+          (approveBlocked(sub) ? '<p class="small" style="margin:4px 0 8px"><span class="badge bad">Approval blocked</span> The format check lists must-fix issues. Request changes so the student can fix and resubmit.</p>' : '') + '<div class="row">' + [['Approved', 'btn-primary', 'Approve'], ['Rejected', 'btn-danger', 'Reject'], ['Changes Requested', 'btn-outline', 'Request Changes'], ['Under Review', 'btn-outline', 'Under Review']].map(function (b) {
+            return '<button class="btn ' + b[1] + ' btn-sm" data-action="sub-status" data-id="' + esc(sub.id) + '" data-status="' + b[0] + '"' + (b[0] === 'Approved' && approveBlocked(sub) ? ' disabled title="Blocked: the format check lists must-fix issues"' : '') + '>' + (done && b[0] === 'Approved' ? 'Re-approve' : b[2]) + '</button>'; }).join('') +
             (state.user.role === 'Submission_Inspector' && sub.assignedTo && String(sub.assignedTo) === String(state.user.regNumber) && !done ? ' <button class="btn btn-outline btn-sm" data-action="decline-assign" data-id="' + esc(sub.id) + '">Decline assignment</button>' : '') + '</div></div>';
       };
       out += inspStats();
@@ -3100,6 +3304,7 @@
           var cmt = document.getElementById('cmt-' + id);
           var comments = cmt ? cmt.value : '';
           if ((status === 'Rejected' || status === 'Changes Requested') && !comments.trim()) { alert('Comments are required for Reject / Request Changes.'); break; }
+          if (status === 'Approved') { var fcSub = (state.inspector || []).filter(function (s) { return String(s.id) === String(id); })[0]; if (fcSub && approveBlocked(fcSub)) { alert('Approval is blocked: the format check lists must-fix issues. Request changes instead.'); break; } }
           if (confirm('Change status to ' + status + '?')) act(authed('api_updateSubmissionStatus', id, status, comments, JSON.stringify([].map.call(document.querySelectorAll('[data-chk="' + id + '"]:checked'), function (c) { return c.value; }))), 'Status updated.', function () { loadView('inspector'); });
           break;
         case 'forgot': state.view = 'forgot'; clearMsgs(); render(); break;
@@ -3274,6 +3479,21 @@
           break;
         case 'read-files': openViewer(id); break;
         case 'viewer-pick': if (state.viewer) showViewer(state.viewer, parseInt(id, 10)); break;
+        case 'stu-check':
+          showModal('<p style="margin:0"><span class="spinner"></span> Checking your file&hellip; this can take up to a minute.</p>');
+          authed('api_studentFormatCheck', id).then(function (r) { showStudentCheck(r, id); }).catch(function (e) { closeModal(); setError(e); });
+          break;
+        case 'pdf-check': runPdfCheck(id, el.getAttribute('data-file')); break;
+        case 'issues-to-comments': {
+          var icSub = (state.inspector || []).filter(function (s) { return String(s.id) === String(id); })[0];
+          var icC = icSub ? icSub.compliance : (state.viewer && String(state.viewer.id) === String(id) ? state.viewer.compliance : null);
+          var icLines = ((icC && icC.issues) || []).filter(function (i) { return i.severity === 'high' || i.severity === 'medium'; }).map(function (i) { return i.category + ': ' + i.message; });
+          if (!icLines.length) { alert('There are no issues to add.'); break; }
+          var icBox = document.getElementById('cmt-' + id);
+          if (icBox) { icBox.value = (icBox.value.trim() ? icBox.value.trim() + '\n' : '') + icLines.join('\n'); el.textContent = 'Added \u2713'; }
+          else if (navigator.clipboard) navigator.clipboard.writeText(icLines.join('\n')).then(function () { alert('Issues copied. Paste them into the Comments box.'); });
+          break;
+        }
         case 'run-check': act(authed('api_runComplianceCheck', id), 'Format check complete.', function () { closeModal(); loadView('inspector'); }); break;
         case 'stage-approve':
           if (confirm('Approve this stage update? The student\u2019s stage will change immediately.')) act(authed('api_decideRequest', id, 'Approved', ''), 'Stage updated; student notified.', function () { loadView('coordinator'); });
@@ -3403,7 +3623,8 @@
       else if (form.id === 'sub-form') {
         var d = collect(form);
         var df = form.querySelector('[name=docFile]'), f = df && df.files[0];
-        var prep = f ? uploadDoc_(f).then(function (url) { d.driveFileUrls = url; }) : Promise.resolve();
+        var pu = f && state.preUpload && state.preUpload.file === f && !state.preUpload.failed ? state.preUpload : null;
+        var prep = f ? (pu ? pu.promise : uploadDoc_(f, d.type)).then(function (url) { d.driveFileUrls = url; }) : Promise.resolve();
         d.asDraft = !!(e.submitter && e.submitter.getAttribute('data-draft') === '1');
         act(prep.then(function () { return authed('api_createSubmission', d); }).then(function (r) { if (r && r.id && !r.draft) authed('api_runComplianceCheck', r.id).catch(function () {}); return r; }), d.asDraft ? 'Draft saved. Find it in My Submissions.' : 'Submission created.', function () { loadView(d.asDraft ? 'submissions' : 'dashboard'); });
       }

@@ -314,6 +314,9 @@ writeFile("login/index.html", portalFramePage({
 }));
 copyAsset("images/Phy_Complex.png");
 copyAsset("images/PG_Journey_Infographic.png");
+copyAsset("audio/music1.mp3");
+copyAsset("audio/music2.mp3");
+copyAsset("audio/music3.mp3");
 
 /** Retired pages → Home (permanent). Cloudflare Pages serves any real file
  *  first, so these only apply while /about/ and /programmes/ do not exist. */
