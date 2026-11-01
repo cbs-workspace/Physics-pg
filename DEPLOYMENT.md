@@ -397,3 +397,5 @@ changes:
   existing one.
 - Never delete and recreate the Cloudflare project — that severs the Git
   connection and changes the `pages.dev` URL.
+
+<!-- Last updated via deployment script: 2026-11-01 -->
