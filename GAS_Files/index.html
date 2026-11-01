@@ -469,6 +469,41 @@
       .modal-overlay { padding: 12px; align-items: flex-end; }
       .modal-card { padding: 18px; border-radius: 16px; }
     }
+    /* programme calendar */
+    .cal-kicker { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .cal-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .cal-grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 6px; min-width: 680px; }
+    .cal-dow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); text-align: center; padding: 4px 0; }
+    .cal-day { min-height: 96px; border: 1px solid var(--border); border-radius: 10px; padding: 5px; background: var(--surface); overflow: hidden; }
+    .cal-day.out { background: transparent; border-color: transparent; }
+    .cal-day.today { border-color: #0d9488; box-shadow: 0 0 0 2px rgba(13,148,136,.18); }
+    .cal-day .d { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px; }
+    .cal-day.today .d { color: #0d9488; }
+    .cal-ev { display: block; width: 100%; text-align: left; border: 0; border-left: 3px solid; border-radius: 5px; padding: 3px 5px; margin: 2px 0; font-size: 11px; line-height: 1.3; cursor: pointer; background: rgba(148,163,184,.13); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cal-ev:hover { filter: brightness(.96); }
+    .cal-ev.practical { border-color: #2563eb; background: rgba(37,99,235,.12); }
+    .cal-ev.workshop { border-color: #16a34a; background: rgba(22,163,74,.12); }
+    .cal-ev.pseminar { border-color: #059669; background: rgba(5,150,105,.12); }
+    .cal-ev.output { border-color: #dc2626; background: rgba(220,38,38,.12); }
+    .cal-ev.deadline { border-color: #d97706; background: rgba(217,119,6,.12); }
+    .cal-ev.seminar { border-color: #0d9488; background: rgba(13,148,136,.12); }
+    .cal-ev.meeting { border-color: #475569; background: rgba(71,85,105,.12); }
+    .cal-ev.cancelled { opacity: .5; text-decoration: line-through; }
+    .cal-tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .02em; padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+    .cal-tag.practical { color: #2563eb; } .cal-tag.workshop { color: #16a34a; } .cal-tag.pseminar { color: #059669; } .cal-tag.output { color: #dc2626; } .cal-tag.deadline { color: #d97706; } .cal-tag.seminar { color: #0d9488; } .cal-tag.meeting { color: #475569; }
+    .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; color: var(--text-muted); font-size: 12px; }
+    .cal-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+    .cal-legend i.practical { background: #2563eb; } .cal-legend i.workshop { background: #16a34a; } .cal-legend i.pseminar { background: #059669; } .cal-legend i.output { background: #dc2626; } .cal-legend i.deadline { background: #d97706; } .cal-legend i.seminar { background: #0d9488; } .cal-legend i.meeting { background: #475569; }
+    .cal-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+    .cal-row:last-child { border-bottom: 0; }
+    .cal-row-when { flex: 0 0 44px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 4px 0; line-height: 1.15; }
+    .cal-row-when strong { display: block; font-size: 17px; }
+    .cal-row-when span { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+    .cal-row-body { flex: 1; min-width: 0; }
+    .cal-row-act { flex: 0 0 auto; }
+    @media (max-width: 640px) { .cal-row-act { display: none; } }
+    [data-theme="dark"] .cal-ev { background: rgba(148,163,184,.2); }
 .pre{white-space:pre-line}</style>
 <script>
   (function () {
@@ -1282,6 +1317,8 @@
       staff: null,
       submissions: null,
       inspector: null,
+      calendar: null,
+      calMonth: '',
       reg: { step: 'form' },
       pwChange: { flash: '' },
       photoPreview: '',
@@ -1300,6 +1337,12 @@
     var SPECIALISATIONS = ['Experimental Solid-State Physics', 'Theoretical Solid-State Physics', 'Nuclear Physics', 'Solar Physics', 'Applied Geophysics'];
     var SUBMISSION_TYPES = ['Research Plan Form', 'Seminar Presentation', 'Research Proposal', 'Progress Report', 'Final Thesis/Dissertation',
       'Internal Examiner and Other Observations', 'Final Correction', 'Comment-by-Comment Response (External Examiner)', 'Comment-by-Comment Response (Internal Examiner)'];
+    var PRESENTATION_KINDS = ['Proposal Presentation', 'Progress Report Presentation', 'Final Examination'];
+    var PRESENTATION_INTENTS = {
+      'Proposal Presentation': { label: 'Proposal presentation', stage: '5 - Proposal Defence Form', warn: '4 - Proposal Submission' },
+      'Progress Report Presentation': { label: 'Progress report presentation', stage: '9 - Compliance Inspection', warn: '8 - Progress Report' },
+      'Final Examination': { label: 'Final examination', stage: '11 - External Defence', warn: '11 - External Defence' }
+    };
     var ROLE_LABELS = { SuperAdmin: 'Super Admin', Student: 'Student', PG_Coordinator: 'PG Coordinator', HoD: 'Head of Department', Staff: 'Staff', Submission_Inspector: 'Submission Inspector' };
 
     /* ================= RPC ================= */
@@ -1338,7 +1381,8 @@
       else if (s === 'Rejected') cls += ' bad';
       else if (s === 'Pending' || s === 'Changes Requested' || s === 'Draft') cls += ' warn';
       else if (s === 'Submitted' || s === 'Under Review') cls += ' info';
-      else if (s === 'Open') cls += ' warn';
+      else if (s === 'Open' || s === 'Pending Supervisors' || s === 'Pending Coordinator') cls += ' warn';
+      else if (s === 'Returned') cls += ' bad';
       else if (s === 'Answered') cls += ' ok';
       return '<span class="' + cls + '">' + esc(s) + '</span>';
     }
@@ -1346,6 +1390,7 @@
     /* ================= NAV ================= */
     var NAV = [
       { key: 'dashboard', label: 'Dashboard', roles: ['Student'] },
+      { key: 'calendar', label: 'Programme Calendar', roles: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Submission_Inspector', 'SuperAdmin'] },
       { key: 'submissions', label: 'My Submissions', roles: ['Student'] },
       { key: 'inbox', label: 'Inquiries', roles: ['Student', 'PG_Coordinator', 'HoD'] },
       { key: 'coordinator', label: 'Coordinator', roles: ['PG_Coordinator'] },
@@ -1369,6 +1414,12 @@
     }
     function loadView(view) {
       loadNavCounts(); loadTemplates();
+      if (view !== 'calendar' && state.user) {
+        authed('api_getProgrammeCalendar').then(function (d) {
+          state.calendar = d;
+          if (state.view === view && !state.busy) render();
+        }).catch(function () {});
+      }
       if (view === 'dashboard' && state.user && state.user.role === 'Student') {
         state.busy = true; render();
         authed('api_getStudentDashboard').then(function (d) { state.dashboard = d; state.busy = false; render(); }).catch(setError);
@@ -1396,6 +1447,13 @@
       } else if (view === 'inspector' && state.user && ['Submission_Inspector', 'PG_Coordinator'].indexOf(state.user.role) !== -1) {
         state.busy = true; render();
         authed('api_listSubmissions').then(function (d) { state.inspector = d; return authed('api_getMyAnnouncements').catch(function () { return []; }); }).then(function (a) { state.annc = a; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'calendar' && state.user) {
+        state.busy = true; render();
+        authed('api_getProgrammeCalendar').then(function (d) {
+          state.calendar = d;
+          if (!state.calMonth) state.calMonth = calDefaultMonth_();
+          state.busy = false; render();
+        }).catch(setError);
       } else {
         render();
       }
@@ -1426,7 +1484,7 @@
     function doLogout() {
       if (state.impersonator) { var at = state.adminToken || sessionStorage.getItem('pgs_admin_token'); endImpersonation(true); if (at) call('api_logout', at).catch(function () {}); return; }
       authed('api_logout').catch(function () {});
-      state.token = ''; state.user = null; state.view = 'login';
+      state.token = ''; state.user = null; state.view = 'login'; state.calendar = null; state.calMonth = '';
       sessionStorage.removeItem('pgs_token');
       render();
     }
@@ -1438,7 +1496,7 @@
       state.busy = true; clearMsgs(); render();
       authed('api_changePassword', d.oldPassword, d.newPassword).then(function () {
         state.busy = false; setNotice('Password changed. Please sign in again.');
-        state.token = ''; state.user = null; state.view = 'login';
+        state.token = ''; state.user = null; state.view = 'login'; state.calendar = null; state.calMonth = '';
         sessionStorage.removeItem('pgs_token');
         render();
       }).catch(function (e) { state.busy = false; state.pwChange.flash = e.message; render(); });
@@ -1520,6 +1578,7 @@
       var out = headerHtml();
       if (state.busy) { out += '<div class="page-loading"><span class="spinner"></span> Loading…</div>'; }
       else if (state.view === 'dashboard') out += viewStudentDashboard();
+      else if (state.view === 'calendar') out += viewCalendar();
       else if (state.view === 'submissions') out += viewSubmissions();
       else if (state.view === 'inbox') out += viewInbox();
       else if (state.view === 'coordinator') out += viewCoordinator();
@@ -1540,7 +1599,8 @@
         '<form id="forgot-form"><div class="field"><label>Registration Number / Staff ID</label><input type="text" name="regNumber" required value="' + esc(state.forgotReg || '') + '"></div>' +
         '<button class="btn btn-outline btn-block" type="button" data-action="send-code" style="margin-bottom:16px">Email me a code</button>' +
         '<div class="field"><label>6-digit code</label><input type="text" name="code" required inputmode="numeric"></div>' +
-        '<div class="field"><label>New password</label><input type="password" name="newPassword" required></div>' +
+        '<div class="field"><label>New password</label><input type="password" name="newPassword" required minlength="8"><div class="small muted" style="margin-top:4px">At least 8 characters, with a letter and a number.</div></div>' +
+        '<div class="field"><label>Confirm new password</label><input type="password" name="confirmPassword" required minlength="8"></div>' +
         '<button class="btn btn-primary btn-block" type="submit">Reset password</button></form>' +
         '<p class="small" style="text-align:center;margin-top:16px"><a href="#" data-action="back-login">&larr; Back to sign in</a></p></div></div>';
     }
@@ -1563,15 +1623,134 @@
     /* ---- Change Password ---- */
     function pwChangeHtml() {
       return '<div class="login-wrap">' + themeFabHtml() + '<div class="login-card">' +
-        '<h2>Change Password</h2><p class="kicker">You must change your password before proceeding.</p>' +
+        '<h2>Change Password</h2><p class="kicker">' + (state.user && state.user.firstLogin ? 'For your security, choose your own password before proceeding. Your Old Password is the one-time password from your email.' : 'Enter your current password, then choose a new one.') + '</p>' +
         (state.pwChange.flash ? '<div class="alert error">' + esc(state.pwChange.flash) + '</div>' : '') +
         '<form id="pw-form">' +
           '<div class="field"><label>Old Password</label><input type="password" name="oldPassword" required></div>' +
           '<div class="field"><label>New Password</label><input type="password" name="newPassword" required minlength="8"></div>' +
           '<div class="field"><label>Confirm New Password</label><input type="password" name="confirmPassword" required minlength="8"></div>' +
+          '<div class="small muted" style="margin:-4px 0 12px">At least 8 characters, with a letter and a number.</div>' +
           '<button class="btn btn-primary btn-block" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? '<span class="spinner"></span>' : 'Change Password') + '</button>' +
         '</form>' +
+        (state.user && !state.user.firstLogin ? '<p class="small" style="text-align:center;margin-top:16px"><a href="#" data-action="cancel-pwchange">&larr; Cancel</a></p>' : '') +
       '</div></div>';
+    }
+
+    function intentMeta(kind) { return PRESENTATION_INTENTS[kind] || { label: kind || '', stage: '', warn: '' }; }
+    function intentWarningHtml(kind, stage) {
+      var meta = intentMeta(kind);
+      var idx = JOURNEY_STAGES.indexOf(stage), warnIdx = JOURNEY_STAGES.indexOf(meta.warn);
+      if (idx < 0 || warnIdx < 0 || idx >= warnIdx) return 'Your supervisors and the PG Coordinator review this request.';
+      return '<span class="badge warn">Early request</span> The usual stage for this presentation is <strong>' + esc(meta.warn) + '</strong>. You can still submit; the PG Coordinator will decide.';
+    }
+    function intentApprovalBadge(status) { return statusBadge(status === 'Declined' ? 'Rejected' : (status || 'Pending')); }
+    function intentApprovalLine(label, status, by, at, note) {
+      status = status || 'Pending';
+      return '<p class="small" style="margin:5px 0"><strong>' + esc(label) + ':</strong> ' + intentApprovalBadge(status) +
+        (by ? ' <span class="muted">' + esc(by) + (at ? ' &middot; ' + esc(at) : '') + '</span>' : '') +
+        (note ? '<br><span class="small">Note: ' + esc(note) + '</span>' : '') + '</p>';
+    }
+    function intentFormHtml(intent, s) {
+      var kind = intent ? intent.kind : 'Proposal Presentation';
+      var month = intent ? intent.preferredMonth : new Date().toISOString().slice(0, 7);
+      var note = intent ? intent.note : '';
+      return '<form id="intent-form" data-id="' + esc(intent ? intent.id : '') + '">' +
+        '<div class="row-cols" style="--cols:2">' +
+          '<div class="field"><label>Presentation type</label><select name="kind" required>' + optionsHtml(PRESENTATION_KINDS, null, kind, function (k) { return intentMeta(k).label; }) + '</select></div>' +
+          '<div class="field"><label>Preferred month</label><input type="month" name="preferredMonth" value="' + esc(month) + '" required></div>' +
+        '</div>' +
+        '<div class="field"><label>Note (optional)</label><textarea name="note" rows="2" maxlength="1200" placeholder="Anything your supervisors should know">' + esc(note) + '</textarea></div>' +
+        '<p id="intent-warning" class="small muted" data-stage="' + esc(s.currentStage) + '" style="margin:0 0 10px">' + intentWarningHtml(kind, s.currentStage) + '</p>' +
+        '<button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (intent ? (intent.status === 'Returned' ? 'Resubmit for approval' : 'Update intent') : 'Submit intent') + '</button>' +
+        (intent ? ' <button class="btn btn-outline btn-sm" type="button" data-action="intent-withdraw" data-id="' + esc(intent.id) + '">Withdraw instead</button>' : '') +
+        '<p class="small muted" style="margin:8px 0 0">' + (s.coSupervisor ? 'Your Main and Co-Supervisors must both approve.' : 'Your Main Supervisor must approve.') + ' The PG Coordinator then approves and advances your stage.</p>' +
+        '</form>';
+    }
+    function intentSummaryHtml(x) {
+      var meta = intentMeta(x.kind);
+      var out = '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px"><div><strong>' + esc(meta.label || x.kind) + '</strong> <span class="small muted">&middot; preferred ' + esc(x.preferredMonth) + '</span></div><div>' + statusBadge(x.status) + '</div></div>';
+      if (x.note) out += '<p class="small" style="margin:0 0 8px"><strong>Your note:</strong> ' + esc(x.note) + '</p>';
+      out += intentApprovalLine(x.mainSupervisorName || 'Main Supervisor', x.mainStatus, x.mainBy, x.mainAt, x.mainNote);
+      out += x.coStatus === 'Not Required'
+        ? '<p class="small" style="margin:5px 0"><strong>Co-Supervisor:</strong> <span class="muted">Not required</span></p>'
+        : intentApprovalLine(x.coSupervisorName || 'Co-Supervisor', x.coStatus, x.coBy, x.coAt, x.coNote);
+      out += intentApprovalLine('PG Coordinator', x.coordinatorStatus, x.coordinatorBy, x.coordinatorAt, x.coordinatorNote);
+      if (x.stageApplied) out += '<p class="small" style="margin:5px 0"><strong>Stage advanced to:</strong> ' + esc(x.stageApplied) + '</p>';
+      if (x.warning) out += '<p class="small" style="margin:8px 0 0"><span class="badge warn">Early request</span> ' + esc(x.warning) + '</p>';
+      return out;
+    }
+    function intentHistoryHtml(list) {
+      if (!list.length) return '';
+      return '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Type</th><th>Preferred month</th><th>Status</th><th>Main</th><th>Co-Supervisor</th><th>Coordinator</th><th>Submitted</th></tr></thead><tbody>' +
+        list.map(function (x) {
+          return '<tr><td>' + esc(intentMeta(x.kind).label || x.kind) + '</td><td class="small">' + esc(x.preferredMonth) + '</td><td>' + statusBadge(x.status) + '</td>' +
+            '<td>' + intentApprovalBadge(x.mainStatus) + '</td><td>' + intentApprovalBadge(x.coStatus) + '</td><td>' + intentApprovalBadge(x.coordinatorStatus) + '</td><td class="small">' + esc(x.createdAt) + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    function presentationIntentStudentCard(s) {
+      var list = state.dashboard.presentationIntents || [];
+      var active = list.filter(function (x) { return ['Pending Supervisors', 'Pending Coordinator', 'Returned'].indexOf(x.status) > -1; })[0];
+      var out = '<div class="card"><h4 style="margin:0 0 8px">Presentation Intent</h4>' +
+        '<p class="small muted" style="margin:0 0 12px">Ask your supervisors and the PG Coordinator for a proposal, progress or final presentation. The Research Plan Form upload remains available under New Submission.</p>';
+      if (active) {
+        out += '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-bottom:12px">' + intentSummaryHtml(active) + '</div>';
+        if (active.status === 'Returned' || active.status === 'Pending Supervisors') out += intentFormHtml(active, s);
+        else out += '<button class="btn btn-outline btn-sm" data-action="intent-withdraw" data-id="' + esc(active.id) + '">Withdraw this intent</button>' +
+          '<p class="small muted" style="margin:8px 0 0">Withdraw it if you need to change the request before a decision is final.</p>';
+      } else if (!s.mainSupervisor) {
+        out += '<p class="muted" style="margin:0">Your Main Supervisor must be assigned before you can request a presentation.</p>';
+      } else {
+        out += intentFormHtml(null, s);
+      }
+      out += intentHistoryHtml(list);
+      return out + '</div>';
+    }
+    function presentationIntentStaffCard(st) {
+      var list = st.presentationIntents || [];
+      var out = '<div class="card"><h4 style="margin:0 0 12px">Presentation Intents</h4>';
+      if (!list.length) {
+        out += '<p class="muted">No presentation intents from your students yet.</p>';
+      } else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Request</th><th>Preferred month</th><th>Approvals</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+        list.forEach(function (x) {
+          out += '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + ' &middot; ' + esc(x.currentStage) + '</span></td>' +
+            '<td>' + esc(intentMeta(x.kind).label || x.kind) + (x.note ? '<br><span class="small muted">' + esc(x.note) + '</span>' : '') + '</td>' +
+            '<td class="small">' + esc(x.preferredMonth) + '</td>' +
+            '<td class="small">Main: ' + intentApprovalBadge(x.mainStatus) + (x.mainNote ? '<br><span class="muted">' + esc(x.mainNote) + '</span>' : '') + '<br>Co: ' + intentApprovalBadge(x.coStatus) + (x.coNote ? '<br><span class="muted">' + esc(x.coNote) + '</span>' : '') + '</td>' +
+            '<td>' + statusBadge(x.status) + (x.myRole ? '<br><span class="small muted">You: ' + esc(x.myRole) + '</span>' : '') + '</td>' +
+            '<td>' + (x.canAct ? '<button class="btn btn-primary btn-sm" data-action="intent-sup-approve" data-id="' + esc(x.id) + '">Approve</button> <button class="btn btn-danger btn-sm" data-action="intent-sup-decline" data-id="' + esc(x.id) + '">Decline</button>' : '<span class="small muted">' + (x.myStatus === 'Approved' ? 'You approved' : x.myStatus === 'Declined' ? 'You declined' : x.status === 'Pending Coordinator' ? 'With PG Coordinator' : 'No action') + '</span>') + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      return out + '</div>';
+    }
+    function presentationIntentCoordinatorCard(c) {
+      var list = c.presentationIntents || [];
+      var awaiting = list.filter(function (x) { return x.status === 'Pending Coordinator'; });
+      var recent = list.filter(function (x) { return x.status !== 'Pending Coordinator'; }).slice(0, 12);
+      var out = '<div class="card"><h4 style="margin:0 0 8px">Presentation Intents (' + awaiting.length + ' awaiting)</h4>' +
+        '<p class="small muted" style="margin:0 0 12px">Approve to advance the student to the mapped stage, or return it for revision. Supervisor approvals restart after a return.</p>';
+      if (!awaiting.length) out += '<p class="muted">No presentation intents await your decision.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Request</th><th>Preferred month</th><th>Main approval</th><th>Co approval</th><th>Action</th></tr></thead><tbody>';
+        awaiting.forEach(function (x) {
+          var target = intentMeta(x.kind).stage || x.targetStage;
+          out += '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + ' &middot; ' + esc(x.currentStage) + '</span></td>' +
+            '<td>' + esc(intentMeta(x.kind).label || x.kind) + (x.note ? '<br><span class="small muted">' + esc(x.note) + '</span>' : '') + '<br><span class="small">Advance to: <strong>' + esc(target) + '</strong></span></td>' +
+            '<td class="small">' + esc(x.preferredMonth) + '</td>' +
+            '<td class="small">' + intentApprovalBadge(x.mainStatus) + (x.mainBy ? '<br><span class="muted">' + esc(x.mainBy) + '</span>' : '') + '</td>' +
+            '<td class="small">' + intentApprovalBadge(x.coStatus) + (x.coBy ? '<br><span class="muted">' + esc(x.coBy) + '</span>' : '') + '</td>' +
+            '<td><button class="btn btn-primary btn-sm" data-action="intent-coord-approve" data-id="' + esc(x.id) + '">Approve</button> <button class="btn btn-danger btn-sm" data-action="intent-coord-return" data-id="' + esc(x.id) + '">Return for revision</button></td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      if (recent.length) {
+        out += '<h4 style="margin:16px 0 8px">Recent decisions</h4><div class="table-wrap"><table><thead><tr><th>Student</th><th>Request</th><th>Status</th><th>Stage applied</th><th>Date</th></tr></thead><tbody>' +
+          recent.map(function (x) {
+            return '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + '</span></td><td class="small">' + esc(intentMeta(x.kind).label || x.kind) + ' &middot; ' + esc(x.preferredMonth) + '</td><td>' + statusBadge(x.status) + '</td><td class="small">' + esc(x.stageApplied || '—') + '</td><td class="small">' + esc(x.updatedAt || x.createdAt) + '</td></tr>';
+          }).join('') + '</tbody></table></div>';
+      }
+      return out + '</div>';
     }
 
     /* ---- Student Dashboard ---- */
@@ -1639,6 +1818,8 @@
         }).join('') +
         '</div></div>';
 
+      out += presentationIntentStudentCard(s);
+
       // Announcements
       out += '<div class="card"><h4 style="margin:0 0 12px">Announcements</h4>';
       if (!state.dashboard.announcements.length) out += '<p class="muted">No announcements yet.</p>';
@@ -1647,7 +1828,7 @@
       });
       out += '</div>';
 
-      out += timeCard() + stageChecklistCard(s, stageIdx) + '<div class="card"><h4 style="margin:0 0 8px">Next step</h4><p class="small muted" style="margin:0 0 6px">' + pct + '% complete &middot; about ' + monthsLeft(s.programme, pct) + ' months left (typical duration)</p><p style="margin:0">' + esc(STAGE_HINTS[Math.min(stageIdx + 1, 14)] || '') + '</p><button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">Message my supervisors</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">My timeline</button> <button class="btn btn-outline btn-sm" data-action="owncard" style="margin-top:8px">Download my card</button> <button class="btn btn-outline btn-sm" data-action="ics" style="margin-top:8px">Add deadlines to calendar</button></div>';
+      out += calendarMiniCard() + timeCard() + stageChecklistCard(s, stageIdx) + '<div class="card"><h4 style="margin:0 0 8px">Next step</h4><p class="small muted" style="margin:0 0 6px">' + pct + '% complete &middot; about ' + monthsLeft(s.programme, pct) + ' months left (typical duration)</p><p style="margin:0">' + esc(STAGE_HINTS[Math.min(stageIdx + 1, 14)] || '') + '</p><button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">Message my supervisors</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">My timeline</button> <button class="btn btn-outline btn-sm" data-action="owncard" style="margin-top:8px">Download my card</button> <button class="btn btn-outline btn-sm" data-action="ics" style="margin-top:8px">Add deadlines to calendar</button></div>';
       var dls = state.dashboard.deadlines || [];
       out += '<div class="card"><h4 style="margin:0 0 12px">Upcoming Deadlines</h4>' + (dls.length ? dls.map(function (d) { return '<p style="margin:4px 0"><strong>' + esc(d.date) + '</strong> &mdash; ' + esc(d.title) + '</p>'; }).join('') : '<p class="muted">None scheduled.</p>') + '</div>';
       out += seminarsCard(state.dashboard.seminars || []);
@@ -1929,6 +2110,8 @@
         '<div class="stat"><div class="label">Active Staff</div><div class="value">' + c.staff.length + '</div></div>' +
       '</div>';
 
+      out += calendarMiniCard();
+
       // Pending approvals
       out += '<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px"><h4 style="margin:0">Pending Approvals (' + c.pending.length + ')</h4>' + (c.pending.length && state.user && state.user.role === 'PG_Coordinator' ? '<button class="btn btn-primary btn-sm" data-action="approve-all">Approve all pending registrations</button>' : '') + '</div>';
       if (!c.pending.length) out += '<p class="muted">No pending registrations.</p>';
@@ -1958,6 +2141,7 @@
       out += '</div>';
 
       out += titleRequestsCard(c);
+      out += presentationIntentCoordinatorCard(c);
 
       // All students: combine name searches and dropdown criteria; cards by default, with a table alternative.
       var coordinatorFilteredStudents = filterCoordinatorStudents(c.students);
@@ -2078,6 +2262,7 @@
         '<div class="stat"><div class="label">Approved</div><div class="value" style="color:var(--primary-strong)">' + (h.byUserStatus.Approved || 0) + '</div></div>' +
         '<div class="stat"><div class="label">Pending</div><div class="value" style="color:var(--warn)">' + (h.byUserStatus.Pending || 0) + '</div></div>' +
         '<div class="stat"><div class="label">Total Submissions</div><div class="value">' + h.submissions.length + '</div></div></div>';
+      out += calendarMiniCard();
       out += '<div class="grid cols-2">' +
         '<div class="card"><h4 style="margin:0 0 12px">Students by Programme</h4>' + pieChart(h.byProgramme) + '</div>' +
         '<div class="card"><h4 style="margin:0 0 12px">Students by Gender</h4>' + pieChart(h.byGender) + '</div>' +
@@ -2436,13 +2621,202 @@
     function seminarsCard(list) {
       return '<div class="card"><h4 style="margin:0 0 12px">Upcoming Seminars</h4>' + (list.length ? list.map(function (x) { return '<p style="margin:4px 0"><strong>' + esc(x.date) + '</strong> &mdash; ' + esc(x.title) + (x.venue ? ' (' + esc(x.venue) + ')' : '') + (x.presenting ? ' <span class="badge info">You are presenting</span>' : '') + '</p>'; }).join('') : '<p class="muted">None scheduled.</p>') + '</div>';
     }
-    function downloadIcs() {
-      var d = state.dashboard, ev = (d.deadlines || []).map(function (x) { return [x.title, x.date]; }).concat((d.seminars || []).map(function (x) { return ['Seminar: ' + x.title, x.date]; }));
-      var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PG Portal//EN'];
-      ev.forEach(function (e, i) { var dt = String(e[1]).replace(/-/g, ''); L.push('BEGIN:VEVENT', 'UID:pg' + i + dt + '@portal', 'DTSTAMP:' + dt + 'T000000Z', 'DTSTART;VALUE=DATE:' + dt, 'SUMMARY:' + String(e[0]).replace(/[,;\n]/g, ' '), 'END:VEVENT'); });
-      L.push('END:VCALENDAR');
-      var u = URL.createObjectURL(new Blob([L.join('\r\n')], { type: 'text/calendar' })), a = document.createElement('a'); a.href = u; a.download = 'pg-deadlines.ics'; a.click(); URL.revokeObjectURL(u);
+    var CAL_KIND_META = {
+      'Practical Training': { cls: 'practical', label: 'Practical training' },
+      'Programme Seminar': { cls: 'pseminar', label: 'Programme seminar' },
+      'Publication Workshop': { cls: 'workshop', label: 'Publication workshop' },
+      'Output Due': { cls: 'output', label: 'Output due' },
+      'Deadline': { cls: 'deadline', label: 'Deadline' },
+      'Seminar': { cls: 'seminar', label: 'Departmental seminar' },
+      'Meeting': { cls: 'meeting', label: 'Supervision meeting' }
+    };
+    var CAL_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    function pad2_(n) { return (n < 10 ? '0' : '') + n; }
+    function todayIso_() { var d = new Date(); return d.getFullYear() + '-' + pad2_(d.getMonth() + 1) + '-' + pad2_(d.getDate()); }
+    function calStartMonth_() { return (state.calendar && state.calendar.startMonth) || '2026-11'; }
+    function calDefaultMonth_() { var c = todayIso_().slice(0, 7); return c < calStartMonth_() ? calStartMonth_() : c; }
+    function ymAdd_(ym, delta) {
+      var p = String(ym).split('-'), y = parseInt(p[0], 10), m = parseInt(p[1], 10) + delta;
+      y += Math.floor((m - 1) / 12); m = ((m - 1) % 12 + 12) % 12 + 1;
+      return y + '-' + pad2_(m);
     }
+    function ymLabel_(ym) {
+      var p = String(ym).split('-');
+      return new Date(Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1)).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    }
+    function calMonthWindowStart_(dateStr) {
+      var start = todayIso_().slice(0, 7), dm = String(dateStr || '').slice(0, 7);
+      if (/^\d{4}-\d{2}$/.test(dm) && (dm < start || dm > ymAdd_(start, 11))) start = dm;
+      return start;
+    }
+    function calMonthOptions_(dateStr) {
+      var start = calMonthWindowStart_(dateStr), sel = String(dateStr || '').slice(0, 7);
+      return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(function (n) {
+        var v = ymAdd_(start, n);
+        return '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + esc(ymLabel_(v)) + '</option>';
+      }).join('');
+    }
+    function calAllEvents_() {
+      var c = state.calendar || {}, out = [];
+      var push = function (x, kind) {
+        var meta = CAL_KIND_META[kind] || { cls: 'pseminar', label: kind };
+        out.push({
+          id: String(x.id || ''), source: (kind === 'Deadline' || kind === 'Seminar' || kind === 'Meeting') ? kind.toLowerCase() : 'programme',
+          kind: kind, cls: meta.cls, label: meta.label, month: String(x.month || ''),
+          title: String(x.title || ''), date: String(x.date || ''), startTime: String(x.startTime || ''),
+          endTime: String(x.endTime || ''), venue: String(x.venue || ''), notes: String(x.notes || ''),
+          status: String(x.status || 'Scheduled')
+        });
+      };
+      (c.sessions || []).forEach(function (x) { push(x, x.kind); });
+      (c.deadlines || []).forEach(function (x) { push(x, 'Deadline'); });
+      (c.seminars || []).forEach(function (x) { push(x, 'Seminar'); });
+      (c.meetings || []).forEach(function (x) { push(x, 'Meeting'); });
+      return out.sort(function (a, b) { return (a.date + ' ' + a.startTime).localeCompare(b.date + ' ' + b.startTime) || a.title.localeCompare(b.title); });
+    }
+    function calEventById_(id) { return calAllEvents_().filter(function (e) { return e.id === String(id); })[0]; }
+    function calTimeLabel_(e) { return e.startTime ? e.startTime + (e.endTime ? '\u2013' + e.endTime : '') : ''; }
+    function calEventBtn_(e) {
+      var label = (e.startTime ? e.startTime + ' ' : '') + e.title;
+      return '<button class="cal-ev ' + e.cls + (e.status === 'Cancelled' ? ' cancelled' : '') + '" data-action="cal-event" data-id="' + esc(e.id) + '" title="' + esc(label) + '">' + esc(label) + '</button>';
+    }
+    function calEventRow_(e) {
+      return '<div class="cal-row"><div class="cal-row-when"><strong>' + esc(e.date.slice(8, 10)) + '</strong><span>' + esc(CAL_DOW[new Date(e.date + 'T00:00:00').getDay()]) + '</span></div>' +
+        '<div class="cal-row-body"><strong>' + esc(e.title) + '</strong> <span class="cal-tag ' + e.cls + '">' + esc(e.label) + '</span>' +
+        (e.status === 'Cancelled' ? ' <span class="badge bad">Cancelled</span>' : '') +
+        '<br><span class="small muted">' + (calTimeLabel_(e) ? esc(calTimeLabel_(e)) + ' &middot; ' : '') + esc(e.venue || 'Venue TBA') + '</span></div>' +
+        '<div class="cal-row-act"><button class="btn btn-outline btn-sm" data-action="cal-event" data-id="' + esc(e.id) + '">Details</button></div></div>';
+    }
+    function calLegend_() {
+      return '<div class="cal-legend">' + ['Practical Training', 'Programme Seminar', 'Publication Workshop', 'Output Due', 'Deadline', 'Seminar', 'Meeting'].map(function (k) {
+        var m = CAL_KIND_META[k]; return '<span><i class="' + m.cls + '"></i>' + m.label + '</span>';
+      }).join('') + '</div>';
+    }
+    function calendarMiniCard() {
+      var c = state.calendar;
+      if (!c) return '<div class="card"><h4 style="margin:0 0 8px">Programme Calendar</h4><p class="muted small" style="margin:0">Loading\u2026</p></div>';
+      var all = calAllEvents_();
+      var today = todayIso_(), thisYm = today.slice(0, 7);
+      if (thisYm < calStartMonth_()) thisYm = calStartMonth_();
+      var thisMonth = all.filter(function (e) { return e.date.slice(0, 7) === thisYm && e.status !== 'Cancelled'; });
+      var soon = all.filter(function (e) { return e.date >= today && e.status !== 'Cancelled'; }).slice(0, 3);
+      var list = function (arr) {
+        return arr.length ? arr.map(function (e) {
+          return '<p style="margin:5px 0"><strong>' + esc(e.date) + '</strong> ' + (e.startTime ? esc(e.startTime) + ' ' : '') + esc(e.title) + (e.venue ? ' <span class="small muted">(' + esc(e.venue) + ')</span>' : '') + '</p>';
+        }).join('') : '<p class="muted small" style="margin:0">Nothing scheduled.</p>';
+      };
+      return '<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">' +
+        '<h4 style="margin:0">Programme Calendar</h4><button class="btn btn-outline btn-sm" data-nav="calendar">Open calendar</button></div>' +
+        '<div class="grid cols-2"><div><div class="cal-kicker">This month</div>' + list(thisMonth.slice(0, 4)) + '</div>' +
+        '<div><div class="cal-kicker">Next up</div>' + list(soon) + '</div></div></div>';
+    }
+    function viewCalendar() {
+      if (!state.calendar) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var ym = state.calMonth || calDefaultMonth_(), events = calAllEvents_();
+      var monthEvents = events.filter(function (e) { return e.date.slice(0, 7) === ym; });
+      var p = ym.split('-'), y = parseInt(p[0], 10), mo = parseInt(p[1], 10);
+      var firstDow = new Date(Date.UTC(y, mo - 1, 1)).getUTCDay(), days = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+      var cells = [], i;
+      for (i = 0; i < firstDow; i++) cells.push('<div class="cal-day out"></div>');
+      for (var d = 1; d <= days; d++) {
+        var ds = ym + '-' + pad2_(d);
+        var dayEv = monthEvents.filter(function (e) { return e.date === ds; });
+        cells.push('<div class="cal-day' + (ds === todayIso_() ? ' today' : '') + '"><div class="d">' + d + '</div>' + dayEv.map(calEventBtn_).join('') + '</div>');
+      }
+      while (cells.length % 7) cells.push('<div class="cal-day out"></div>');
+      var out = '<div class="row" style="justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px">' +
+        '<div><h2 style="margin:0 0 4px">Programme Calendar</h2><p class="muted" style="margin:0">One-year PG Academic Development Training Programme \u00b7 ' + esc(state.calendar.timezone || 'Africa/Lagos') + '</p></div>' +
+        '<div class="row" style="flex-wrap:wrap">' + (state.calendar.canEdit ? '<button class="btn btn-primary btn-sm" data-action="cal-new">Add session</button>' : '') +
+        '<button class="btn btn-outline btn-sm" data-action="cal-ics">Download .ics</button></div></div>';
+      out += '<div class="card"><div class="cal-toolbar"><button class="btn btn-outline btn-sm" data-action="cal-prev" aria-label="Previous month">&larr;</button>' +
+        '<button class="btn btn-outline btn-sm" data-action="cal-today">Today</button>' +
+        '<button class="btn btn-outline btn-sm" data-action="cal-next" aria-label="Next month">&rarr;</button>' +
+        '<strong style="font-size:16px">' + esc(ymLabel_(ym)) + '</strong>' +
+        '<span class="small muted">' + monthEvents.length + ' event' + (monthEvents.length === 1 ? '' : 's') + '</span></div>' +
+        '<div class="cal-grid-wrap"><div class="cal-grid">' + CAL_DOW.map(function (x) { return '<div class="cal-dow">' + x + '</div>'; }).join('') + cells.join('') + '</div></div>' +
+        calLegend_() + '</div>';
+      out += '<div class="card"><h4 style="margin:0 0 12px">' + esc(ymLabel_(ym)) + ' at a glance</h4>' +
+        (monthEvents.length ? monthEvents.map(calEventRow_).join('') : '<p class="muted">No events this month.</p>') + '</div>';
+      return out;
+    }
+    function calEventModal_(id) {
+      var e = calEventById_(id); if (!e) return;
+      var canEdit = state.calendar && state.calendar.canEdit && e.source === 'programme';
+      var html = '<h3 style="margin:0 0 4px">' + esc(e.title) + '</h3><p class="small muted" style="margin:0 0 12px">' + esc(e.label) + (e.status === 'Cancelled' ? ' \u00b7 Cancelled' : '') + '</p>' +
+        '<p style="margin:4px 0"><strong>Date:</strong> ' + esc(e.date) + '</p>' +
+        '<p style="margin:4px 0"><strong>Time:</strong> ' + esc(calTimeLabel_(e) || 'All day') + '</p>' +
+        '<p style="margin:4px 0"><strong>Venue:</strong> ' + esc(e.venue || 'TBA') + '</p>' +
+        (e.notes ? '<p class="small pre" style="margin:10px 0">' + esc(e.notes) + '</p>' : '') +
+        '<div class="row" style="margin-top:12px;flex-wrap:wrap">' +
+        (canEdit ? '<button class="btn btn-primary btn-sm" data-action="cal-edit" data-id="' + esc(e.id) + '">Edit</button>' +
+          '<button class="btn btn-outline btn-sm" data-action="cal-toggle" data-id="' + esc(e.id) + '">' + (e.status === 'Cancelled' ? 'Restore' : 'Cancel session') + '</button>' +
+          '<button class="btn btn-danger btn-sm" data-action="cal-delete" data-id="' + esc(e.id) + '">Delete</button>' : '') +
+        '<button class="btn btn-outline btn-sm" data-action="close-modal">Close</button></div>';
+      showModal(html);
+    }
+    function calFormModal_(id) {
+      var e = id ? calEventById_(id) : null;
+      var ym = state.calMonth || calDefaultMonth_();
+      var defaultDate = ym === todayIso_().slice(0, 7) ? todayIso_() : ym + '-01';
+      var dateVal = e ? e.date : defaultDate;
+      var kinds = ['Practical Training', 'Programme Seminar', 'Publication Workshop', 'Output Due'];
+      var html = '<h3 style="margin:0 0 12px">' + (e ? 'Edit' : 'Add') + ' programme session</h3><form id="cal-form" data-id="' + esc(e ? e.id : '') + '">' +
+        '<div class="row-cols" style="--cols:2"><div class="field"><label>Month</label><select name="month">' +
+        calMonthOptions_(dateVal) + '</select></div>' +
+        '<div class="field"><label>Type</label><select name="kind">' + kinds.map(function (k) { return '<option' + (e && e.kind === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div></div>' +
+        '<div class="field"><label>Title</label><input type="text" name="title" required maxlength="200" value="' + esc(e ? e.title : '') + '"></div>' +
+        '<div class="row-cols" style="--cols:3"><div class="field"><label>Date</label><input type="date" name="date" required value="' + esc(dateVal) + '"></div>' +
+        '<div class="field"><label>Start</label><input type="time" name="startTime" value="' + esc(e ? e.startTime : '10:00') + '"></div>' +
+        '<div class="field"><label>End</label><input type="time" name="endTime" value="' + esc(e ? e.endTime : '13:00') + '"></div></div>' +
+        '<div class="row-cols" style="--cols:2"><div class="field"><label>Venue</label><input type="text" name="venue" value="' + esc(e ? e.venue : 'PG Class') + '"></div>' +
+        '<div class="field"><label>Status</label><select name="status"><option' + (!e || e.status !== 'Cancelled' ? ' selected' : '') + '>Scheduled</option><option' + (e && e.status === 'Cancelled' ? ' selected' : '') + '>Cancelled</option></select></div></div>' +
+        '<div class="field"><label>Notes / required output</label><textarea name="notes" rows="3">' + esc(e ? e.notes : '') + '</textarea></div>' +
+        '<div class="row"><button class="btn btn-primary" type="submit">Save</button><button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></div></form>';
+      showModal(html);
+    }
+    document.addEventListener('change', function (e) {
+      var t = e.target;
+      if (!t || !t.form || t.form.id !== 'cal-form') return;
+      if (t.name === 'date') {
+        var ms = t.form.querySelector('select[name="month"]');
+        if (ms) ms.innerHTML = calMonthOptions_(t.value);
+      } else if (t.name === 'month') {
+        var di = t.form.querySelector('input[name="date"]');
+        if (di && /^\d{4}-\d{2}$/.test(t.value)) {
+          var day = parseInt(String(di.value || '').slice(8, 10), 10) || 1;
+          var p = t.value.split('-'), max = new Date(parseInt(p[0], 10), parseInt(p[1], 10), 0).getDate();
+          di.value = t.value + '-' + pad2_(Math.min(day, max));
+        }
+      }
+    });
+    function icsEsc_(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+    function downloadCalendarIcs_() {
+      var ev = [];
+      if (state.calendar) {
+        ev = calAllEvents_();
+      } else if (state.dashboard) {
+        (state.dashboard.deadlines || []).forEach(function (x) { ev.push({ title: x.title, date: x.date, startTime: '', endTime: '', venue: '', notes: '' }); });
+        (state.dashboard.seminars || []).forEach(function (x) { ev.push({ title: 'Seminar: ' + x.title, date: x.date, startTime: '', endTime: '', venue: x.venue || '', notes: '' }); });
+      }
+      var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PG Portal//EN', 'CALSCALE:GREGORIAN'];
+      ev.forEach(function (e, i) {
+        var dt = String(e.date || '').replace(/-/g, '');
+        if (!/^\d{8}$/.test(dt)) return;
+        L.push('BEGIN:VEVENT', 'UID:pg' + i + '-' + dt + '@portal', 'DTSTAMP:' + dt + 'T000000Z', 'SUMMARY:' + icsEsc_(e.title));
+        if (e.startTime) {
+          L.push('DTSTART:' + dt + 'T' + e.startTime.replace(':', '') + '00', 'DTEND:' + dt + 'T' + (e.endTime || e.startTime).replace(':', '') + '00');
+        } else {
+          L.push('DTSTART;VALUE=DATE:' + dt);
+        }
+        if (e.venue) L.push('LOCATION:' + icsEsc_(e.venue));
+        if (e.notes) L.push('DESCRIPTION:' + icsEsc_(e.notes));
+        L.push('END:VEVENT');
+      });
+      L.push('END:VCALENDAR');
+      var u = URL.createObjectURL(new Blob([L.join('\r\n')], { type: 'text/calendar' })), a = document.createElement('a');
+      a.href = u; a.download = 'pg-programme-calendar.ics'; a.click(); URL.revokeObjectURL(u);
+    }
+    function downloadIcs() { downloadCalendarIcs_(); }
     function staffLoad(id) { var l = (state.coordinator && state.coordinator.staff) || (state.hod && state.hod.staff) || []; var s = l.filter(function (x) { return String(x.id) === String(id); })[0]; return s && s.load !== undefined ? s : null; }
     function loadOk(ids) { for (var i = 0; i < ids.length; i++) { var s = ids[i] && staffLoad(ids[i]); if (s && s.load >= 8 && !confirm(s.fullName + ' already supervises ' + s.load + ' students. Assign anyway?')) return false; } return true; }
     function armSession() {
@@ -2501,12 +2875,13 @@
     }
     /* ---- Super Admin: sign in as any user ---- */
     function resetData_() {
-      ['dashboard', 'coordinator', 'hod', 'staff', 'submissions', 'inspector', 'audit', 'annc', 'msgRecipients', 'impUsers'].forEach(function (k) { state[k] = null; });
+      ['dashboard', 'coordinator', 'hod', 'staff', 'submissions', 'inspector', 'audit', 'annc', 'msgRecipients', 'impUsers', 'calendar'].forEach(function (k) { state[k] = null; });
+      state.calMonth = '';
       state.unread = 0;
     }
     function viewSuperAdmin() {
       if (!state.impUsers) return '<div class="page-loading"><span class="spinner"></span></div>';
-      var out = '<h2 style="margin:0 0 4px">Super Admin</h2><p class="muted" style="margin:0 0 16px">Sign in as any active user with that user&rsquo;s full access. Every sign-in, sign-out and action is written to the Audit Log under your name.</p>' +
+      var out = '<h2 style="margin:0 0 4px">Super Admin</h2><p class="muted" style="margin:0 0 16px">Sign in as any active user with that user&rsquo;s full access. Every sign-in, sign-out and action is written to the Audit Log under your name.</p>' + calendarMiniCard() +
         '<div class="card"><div class="field"><label>Find a user</label><input type="search" id="imp-search" placeholder="Name, ID, email or role" autocomplete="off"></div>';
       if (!state.impUsers.length) return out + '<p class="muted">No other active users.</p></div>';
       out += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>ID</th><th>Role</th><th>Email</th><th></th></tr></thead><tbody>';
@@ -2550,12 +2925,13 @@
     }
     function viewStaff() {
       if (!state.staff) return '<div class="page-loading"><span class="spinner"></span></div>';
-      var st = state.staff, out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>' + annCard_(st.announcements);
+      var st = state.staff, out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>' + annCard_(st.announcements) + calendarMiniCard();
       var attn = st.students.filter(function (s) { return s.stalled; }).map(function (s) { return esc(s.fullName) + ' — stalled at ' + esc(s.currentStage); })
         .concat(st.submissions.filter(function (x) { return x.status === 'Rejected' || x.status === 'Changes Requested'; }).map(function (x) { return esc(x.studentName) + ' — ' + esc(x.type) + ' ' + esc(x.status.toLowerCase()); }));
       attn = attn.concat(st.submissions.filter(function (x) { return x.needsEndorsement && !x.endorsedBy && ['Submitted', 'Under Review'].indexOf(x.status) > -1 && x.waitingDays >= 3; }).map(function (x) { return esc(x.studentName) + ' \u2014 ' + esc(x.type) + ' waiting ' + x.waitingDays + ' days for your endorsement'; }));
+      attn = attn.concat((st.presentationIntents || []).filter(function (x) { return x.canAct; }).map(function (x) { return esc(x.studentName) + ' \u2014 ' + esc(intentMeta(x.kind).label) + ' for ' + esc(x.preferredMonth) + ' is awaiting your approval'; }));
       if (attn.length) out += '<div class="card"><h4 style="margin:0 0 8px">Needs attention (' + attn.length + ')</h4>' + attn.map(function (t) { return '<p style="margin:3px 0">&bull; ' + t + '</p>'; }).join('') + '</div>';
-      out += msgFormHtml();
+      out += presentationIntentStaffCard(st) + msgFormHtml();
       out += '<div class="card"><h4 style="margin:0 0 12px">My Supervised Students</h4>';
       if (!st.students.length) out += '<p class="muted">No students assigned to you yet.</p>';
       else {
@@ -2595,7 +2971,7 @@
     }
     function viewInspector() {
       if (!state.inspector) return '<div class="page-loading"><span class="spinner"></span></div>';
-      var out = '<h2 style="margin:0 0 20px">Submissions Review</h2>' + annCard_(state.annc) + '<input id="insp-q" type="search" placeholder="Search student, reg no., type or status…" style="max-width:420px;margin-bottom:16px">';
+      var out = '<h2 style="margin:0 0 20px">Submissions Review</h2>' + calendarMiniCard() + annCard_(state.annc) + '<input id="insp-q" type="search" placeholder="Search student, reg no., type or status…" style="max-width:420px;margin-bottom:16px">';
       if (!state.inspector.length) return out + '<div class="empty">No submissions yet.</div>';
       var open = function (s) { return s.status === 'Submitted' || s.status === 'Changes Requested' || s.status === 'Under Review'; };
       var card = function (sub) {
@@ -2672,14 +3048,15 @@
           break;
         }
         case 'close-nav': document.body.classList.remove('nav-open'); break;
-        case 'pwchange': state.view = 'pwchange'; clearMsgs(); render(); break;
+        case 'pwchange': state.view = 'pwchange'; state.pwChange.flash = ''; clearMsgs(); render(); break;
+        case 'cancel-pwchange': state.pwChange.flash = ''; clearMsgs(); navigate(defaultView_()); break;
         case 'approve':
-          if (confirm('Approve this student?')) act(authed('api_approveStudent', id), 'Student approved.', function () { loadView('coordinator'); });
+          if (confirm('Approve this student?')) act(authed('api_approveStudent', id).then(function (r) { if (r && r.emailed === false) alert('The student was approved but the email with the one-time password could not be sent (mail quota or invalid address).\n\nGive the student this one-time password:\n\n' + r.tempPassword); }), 'Student approved.', function () { loadView('coordinator'); });
           break;
         case 'approve-all':
           if (state.user && state.user.role !== 'PG_Coordinator') { alert('Only the PG Coordinator can bulk-approve registrations.'); break; }
           if (state.coordinator && state.coordinator.pending && state.coordinator.pending.length && confirm('Approve all ' + state.coordinator.pending.length + ' currently pending student registrations? Each student will receive an approval email.')) {
-            act(authed('api_approvePendingStudents'), 'Bulk approval complete.', function () { loadView('coordinator'); });
+            act(authed('api_approvePendingStudents').then(function (r) { if (r && r.failed && r.failed.length) alert(r.failed.length + ' approval email(s) could not be sent (mail quota or invalid address). Give these students their one-time passwords, or use Reset PW later:\n\n' + r.failed.map(function (f) { return f.regNumber + '  \u2192  ' + f.tempPassword; }).join('\n')); }), 'Bulk approval complete.', function () { loadView('coordinator'); });
           }
           break;
         case 'reject':
@@ -2872,6 +3249,25 @@
         case 'endorse':
           if (confirm('Endorse this submission?')) act(authed('api_endorseSubmission', id), 'Submission endorsed.', function () { loadView('staffdash'); });
           break;
+        case 'intent-sup-approve':
+          if (confirm('Approve this presentation intent? The other supervisor and then the PG Coordinator will be notified.')) act(authed('api_decidePresentationIntent', id, 'Approved', ''), 'Presentation intent approved.', function () { loadView('staffdash'); });
+          break;
+        case 'intent-sup-decline': {
+          var idn = prompt('Reason for declining (required):'); if (!idn) break;
+          act(authed('api_decidePresentationIntent', id, 'Declined', idn), 'Presentation intent returned to the student for revision.', function () { loadView('staffdash'); });
+          break;
+        }
+        case 'intent-coord-approve':
+          if (confirm('Approve this presentation intent and advance the student\u2019s stage?')) act(authed('api_decidePresentationIntentCoordinator', id, 'Approved', ''), 'Presentation intent approved; stage updated.', function () { loadView('coordinator'); });
+          break;
+        case 'intent-coord-return': {
+          var icn = prompt('Reason for returning for revision (required):'); if (!icn) break;
+          act(authed('api_decidePresentationIntentCoordinator', id, 'Returned', icn), 'Presentation intent returned for revision.', function () { loadView('coordinator'); });
+          break;
+        }
+        case 'intent-withdraw':
+          if (confirm('Withdraw this presentation intent? Your supervisors and the PG Coordinator will be notified.')) act(authed('api_withdrawPresentationIntent', id), 'Presentation intent withdrawn.', function () { loadView('dashboard'); });
+          break;
         case 'read-files': openViewer(id); break;
         case 'viewer-pick': if (state.viewer) showViewer(state.viewer, parseInt(id, 10)); break;
         case 'run-check': act(authed('api_runComplianceCheck', id), 'Format check complete.', function () { closeModal(); loadView('inspector'); }); break;
@@ -2893,6 +3289,27 @@
           authed('api_getTimeline', id).then(function (ev) { showModal('<h3 style="margin:0 0 12px">Journey timeline &mdash; ' + esc(id) + '</h3><div style="max-height:340px;overflow:auto">' + ev.map(function (x) { return '<div style="padding:5px 0;border-bottom:1px solid var(--border-soft)"><span class="small muted">' + esc(x.at) + '</span><br>' + esc(x.text) + '</div>'; }).join('') + '</div><button class="btn btn-outline" data-action="close-modal" style="margin-top:12px">Close</button>'); }).catch(setError);
           break;
         case 'ics': downloadIcs(); break;
+        case 'cal-ics': downloadCalendarIcs_(); break;
+        case 'cal-prev': state.calMonth = ymAdd_(state.calMonth || calDefaultMonth_(), -1); render(); break;
+        case 'cal-next': state.calMonth = ymAdd_(state.calMonth || calDefaultMonth_(), 1); render(); break;
+        case 'cal-today': state.calMonth = calDefaultMonth_(); render(); break;
+        case 'cal-new': calFormModal_(''); break;
+        case 'cal-event': calEventModal_(id); break;
+        case 'cal-edit': closeModal(); calFormModal_(id); break;
+        case 'cal-toggle': {
+          var ce = calEventById_(id); if (!ce) break;
+          var nextStatus = ce.status === 'Cancelled' ? 'Scheduled' : 'Cancelled';
+          if (!confirm((nextStatus === 'Cancelled' ? 'Cancel' : 'Restore') + ' this session?')) break;
+          act(authed('api_saveProgrammeSession', {
+            id: ce.id, month: String(ce.date || '').slice(0, 7), kind: ce.kind, title: ce.title, date: ce.date,
+            startTime: ce.startTime, endTime: ce.endTime, venue: ce.venue, notes: ce.notes, status: nextStatus
+          }), nextStatus === 'Cancelled' ? 'Session cancelled.' : 'Session restored.', function () { closeModal(); loadView('calendar'); });
+          break;
+        }
+        case 'cal-delete':
+          if (!confirm('Delete this programme session permanently?')) break;
+          act(authed('api_deleteProgrammeSession', id), 'Session deleted.', function () { closeModal(); loadView('calendar'); });
+          break;
         case 'owncard':
           var ds = state.dashboard.student;
           state.hod = { students: [{ regNumber: ds.regNumber, fullName: [ds.firstName, ds.otherNames, ds.surname].filter(Boolean).join(' '), gender: ds.gender, programme: ds.programme, specialisation: ds.specialisation, yearOfAdmission: ds.yearOfAdmission, session: ds.session, thesisTitle: ds.thesisTitle, titleStatus: ds.titleStatus, currentStage: ds.currentStage, email: ds.email, phoneNumber: ds.phoneNumber, faculty: ds.faculty, department: ds.department, passportFileId: ds.passportFileId, mainSupervisor: ds.mainSupervisor ? ds.mainSupervisor.fullName : '', coSupervisor: ds.coSupervisor ? ds.coSupervisor.fullName : '' }], submissions: state.dashboard.submissions };
@@ -2967,11 +3384,18 @@
       if (form.id === 'login-form') doLogin(form);
       else if (form.id === 'forgot-form') {
         var fd = collect(form);
+        if (fd.newPassword !== fd.confirmPassword) { state.forgotReg = fd.regNumber; state.error = 'New passwords do not match.'; state.notice = ''; render(); return; }
         call('api_resetWithCode', fd.regNumber, fd.code, fd.newPassword).then(function () { state.view = ''; clearMsgs(); setNotice('Password reset. Sign in with your new password.'); render(); }).catch(setError);
       }
       else if (form.id === 'pw-form') doChangePassword(form);
       else if (form.id === 'photo-form') doUpdatePhoto(form);
       else if (form.id === 'title-form') { var tf = collect(form); act(authed('api_saveThesisTitle', tf.thesisTitle), 'Title saved. The PG Coordinator will confirm it.', function () { loadView('dashboard'); }); }
+      else if (form.id === 'intent-form') {
+        if (!enforceForm(form)) return;
+        var it = collect(form);
+        it.id = form.getAttribute('data-id') || '';
+        act(authed('api_savePresentationIntent', it), it.id ? 'Presentation intent resubmitted. Both supervisors must approve again.' : 'Presentation intent submitted to your supervisors.', function () { loadView('dashboard'); });
+      }
       else if (form.id === 'sub-form') {
         var d = collect(form);
         var df = form.querySelector('[name=docFile]'), f = df && df.files[0];
@@ -2999,6 +3423,13 @@
       }
       else if (form.id === 'req-form') { var rq = collect(form); act(authed('api_createRequest', rq.type, rq.reason), 'Request sent.', function () { loadView('dashboard'); }); }
       else if (form.id === 'sem-form') { var sm = collect(form); act(authed('api_addSeminar', sm.title, sm.date, sm.venue, sm.presenters), 'Seminar scheduled.', function () { loadView('hod'); }); }
+      else if (form.id === 'cal-form') {
+        var cf = collect(form);
+        cf.id = form.getAttribute('data-id') || '';
+        cf.month = String(cf.date || '').slice(0, 7);
+        state.calMonth = String(cf.date || '').slice(0, 7) || state.calMonth;
+        act(authed('api_saveProgrammeSession', cf), cf.id ? 'Session updated.' : 'Session added.', function () { closeModal(); loadView('calendar'); });
+      }
       else if (form.id === 'exm-form') { var ex = collect(form); act(authed('api_addExaminer', ex.regNumber, ex.examinerName, ex.type, ex.email), 'Examiner saved (if HoD approval is required it now waits for the HoD).', function () { loadView('hod'); }); }
       else if (form.id === 'login-form') { var lg = collect(form); act(authed('api_saveStaffLogin', lg), 'Login saved.', function () { loadView('coordinator'); }); }
       else if (form.id === 'dl-form') { var dd = collect(form); act(authed('api_addDeadline', dd.title, dd.date), 'Deadline added.', function () { loadView('hod'); }); }
@@ -3022,6 +3453,13 @@
         if (!loadOk([main, co])) return;
         act(authed('api_assignSupervisors', assignId, main, co), 'Supervisors assigned.', function () { closeModal(); loadView(state.view === 'hod' ? 'hod' : 'coordinator'); });
       }
+    });
+
+    document.addEventListener('change', function (e) {
+      var t = e.target;
+      if (!t || t.name !== 'kind' || !t.form || t.form.id !== 'intent-form') return;
+      var warn = document.getElementById('intent-warning');
+      if (warn) warn.innerHTML = intentWarningHtml(t.value, warn.getAttribute('data-stage'));
     });
 
     function openAssignModal(regNumber) {
@@ -3098,18 +3536,26 @@
        attaching (a dead listener is what let forms fall through to a native
        submit and land on Google's userCodeAppPanel URL). */
     function annMarqueeItem_(a) {
-      var when = '';
-      if (a.createdAt) {
+      var isEvent = a.type === 'programme' || !!a.date, when = '';
+      if (isEvent) {
+        var ed = new Date(String(a.date) + 'T00:00:00');
+        when = !isNaN(ed) ? ed.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : String(a.date || '');
+        if (a.startTime) when += ' \u00b7 ' + a.startTime + (a.endTime ? '\u2013' + a.endTime : '');
+        if (a.venue) when += ' \u00b7 ' + a.venue;
+      } else if (a.createdAt) {
         var d = new Date(a.createdAt);
         if (!isNaN(d)) when = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
       }
       var body = String(a.body || '').replace(/\s+/g, ' ').trim();
       if (body.length > 150) body = body.slice(0, 150).replace(/\s+\S*$/, '') + '…';
+      var tags = { 'Practical Training': 'Practical', 'Programme Seminar': 'Seminar', 'Publication Workshop': 'Workshop', 'Output Due': 'Output due' };
+      var tag = isEvent ? (tags[a.kind] || 'Event') : 'Announcement';
       return '<div class="ann-marquee-item">' +
-        '<span class="tag">Announcement</span>' +
+        '<span class="tag">' + esc(tag) + '</span>' +
         '<span class="t">' + esc(a.title) + '</span>' +
-        (body ? '<span class="b">' + esc(body) + '</span>' : '') +
-        (when ? '<span class="w">' + esc(when) + '</span>' : '') +
+        (isEvent
+          ? (when ? '<span class="b">' + esc(when) + '</span>' : '')
+          : ((body ? '<span class="b">' + esc(body) + '</span>' : '') + (when ? '<span class="w">' + esc(when) + '</span>' : ''))) +
       '</div>';
     }
     try {

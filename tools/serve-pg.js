@@ -58,6 +58,32 @@ const TEMPLATES = {
   "Seminar Template": "1e1Ep8-LvFlxXP8VBLPiWnP-lVqCq_lFH",
 };
 
+function programmeDemoSessions() {
+  const plan = [
+    [1, "2026-11-12", "2026-11-26", false, "MS Word I: page setup, margins, fonts, spacing and section breaks", "Postgraduate orientation: PG regulations, supervision and milestones", ""],
+    [2, "2026-12-10", "2026-12-17", false, "Academic searching: Google Scholar, databases, keywords and Boolean operators", "Developing a researchable topic: gaps, problem statement and objectives", ""],
+    [3, "2027-01-14", "2027-01-28", true, "EndNote I: importing, organising and managing references and PDFs", "Critical literature review: synthesis, comparison and research gaps", "Understanding the publishing landscape"],
+    [4, "2027-02-11", "2027-02-25", false, "MS Word II: styles, heading hierarchy, contents and cross-references", "Research proposal structure: background, problem, aim and methodology", ""],
+    [5, "2027-03-11", "2027-03-25", true, "Research data workflows: file organisation, metadata and version control", "Research methodology and reproducibility in physics", "Indexing and journal rankings: Web of Science, Scopus and metrics"],
+    [6, "2027-04-08", "2027-04-29", true, "EndNote II: citations, bibliographies and citation styles", "Academic integrity: plagiarism, responsible AI, ethics and authorship", "Spotting predatory and hijacked journals"],
+    [7, "2027-05-13", "2027-05-27", false, "MS Word III: equations, numbering, symbols and cross-references", "Scientific writing and reporting results, figures, tables and units", ""],
+    [8, "2027-06-10", "2027-06-24", true, "Scientific figures and tables: plotting, labels, scales and uncertainty", "Data interpretation and discussion: evidence, inference and conclusions", "Selecting the right journal: scope, guidelines and open access"],
+    [9, "2027-07-08", "2027-07-29", true, "LaTeX/Overleaf: structure, equations, references and cross-referencing", "Dissertation and thesis preparation: coherence and requirements", "Preparing a manuscript for submission"],
+    [10, "2027-08-12", "2027-08-26", true, "Similarity checking: interpreting reports and ethical paraphrasing", "Research publication: journal articles, peer review and predatory publishing", "Online submission systems: Editorial Manager hands-on"],
+    [11, "2027-09-09", "2027-09-30", true, "Scientific presentation: slides, equations, plots and timing", "Proposal and thesis defence: presenting methods and answering questions", "Peer review and revision: responding to editors and reviewers"],
+    [12, "2027-10-14", "2027-10-28", true, "Final document audit: formatting, citations, references and compliance", "Annual progress review: milestones, challenges and next-year plans", "Post-acceptance and visibility: proofs, licences and profiles"],
+  ];
+  const rows = [];
+  plan.forEach((p) => {
+    const [m, practical, seminar, workshop, pracTitle, semTitle, workTitle] = p;
+    rows.push({ id: "PgsM" + m + "P", month: m, kind: "Practical Training", title: "Month " + m + ": " + pracTitle, date: practical, startTime: "10:00", endTime: "13:00", venue: "PG Class", notes: "Practical training session.", status: "Scheduled", createdBy: "system" });
+    rows.push({ id: "PgsM" + m + "S", month: m, kind: "Programme Seminar", title: "Month " + m + ": " + semTitle, date: seminar, startTime: "10:00", endTime: "12:00", venue: "PG Class", notes: "Monthly programme seminar.", status: "Scheduled", createdBy: "system" });
+    if (workshop) rows.push({ id: "PgsM" + m + "W", month: m, kind: "Publication Workshop", title: "Month " + m + ": " + workTitle, date: practical, startTime: "14:00", endTime: "17:00", venue: "PG Class", notes: "Publication skills workshop.", status: "Scheduled", createdBy: "system" });
+    rows.push({ id: "PgsM" + m + "O", month: m, kind: "Output Due", title: "Month " + m + ": outputs due", date: seminar, startTime: "10:00", endTime: "12:00", venue: "PG Class", notes: "Submit the month's required output at the seminar.", status: "Scheduled", createdBy: "system" });
+  });
+  return rows;
+}
+
 /* ---- In-memory demo database ---- */
 function seedDb() {
   const now = "2026-10-01 08:00:00";
@@ -90,7 +116,36 @@ function seedDb() {
     { id: "Ann01", title: "Welcome to 2026/2027 Session", body: "Department of Physics Postgraduate Journey is now live. Register and await approval.", active: true, createdBy: "Usr04", createdAt: "2026-10-01 08:00:00" },
     { id: "Ann02", title: "Monthly Seminar Schedule", body: "Next seminar holds on the last Thursday of every month at 2PM, Physics Seminar Room.", active: true, createdBy: "Usr04", createdAt: "2026-10-15 10:00:00" },
   ];
-  return { users, students, staff, submissions, announcements, sessions: {}, seq: 100 };
+  const programmeSessions = programmeDemoSessions();
+  const deadlines = [
+    { id: "Ddl01", title: "Research Plan Form", date: "2026-11-26", notes: "Submit via the portal." },
+    { id: "Ddl02", title: "Progress Report", date: "2027-02-25", notes: "Signed by supervisor." },
+    { id: "Ddl03", title: "Final Thesis/Dissertation", date: "2027-10-28", notes: "Four bound copies." },
+  ];
+  const seminars = [
+    { id: "Sem01", title: "Solar Physics and Space Weather", date: "2026-11-26", venue: "Physics Seminar Room", presenters: "UA/pg2026/000001" },
+    { id: "Sem02", title: "Nuclear Techniques in Materials Analysis", date: "2027-01-28", venue: "Physics Seminar Room", presenters: "26/408PHYX/040" },
+  ];
+  const meetings = [
+    { id: "Mtg01", regNumber: "UA/pg2026/000001", date: "2026-11-05", time: "11:00", venue: "Supervisor's office", notes: "Progress discussion.", status: "Scheduled" },
+    { id: "Mtg02", regNumber: "UA/pg2026/000001", date: "2026-12-03", time: "11:00", venue: "Supervisor's office", notes: "Draft proposal review.", status: "Scheduled" },
+    { id: "Mtg03", regNumber: "26/408PHYX/040", date: "2026-11-10", time: "14:00", venue: "Physics Seminar Room", notes: "Chapter review.", status: "Scheduled" },
+  ];
+  const presentationIntents = [
+    { id: "Pin01", regNumber: "UA/pg2026/000001", kind: "Proposal Presentation", preferredMonth: "2026-11", note: "Draft proposal is ready for departmental defence.", status: "Pending Supervisors",
+      mainStatus: "Approved", mainBy: "Dr. Bala Ahmed", mainAt: "2026-10-22 10:00:00", mainNote: "",
+      coStatus: "Pending", coBy: "", coAt: "", coNote: "",
+      coordinatorStatus: "Pending", coordinatorBy: "", coordinatorAt: "", coordinatorNote: "", stageApplied: "",
+      history: JSON.stringify([{ at: "2026-10-20 09:00:00", by: "Chinedu Emeka Okafor", role: "Student", action: "Submitted", note: "Proposal Presentation / 2026-11" }, { at: "2026-10-22 10:00:00", by: "Dr. Bala Ahmed", role: "Main Supervisor", action: "Approved", note: "" }]),
+      createdAt: "2026-10-20 09:00:00", updatedAt: "2026-10-22 10:00:00" },
+    { id: "Pin02", regNumber: "26/408PHYX/040", kind: "Progress Report Presentation", preferredMonth: "2026-12", note: "Annual progress report submitted for compliance review.", status: "Pending Coordinator",
+      mainStatus: "Approved", mainBy: "Dr. Bala Ahmed", mainAt: "2026-10-23 12:00:00", mainNote: "",
+      coStatus: "Not Required", coBy: "", coAt: "", coNote: "",
+      coordinatorStatus: "Pending", coordinatorBy: "", coordinatorAt: "", coordinatorNote: "", stageApplied: "",
+      history: JSON.stringify([{ at: "2026-10-21 08:30:00", by: "Blessing Chidi Eze", role: "Student", action: "Submitted", note: "Progress Report Presentation / 2026-12" }, { at: "2026-10-23 12:00:00", by: "Dr. Bala Ahmed", role: "Main Supervisor", action: "Approved", note: "" }]),
+      createdAt: "2026-10-21 08:30:00", updatedAt: "2026-10-23 12:00:00" },
+  ];
+  return { users, students, staff, submissions, announcements, programmeSessions, deadlines, seminars, meetings, presentationIntents, sessions: {}, seq: 100 };
 }
 
 const DB = seedDb();
@@ -111,6 +166,18 @@ function assertRole(user, roles) {
 }
 function nextId(prefix) { DB.seq += 1; return prefix + DB.seq; }
 function now() { return new Date().toISOString().slice(0, 19).replace("T", " "); }
+
+function publicFeedItems() {
+  const today = new Date().toISOString().slice(0, 10);
+  const events = DB.programmeSessions.filter((s) => s.date >= today && s.status !== "Cancelled")
+    .sort((a, b) => String(a.date + " " + a.startTime).localeCompare(String(b.date + " " + b.startTime)))
+    .slice(0, 8)
+    .map((s) => ({ id: s.id, type: "programme", title: s.title, body: "", createdAt: "", date: s.date, startTime: s.startTime, endTime: s.endTime, kind: s.kind, venue: s.venue }));
+  const announcements = DB.announcements.filter((a) => a.active).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+    .slice(0, events.length ? 8 : 12)
+    .map((a) => ({ id: a.id, type: "announcement", title: a.title, body: a.body, createdAt: a.createdAt }));
+  return events.concat(announcements);
+}
 
 /* ---- Mock API ---- */
 const API = {
@@ -194,8 +261,73 @@ const API = {
       stages: STAGES,
     };
   },
-  api_listSubmissions(token) {
+  api_getProgrammeCalendar(token) {
     const user = requireUser(token);
+    let meetings = [];
+    if (user.role === "Student") {
+      meetings = DB.meetings.filter((m) => m.regNumber === user.regNumber);
+    } else if (user.role === "Staff") {
+      const regs = DB.students.filter((s) => s.mainSupervisorId === user.id || s.coSupervisorId === user.id).map((s) => s.regNumber);
+      meetings = DB.meetings.filter((m) => regs.indexOf(m.regNumber) !== -1);
+    }
+    return {
+      timezone: "Africa/Lagos",
+      startMonth: "2026-11",
+      sessions: DB.programmeSessions.slice().sort((a, b) => String(a.date + " " + a.startTime).localeCompare(String(b.date + " " + b.startTime))),
+      deadlines: DB.deadlines.slice().sort((a, b) => String(a.date).localeCompare(String(b.date))),
+      seminars: DB.seminars.slice().sort((a, b) => String(a.date).localeCompare(String(b.date))),
+      meetings: meetings.slice().sort((a, b) => String(a.date + " " + a.time).localeCompare(String(b.date + " " + b.time))),
+      canEdit: user.role === "PG_Coordinator",
+    };
+  },
+  api_saveProgrammeSession(token, payload) {
+    const user = requireUser(token);
+    assertRole(user, ["PG_Coordinator"]);
+    payload = payload || {};
+    const title = String(payload.title || "").trim();
+    const date = String(payload.date || "").trim();
+    const kind = String(payload.kind || "").trim();
+    const status = String(payload.status || "Scheduled").trim();
+    let month = String(payload.month || "").trim();
+    const monthNum = parseInt(month, 10);
+    if (/^\d{1,2}$/.test(month)) {
+      if (!(monthNum >= 1 && monthNum <= 12)) throw new Error("A valid month is required.");
+      month = monthNum;
+    } else if (!/^\d{4}-(0[1-9]|1[0-2])(-\d{2})?$/.test(month)) {
+      throw new Error("A valid month is required.");
+    }
+    if (!title) throw new Error("Title is required.");
+    if (title.length > 200) throw new Error("Title must be 200 characters or fewer.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("A valid date is required.");
+    if (["Practical Training", "Programme Seminar", "Publication Workshop", "Output Due"].indexOf(kind) === -1) throw new Error("Invalid session type.");
+    if (["Scheduled", "Cancelled"].indexOf(status) === -1) throw new Error("Invalid status.");
+    const startTime = String(payload.startTime || "").trim();
+    const endTime = String(payload.endTime || "").trim();
+    if (startTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime)) throw new Error("Start time must be HH:mm.");
+    if (endTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime)) throw new Error("End time must be HH:mm.");
+    if (startTime && endTime && endTime < startTime) throw new Error("End time must be after the start time.");
+    const row = { month, kind, title, date, startTime, endTime, venue: String(payload.venue || "").trim(), notes: String(payload.notes || ""), status, updatedAt: now() };
+    if (payload.id) {
+      const existing = DB.programmeSessions.find((x) => x.id === payload.id);
+      if (!existing) throw new Error("Programme session not found.");
+      Object.assign(existing, row);
+      return { ok: true, id: existing.id };
+    }
+    row.id = nextId("Pgs");
+    row.createdBy = user.id;
+    row.createdAt = now();
+    DB.programmeSessions.push(row);
+    return { ok: true, id: row.id };
+  },
+  api_deleteProgrammeSession(token, id) {
+    const user = requireUser(token);
+    assertRole(user, ["PG_Coordinator"]);
+    const idx = DB.programmeSessions.findIndex((x) => x.id === id);
+    if (idx === -1) throw new Error("Programme session not found.");
+    DB.programmeSessions.splice(idx, 1);
+    return { ok: true };
+  },
+  api_listSubmissions(token) {    const user = requireUser(token);
     let list;
     if (user.role === "Student") list = DB.submissions.filter((s) => s.regNumber === user.regNumber);
     else if (user.role === "Staff") {
@@ -420,7 +552,7 @@ const API = {
 const MOCK_JS = `
 <script>
 (function () {
-  var DB = ${JSON.stringify({ users: DB.users, students: DB.students, staff: DB.staff, submissions: DB.submissions, announcements: DB.announcements })};
+  var DB = ${JSON.stringify({ users: DB.users, students: DB.students, staff: DB.staff, submissions: DB.submissions, announcements: DB.announcements, programmeSessions: DB.programmeSessions, deadlines: DB.deadlines, seminars: DB.seminars, meetings: DB.meetings, presentationIntents: DB.presentationIntents })};
   window.__PG_MOCK_DB__ = DB;
 })();
 window.google = { script: { run: (function () {
@@ -476,6 +608,91 @@ window.__PG_MOCK_API__ = (function () {
   function now() { return new Date().toISOString().slice(0, 19).replace('T', ' '); }
   function find(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
   function filter(arr, fn) { var out = []; for (var i = 0; i < arr.length; i++) if (fn(arr[i])) out.push(arr[i]); return out; }
+  var PRESENTATION_INTENTS = {
+    'Proposal Presentation': { label: 'Proposal presentation', stage: '5 - Proposal Defence Form', warn: '4 - Proposal Submission' },
+    'Progress Report Presentation': { label: 'Progress report presentation', stage: '9 - Compliance Inspection', warn: '8 - Progress Report' },
+    'Final Examination': { label: 'Final examination', stage: '11 - External Defence', warn: '11 - External Defence' }
+  };
+  var PRESENTATION_ACTIVE = ['Pending Supervisors', 'Pending Coordinator', 'Returned'];
+  function presentationMeta(kind) { return PRESENTATION_INTENTS[kind] || null; }
+  function presentationStaffId(user) {
+    if (!user || user.role !== 'Staff') return '';
+    if (find(DB.staff, function (x) { return String(x.id) === String(user.id); })) return String(user.id);
+    if (find(DB.staff, function (x) { return String(x.id) === String(user.regNumber); })) return String(user.regNumber);
+    var em = String(user.email || '').toLowerCase();
+    var st = em && find(DB.staff, function (x) { return String(x.email || '').toLowerCase() === em; });
+    if (st) return String(st.id);
+    var fn = String(user.fullName || '').trim().toLowerCase();
+    st = fn && find(DB.staff, function (x) { return String(x.fullName || '').trim().toLowerCase() === fn; });
+    return st ? String(st.id) : '';
+  }
+  function presentationWarn(stu, kind) {
+    var meta = presentationMeta(kind);
+    if (!stu || !meta) return '';
+    var idx = STAGES.indexOf(String(stu.currentStage || '')), wi = STAGES.indexOf(meta.warn);
+    if (idx < 0 || wi < 0 || idx >= wi) return '';
+    return 'This is earlier than the usual stage (' + meta.warn + '). You can still submit; the PG Coordinator will decide.';
+  }
+  function presentationView(r, viewer) {
+    var stu = find(DB.students, function (s) { return String(s.regNumber) === String(r.regNumber); });
+    var main = stu && stu.mainSupervisorId ? find(DB.staff, function (x) { return String(x.id) === String(stu.mainSupervisorId); }) : null;
+    var co = stu && stu.coSupervisorId ? find(DB.staff, function (x) { return String(x.id) === String(stu.coSupervisorId); }) : null;
+    var meta = presentationMeta(r.kind), hist = [];
+    try { hist = JSON.parse(r.history || '[]'); } catch (e) { hist = []; }
+    var v = {
+      id: r.id, regNumber: String(r.regNumber || ''), studentName: stu ? fullNameOf(stu) : '',
+      programme: stu ? stu.programme : '', currentStage: stu ? stu.currentStage : '',
+      kind: String(r.kind || ''), preferredMonth: String(r.preferredMonth || ''), note: String(r.note || ''), status: String(r.status || ''),
+      mainStatus: String(r.mainStatus || 'Pending'), mainBy: String(r.mainBy || ''), mainAt: String(r.mainAt || ''), mainNote: String(r.mainNote || ''),
+      coStatus: String(r.coStatus || (co ? 'Pending' : 'Not Required')), coBy: String(r.coBy || ''), coAt: String(r.coAt || ''), coNote: String(r.coNote || ''),
+      coordinatorStatus: String(r.coordinatorStatus || 'Pending'), coordinatorBy: String(r.coordinatorBy || ''), coordinatorAt: String(r.coordinatorAt || ''), coordinatorNote: String(r.coordinatorNote || ''),
+      stageApplied: String(r.stageApplied || ''), targetStage: meta ? meta.stage : '',
+      mainSupervisorName: main ? main.fullName : '', coSupervisorName: co ? co.fullName : '',
+      warning: presentationWarn(stu, r.kind), history: hist, createdAt: String(r.createdAt || ''), updatedAt: String(r.updatedAt || ''),
+      canEdit: false, canWithdraw: false, canAct: false, myRole: '', myStatus: ''
+    };
+    if (viewer && viewer.role === 'Student') {
+      v.canEdit = ['Pending Supervisors', 'Returned'].indexOf(v.status) > -1;
+      v.canWithdraw = PRESENTATION_ACTIVE.indexOf(v.status) > -1;
+    } else if (viewer && viewer.role === 'Staff' && stu) {
+      var sid = presentationStaffId(viewer);
+      var isMain = sid && String(stu.mainSupervisorId) === sid;
+      var isCo = sid && String(stu.coSupervisorId) === sid;
+      v.myRole = isMain ? 'Main Supervisor' : (isCo ? 'Co-Supervisor' : '');
+      v.myStatus = isMain ? v.mainStatus : (isCo ? v.coStatus : '');
+      v.canAct = !!v.myRole && v.status === 'Pending Supervisors' && v.myStatus === 'Pending';
+    } else if (viewer && viewer.role === 'PG_Coordinator') {
+      v.canAct = v.status === 'Pending Coordinator';
+    }
+    return v;
+  }
+  function presentationIntentsForStudent(user) {
+    return filter(DB.presentationIntents, function (r) { return String(r.regNumber) === String(user.regNumber); })
+      .sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); })
+      .map(function (r) { return presentationView(r, user); });
+  }
+  function presentationIntentsForStaff(user) {
+    var sid = presentationStaffId(user), regs = [];
+    if (!sid) return [];
+    regs = filter(DB.students, function (s) { return String(s.mainSupervisorId) === sid || String(s.coSupervisorId) === sid; }).map(function (s) { return s.regNumber; });
+    return filter(DB.presentationIntents, function (r) { return regs.indexOf(r.regNumber) !== -1; })
+      .sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); })
+      .map(function (r) { return presentationView(r, user); });
+  }
+  function presentationIntentsForCoordinator(user) {
+    return DB.presentationIntents.filter(function (r) { return r.status !== 'Withdrawn'; })
+      .sort(function (a, b) {
+        var ap = a.status === 'Pending Coordinator' ? 0 : 1, bp = b.status === 'Pending Coordinator' ? 0 : 1;
+        return ap - bp || String(b.createdAt).localeCompare(String(a.createdAt));
+      })
+      .map(function (r) { return presentationView(r, user); });
+  }
+  function presentationPush(r, ev) {
+    var a = [];
+    try { a = JSON.parse(r.history || '[]'); } catch (e) { a = []; }
+    a.push(ev);
+    return JSON.stringify(a.slice(-20));
+  }
 
   return {
     api_login: function (regNumber, password) {
@@ -554,6 +771,7 @@ window.__PG_MOCK_API__ = (function () {
         },
         submissions: subs,
         announcements: anns.slice(0, 10),
+        presentationIntents: presentationIntentsForStudent(user),
         templates: TEMPLATES,
         stages: STAGES
       };
@@ -600,7 +818,7 @@ window.__PG_MOCK_API__ = (function () {
         return { regNumber: s.regNumber, fullName: fullNameOf(s), programme: s.programme, specialisation: s.specialisation, mainSupervisor: main ? main.fullName : '', coSupervisor: co ? co.fullName : '', currentStage: s.currentStage, status: u ? u.status : '' };
       });
       var staffList = filter(DB.staff, function (s) { return s.active; }).map(function (s) { return { id: s.id, fullName: s.fullName, rank: s.rank, specialisation: s.specialisation }; });
-      return { pending: pending, students: allStudents, staff: staffList, stages: STAGES };
+      return { pending: pending, students: allStudents, staff: staffList, stages: STAGES, presentationIntents: presentationIntentsForCoordinator(user) };
     },
     api_approveStudent: function (token, regNumber) {
       var user = requireUser(token);
@@ -755,14 +973,16 @@ window.__PG_MOCK_API__ = (function () {
     api_getStaffDashboard: function (token) {
       var user = requireUser(token);
       assertRole(user, ['Staff']);
-      var mine = filter(DB.students, function (s) { return s.mainSupervisorId === user.id || s.coSupervisorId === user.id; });
+      var sid = presentationStaffId(user);
+      var mine = filter(DB.students, function (s) { return String(s.mainSupervisorId) === sid || String(s.coSupervisorId) === sid; });
       var regs = mine.map(function (s) { return s.regNumber; });
       return {
         students: mine.map(function (s) { return { regNumber: s.regNumber, fullName: fullNameOf(s), programme: s.programme, specialisation: s.specialisation, currentStage: s.currentStage, passportUrl: s.passportUrl }; }),
         submissions: filter(DB.submissions, function (s) { return regs.indexOf(s.regNumber) !== -1; }).map(function (s) {
           var stu = find(DB.students, function (x) { return x.regNumber === s.regNumber; });
           return { id: s.id, regNumber: s.regNumber, studentName: stu ? fullNameOf(stu) : '', type: s.type, status: s.status, supervisorNotes: s.supervisorNotes, createdAt: s.createdAt };
-        })
+        }),
+        presentationIntents: presentationIntentsForStaff(user)
       };
     },
     api_exportData: function (token) {
@@ -779,13 +999,108 @@ window.__PG_MOCK_API__ = (function () {
     },
     api_updateProfile: function () { return true; },
     api_listStaff: function (token) { requireUser(token); return filter(DB.staff, function (s) { return s.active; }); },
+    api_savePresentationIntent: function (token, payload) {
+      var user = requireUser(token);
+      assertRole(user, ['Student']);
+      var stu = find(DB.students, function (s) { return String(s.regNumber) === String(user.regNumber); });
+      if (!stu) throw new Error('Student profile not found.');
+      if (!stu.mainSupervisorId) throw new Error('Your Main Supervisor must be assigned before you can request a presentation.');
+      payload = payload || {};
+      var kind = String(payload.kind || '');
+      if (!presentationMeta(kind)) throw new Error('Choose a valid presentation type.');
+      var month = String(payload.preferredMonth || '').trim();
+      if (!/^\\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Choose a valid preferred month.');
+      var note = String(payload.note || '').trim().slice(0, 1200);
+      var coId = String(stu.coSupervisorId || '');
+      if (coId && !find(DB.staff, function (x) { return String(x.id) === coId; })) coId = '';
+      var nowStr = now(), id = String(payload.id || ''), r;
+      if (id) {
+        r = find(DB.presentationIntents, function (x) { return String(x.id) === id; });
+        if (!r || String(r.regNumber) !== String(user.regNumber)) throw new Error('Presentation intent not found.');
+        if (['Pending Supervisors', 'Returned'].indexOf(String(r.status)) === -1) throw new Error('This presentation intent can no longer be edited.');
+        r.kind = kind; r.preferredMonth = month; r.note = note; r.status = 'Pending Supervisors';
+        r.mainStatus = 'Pending'; r.mainBy = ''; r.mainAt = ''; r.mainNote = '';
+        r.coStatus = coId ? 'Pending' : 'Not Required'; r.coBy = ''; r.coAt = ''; r.coNote = '';
+        r.coordinatorStatus = 'Pending'; r.coordinatorBy = ''; r.coordinatorAt = ''; r.coordinatorNote = ''; r.stageApplied = '';
+        r.history = presentationPush(r, { at: nowStr, by: user.fullName, role: 'Student', action: 'Resubmitted', note: kind + ' / ' + month });
+        r.updatedAt = nowStr;
+      } else {
+        var existing = find(DB.presentationIntents, function (x) { return String(x.regNumber) === String(user.regNumber) && PRESENTATION_ACTIVE.indexOf(String(x.status)) > -1; });
+        if (existing) throw new Error('You already have a presentation intent in progress. Edit and resubmit it, or withdraw it first.');
+        r = { id: nextId('Pnt'), regNumber: user.regNumber, kind: kind, preferredMonth: month, note: note, status: 'Pending Supervisors',
+          mainStatus: 'Pending', mainBy: '', mainAt: '', mainNote: '',
+          coStatus: coId ? 'Pending' : 'Not Required', coBy: '', coAt: '', coNote: '',
+          coordinatorStatus: 'Pending', coordinatorBy: '', coordinatorAt: '', coordinatorNote: '', stageApplied: '',
+          history: JSON.stringify([{ at: nowStr, by: user.fullName, role: 'Student', action: 'Submitted', note: kind + ' / ' + month }]),
+          createdAt: nowStr, updatedAt: nowStr };
+        DB.presentationIntents.push(r);
+        id = r.id;
+      }
+      return { id: id, status: 'Pending Supervisors', warning: presentationWarn(stu, kind) };
+    },
+    api_decidePresentationIntent: function (token, id, decision, note) {
+      var user = requireUser(token);
+      assertRole(user, ['Staff']);
+      decision = String(decision || '');
+      if (['Approved', 'Declined'].indexOf(decision) === -1) throw new Error('Invalid decision.');
+      note = String(note || '').trim().slice(0, 1200);
+      if (decision === 'Declined' && !note) throw new Error('A reason is required when declining.');
+      var r = find(DB.presentationIntents, function (x) { return String(x.id) === String(id); });
+      if (!r) throw new Error('Presentation intent not found.');
+      if (r.status !== 'Pending Supervisors') throw new Error('This presentation intent is no longer awaiting supervisor approval.');
+      var stu = find(DB.students, function (s) { return String(s.regNumber) === String(r.regNumber); });
+      var sid = presentationStaffId(user);
+      var isMain = sid && String(stu.mainSupervisorId) === sid;
+      var isCo = sid && String(stu.coSupervisorId) === sid;
+      if (!isMain && !isCo) throw new Error('This presentation intent is not from your student.');
+      var field = isMain ? 'main' : 'co';
+      if (String(r[field + 'Status'] || 'Pending') !== 'Pending') throw new Error('You have already decided on this presentation intent.');
+      var nowStr = now();
+      r[field + 'Status'] = decision; r[field + 'By'] = user.fullName; r[field + 'At'] = nowStr; r[field + 'Note'] = note;
+      var mainStatus = isMain ? decision : String(r.mainStatus || 'Pending');
+      var coStatus = isCo ? decision : String(r.coStatus || (stu.coSupervisorId ? 'Pending' : 'Not Required'));
+      r.status = decision === 'Declined' ? 'Returned' : (mainStatus === 'Approved' && (!stu.coSupervisorId || coStatus === 'Approved') ? 'Pending Coordinator' : 'Pending Supervisors');
+      r.history = presentationPush(r, { at: nowStr, by: user.fullName, role: isMain ? 'Main Supervisor' : 'Co-Supervisor', action: decision, note: note });
+      r.updatedAt = nowStr;
+      return { ok: true, status: r.status };
+    },
+    api_decidePresentationIntentCoordinator: function (token, id, decision, note) {
+      var user = requireUser(token);
+      assertRole(user, ['PG_Coordinator']);
+      decision = String(decision || '');
+      if (['Approved', 'Returned'].indexOf(decision) === -1) throw new Error('Invalid decision.');
+      note = String(note || '').trim().slice(0, 1200);
+      if (decision === 'Returned' && !note) throw new Error('A reason is required when returning a presentation intent.');
+      var r = find(DB.presentationIntents, function (x) { return String(x.id) === String(id); });
+      if (!r) throw new Error('Presentation intent not found.');
+      if (r.status !== 'Pending Coordinator') throw new Error('This presentation intent is not awaiting PG Coordinator approval.');
+      var stu = find(DB.students, function (s) { return String(s.regNumber) === String(r.regNumber); });
+      var nowStr = now(), applied = '';
+      if (decision === 'Approved') {
+        var meta = presentationMeta(r.kind), target = meta ? meta.stage : '';
+        if (target && STAGES.indexOf(target) > STAGES.indexOf(stu.currentStage)) { stu.currentStage = target; stu.updatedAt = nowStr; applied = target; }
+        r.status = 'Approved'; r.coordinatorStatus = 'Approved'; r.coordinatorBy = user.fullName; r.coordinatorAt = nowStr; r.coordinatorNote = note; r.stageApplied = applied;
+      } else {
+        r.status = 'Returned'; r.coordinatorStatus = 'Returned'; r.coordinatorBy = user.fullName; r.coordinatorAt = nowStr; r.coordinatorNote = note;
+      }
+      r.history = presentationPush(r, { at: nowStr, by: user.fullName, role: 'PG Coordinator', action: decision, note: note });
+      r.updatedAt = nowStr;
+      return { ok: true, status: decision, stageApplied: applied };
+    },
+    api_withdrawPresentationIntent: function (token, id) {
+      var user = requireUser(token);
+      assertRole(user, ['Student']);
+      var r = find(DB.presentationIntents, function (x) { return String(x.id) === String(id); });
+      if (!r || String(r.regNumber) !== String(user.regNumber)) throw new Error('Presentation intent not found.');
+      if (PRESENTATION_ACTIVE.indexOf(String(r.status)) === -1) throw new Error('This presentation intent can no longer be withdrawn.');
+      r.status = 'Withdrawn';
+      r.history = presentationPush(r, { at: now(), by: user.fullName, role: 'Student', action: 'Withdrawn', note: '' });
+      r.updatedAt = now();
+      return { ok: true };
+    },
     /* ---- public landing pages (no auth) ---- */
     api_publicAnnouncements: function () {
-      var list = filter(DB.announcements, function (a) { return a.active && String(a.title || '').trim() !== ''; });
-      list.sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
-      return { items: list.slice(0, 12).map(function (a) {
-        return { id: a.id, title: String(a.title || ''), body: String(a.body || ''), createdAt: String(a.createdAt || '') };
-      }) };
+      return { items: publicFeedItems() };
     },
     api_checkRegistrationStatus: function (regNumber) {
       var reg = String(regNumber || '').trim();
