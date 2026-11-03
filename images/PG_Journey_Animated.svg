@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900" role="img" aria-label="Animated Postgraduate Journey: 5 phases and 16 steps">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#064e3b"/></linearGradient><filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<style>
+.node,.ring,.lbl,.bn,.prog,.mk{animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}
+.node{transform-box:fill-box;transform-origin:center}
+.ring{transform-box:fill-box;transform-origin:center;opacity:0;fill:none;stroke-width:3}
+.num{fill:#fff;font:700 22px 'Segoe UI',Arial,sans-serif;text-anchor:middle}
+.lblt{font:600 13.5px 'Segoe UI',Arial,sans-serif;text-anchor:middle}
+.title{font:700 30px 'Segoe UI',Arial,sans-serif;fill:#ecfdf5;text-anchor:middle}
+.sub{font:400 14px 'Segoe UI',Arial,sans-serif;fill:#94a3b8;text-anchor:middle}
+.bt1{font:700 22px 'Segoe UI',Arial,sans-serif;fill:#fff;text-anchor:middle}
+.bt2{font:500 14px 'Segoe UI',Arial,sans-serif;text-anchor:middle}
+.leg{font:600 12px 'Segoe UI',Arial,sans-serif;fill:#cbd5e1}
+.gtxt{font:700 9px 'Segoe UI',Arial,sans-serif;fill:#0f172a;text-anchor:middle}
+.prog{stroke-dasharray:1000;stroke-dashoffset:1000;opacity:0}
+.bn{opacity:0}
+@media (prefers-reduced-motion:reduce){
+ .node,.ring,.lbl,.bn,.prog,.mk{animation:none!important}
+ .node{color:var(--c)} .lblt{fill:#e2e8f0} .prog{stroke-dashoffset:0;opacity:1} .mk{display:none}
+ .bn:last-of-type{opacity:1}
+}
+
+@keyframes prog{0%{stroke-dashoffset:1000;opacity:1}2.500%{stroke-dashoffset:1000.0;opacity:1}7.500%{stroke-dashoffset:932.6;opacity:1}12.500%{stroke-dashoffset:865.1;opacity:1}17.500%{stroke-dashoffset:797.7;opacity:1}22.500%{stroke-dashoffset:734.1;opacity:1}27.500%{stroke-dashoffset:666.7;opacity:1}32.500%{stroke-dashoffset:599.2;opacity:1}37.500%{stroke-dashoffset:531.8;opacity:1}42.500%{stroke-dashoffset:468.2;opacity:1}47.500%{stroke-dashoffset:400.8;opacity:1}52.500%{stroke-dashoffset:333.3;opacity:1}57.500%{stroke-dashoffset:265.9;opacity:1}62.500%{stroke-dashoffset:202.3;opacity:1}67.500%{stroke-dashoffset:134.9;opacity:1}72.500%{stroke-dashoffset:67.4;opacity:1}77.500%{stroke-dashoffset:-0.0;opacity:1}93%{stroke-dashoffset:0;opacity:1}97%{stroke-dashoffset:0;opacity:0}97.1%{stroke-dashoffset:1000;opacity:0}100%{stroke-dashoffset:1000;opacity:0}}
+.prog{animation-name:prog}
+@keyframes mk{0%{opacity:1}93%{opacity:1}97%{opacity:0}100%{opacity:0}}
+.mk{animation-name:mk}
+@keyframes n1{0%,2.490%{color:#1e293b;transform:scale(1)}2.500%{color:#10b981;transform:scale(1.3)}4.500%{color:#10b981;transform:scale(1)}93%{color:#10b981;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r1{0%,2.490%{opacity:0;transform:scale(1)}2.500%{opacity:.9;transform:scale(1)}6.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l1{0%,2.490%{fill:#64748b}3.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b1{0%,2.490%{opacity:0}2.900%{opacity:1}7.000%{opacity:1}7.500%{opacity:0}100%{opacity:0}}
+.nd1{animation-name:n1}.rg1{animation-name:r1}.lb1 .lblt{animation-name:l1;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn1{animation-name:b1}
+@keyframes n2{0%,7.490%{color:#1e293b;transform:scale(1)}7.500%{color:#10b981;transform:scale(1.3)}9.500%{color:#10b981;transform:scale(1)}93%{color:#10b981;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r2{0%,7.490%{opacity:0;transform:scale(1)}7.500%{opacity:.9;transform:scale(1)}11.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l2{0%,7.490%{fill:#64748b}8.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b2{0%,7.490%{opacity:0}7.900%{opacity:1}12.000%{opacity:1}12.500%{opacity:0}100%{opacity:0}}
+.nd2{animation-name:n2}.rg2{animation-name:r2}.lb2 .lblt{animation-name:l2;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn2{animation-name:b2}
+@keyframes n3{0%,12.490%{color:#1e293b;transform:scale(1)}12.500%{color:#10b981;transform:scale(1.3)}14.500%{color:#10b981;transform:scale(1)}93%{color:#10b981;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r3{0%,12.490%{opacity:0;transform:scale(1)}12.500%{opacity:.9;transform:scale(1)}16.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l3{0%,12.490%{fill:#64748b}13.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b3{0%,12.490%{opacity:0}12.900%{opacity:1}17.000%{opacity:1}17.500%{opacity:0}100%{opacity:0}}
+.nd3{animation-name:n3}.rg3{animation-name:r3}.lb3 .lblt{animation-name:l3;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn3{animation-name:b3}
+@keyframes n4{0%,17.490%{color:#1e293b;transform:scale(1)}17.500%{color:#3b82f6;transform:scale(1.3)}19.500%{color:#3b82f6;transform:scale(1)}93%{color:#3b82f6;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r4{0%,17.490%{opacity:0;transform:scale(1)}17.500%{opacity:.9;transform:scale(1)}21.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l4{0%,17.490%{fill:#64748b}18.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b4{0%,17.490%{opacity:0}17.900%{opacity:1}22.000%{opacity:1}22.500%{opacity:0}100%{opacity:0}}
+.nd4{animation-name:n4}.rg4{animation-name:r4}.lb4 .lblt{animation-name:l4;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn4{animation-name:b4}
+@keyframes n5{0%,22.490%{color:#1e293b;transform:scale(1)}22.500%{color:#3b82f6;transform:scale(1.3)}24.500%{color:#3b82f6;transform:scale(1)}93%{color:#3b82f6;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r5{0%,22.490%{opacity:0;transform:scale(1)}22.500%{opacity:.9;transform:scale(1)}26.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l5{0%,22.490%{fill:#64748b}23.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b5{0%,22.490%{opacity:0}22.900%{opacity:1}27.000%{opacity:1}27.500%{opacity:0}100%{opacity:0}}
+.nd5{animation-name:n5}.rg5{animation-name:r5}.lb5 .lblt{animation-name:l5;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn5{animation-name:b5}
+@keyframes n6{0%,27.490%{color:#1e293b;transform:scale(1)}27.500%{color:#3b82f6;transform:scale(1.3)}29.500%{color:#3b82f6;transform:scale(1)}93%{color:#3b82f6;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r6{0%,27.490%{opacity:0;transform:scale(1)}27.500%{opacity:.9;transform:scale(1)}31.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l6{0%,27.490%{fill:#64748b}28.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b6{0%,27.490%{opacity:0}27.900%{opacity:1}32.000%{opacity:1}32.500%{opacity:0}100%{opacity:0}}
+.nd6{animation-name:n6}.rg6{animation-name:r6}.lb6 .lblt{animation-name:l6;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn6{animation-name:b6}
+@keyframes n7{0%,32.490%{color:#1e293b;transform:scale(1)}32.500%{color:#3b82f6;transform:scale(1.3)}34.500%{color:#3b82f6;transform:scale(1)}93%{color:#3b82f6;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r7{0%,32.490%{opacity:0;transform:scale(1)}32.500%{opacity:.9;transform:scale(1)}36.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l7{0%,32.490%{fill:#64748b}33.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b7{0%,32.490%{opacity:0}32.900%{opacity:1}37.000%{opacity:1}37.500%{opacity:0}100%{opacity:0}}
+.nd7{animation-name:n7}.rg7{animation-name:r7}.lb7 .lblt{animation-name:l7;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn7{animation-name:b7}
+@keyframes n8{0%,37.490%{color:#1e293b;transform:scale(1)}37.500%{color:#f59e0b;transform:scale(1.3)}39.500%{color:#f59e0b;transform:scale(1)}93%{color:#f59e0b;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r8{0%,37.490%{opacity:0;transform:scale(1)}37.500%{opacity:.9;transform:scale(1)}41.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l8{0%,37.490%{fill:#64748b}38.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b8{0%,37.490%{opacity:0}37.900%{opacity:1}42.000%{opacity:1}42.500%{opacity:0}100%{opacity:0}}
+.nd8{animation-name:n8}.rg8{animation-name:r8}.lb8 .lblt{animation-name:l8;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn8{animation-name:b8}
+@keyframes n9{0%,42.490%{color:#1e293b;transform:scale(1)}42.500%{color:#f59e0b;transform:scale(1.3)}44.500%{color:#f59e0b;transform:scale(1)}93%{color:#f59e0b;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r9{0%,42.490%{opacity:0;transform:scale(1)}42.500%{opacity:.9;transform:scale(1)}46.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l9{0%,42.490%{fill:#64748b}43.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b9{0%,42.490%{opacity:0}42.900%{opacity:1}47.000%{opacity:1}47.500%{opacity:0}100%{opacity:0}}
+.nd9{animation-name:n9}.rg9{animation-name:r9}.lb9 .lblt{animation-name:l9;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn9{animation-name:b9}
+@keyframes n10{0%,47.490%{color:#1e293b;transform:scale(1)}47.500%{color:#f59e0b;transform:scale(1.3)}49.500%{color:#f59e0b;transform:scale(1)}93%{color:#f59e0b;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r10{0%,47.490%{opacity:0;transform:scale(1)}47.500%{opacity:.9;transform:scale(1)}51.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l10{0%,47.490%{fill:#64748b}48.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b10{0%,47.490%{opacity:0}47.900%{opacity:1}52.000%{opacity:1}52.500%{opacity:0}100%{opacity:0}}
+.nd10{animation-name:n10}.rg10{animation-name:r10}.lb10 .lblt{animation-name:l10;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn10{animation-name:b10}
+@keyframes n11{0%,52.490%{color:#1e293b;transform:scale(1)}52.500%{color:#8b5cf6;transform:scale(1.3)}54.500%{color:#8b5cf6;transform:scale(1)}93%{color:#8b5cf6;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r11{0%,52.490%{opacity:0;transform:scale(1)}52.500%{opacity:.9;transform:scale(1)}56.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l11{0%,52.490%{fill:#64748b}53.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b11{0%,52.490%{opacity:0}52.900%{opacity:1}57.000%{opacity:1}57.500%{opacity:0}100%{opacity:0}}
+.nd11{animation-name:n11}.rg11{animation-name:r11}.lb11 .lblt{animation-name:l11;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn11{animation-name:b11}
+@keyframes n12{0%,57.490%{color:#1e293b;transform:scale(1)}57.500%{color:#8b5cf6;transform:scale(1.3)}59.500%{color:#8b5cf6;transform:scale(1)}93%{color:#8b5cf6;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r12{0%,57.490%{opacity:0;transform:scale(1)}57.500%{opacity:.9;transform:scale(1)}61.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l12{0%,57.490%{fill:#64748b}58.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b12{0%,57.490%{opacity:0}57.900%{opacity:1}62.000%{opacity:1}62.500%{opacity:0}100%{opacity:0}}
+.nd12{animation-name:n12}.rg12{animation-name:r12}.lb12 .lblt{animation-name:l12;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn12{animation-name:b12}
+@keyframes n13{0%,62.490%{color:#1e293b;transform:scale(1)}62.500%{color:#8b5cf6;transform:scale(1.3)}64.500%{color:#8b5cf6;transform:scale(1)}93%{color:#8b5cf6;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r13{0%,62.490%{opacity:0;transform:scale(1)}62.500%{opacity:.9;transform:scale(1)}66.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l13{0%,62.490%{fill:#64748b}63.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b13{0%,62.490%{opacity:0}62.900%{opacity:1}67.000%{opacity:1}67.500%{opacity:0}100%{opacity:0}}
+.nd13{animation-name:n13}.rg13{animation-name:r13}.lb13 .lblt{animation-name:l13;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn13{animation-name:b13}
+@keyframes n14{0%,67.490%{color:#1e293b;transform:scale(1)}67.500%{color:#ec4899;transform:scale(1.3)}69.500%{color:#ec4899;transform:scale(1)}93%{color:#ec4899;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r14{0%,67.490%{opacity:0;transform:scale(1)}67.500%{opacity:.9;transform:scale(1)}71.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l14{0%,67.490%{fill:#64748b}68.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b14{0%,67.490%{opacity:0}67.900%{opacity:1}72.000%{opacity:1}72.500%{opacity:0}100%{opacity:0}}
+.nd14{animation-name:n14}.rg14{animation-name:r14}.lb14 .lblt{animation-name:l14;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn14{animation-name:b14}
+@keyframes n15{0%,72.490%{color:#1e293b;transform:scale(1)}72.500%{color:#ec4899;transform:scale(1.3)}74.500%{color:#ec4899;transform:scale(1)}93%{color:#ec4899;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r15{0%,72.490%{opacity:0;transform:scale(1)}72.500%{opacity:.9;transform:scale(1)}76.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l15{0%,72.490%{fill:#64748b}73.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b15{0%,72.490%{opacity:0}72.900%{opacity:1}77.000%{opacity:1}77.500%{opacity:0}100%{opacity:0}}
+.nd15{animation-name:n15}.rg15{animation-name:r15}.lb15 .lblt{animation-name:l15;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn15{animation-name:b15}
+@keyframes n16{0%,77.490%{color:#1e293b;transform:scale(1)}77.500%{color:#ec4899;transform:scale(1.3)}79.500%{color:#ec4899;transform:scale(1)}93%{color:#ec4899;transform:scale(1)}98%,100%{color:#1e293b;transform:scale(1)}}
+@keyframes r16{0%,77.490%{opacity:0;transform:scale(1)}77.500%{opacity:.9;transform:scale(1)}81.000%{opacity:0;transform:scale(1.9)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes l16{0%,77.490%{fill:#64748b}78.500%{fill:#fff}93%{fill:#e2e8f0}98%,100%{fill:#64748b}}
+@keyframes b16{0%,77.490%{opacity:0}77.900%{opacity:1}92.500%{opacity:1}96.000%{opacity:0}100%{opacity:0}}
+.nd16{animation-name:n16}.rg16{animation-name:r16}.lb16 .lblt{animation-name:l16;animation-duration:24.0s;animation-iteration-count:infinite;animation-timing-function:linear}.bn16{animation-name:b16}</style>
+<rect width="1000" height="900" rx="22" fill="url(#bg)"/>
+<text class="title" x="500" y="56">Your Postgraduate Journey</text>
+<text class="sub" x="500" y="84">Department of Physics &#183; University of Abuja &#183; 5 phases, 16 steps</text>
+<path d="M140,200 L380,200 L620,200 L860,200 C950,200 950,350 860,350 L620,350 L380,350 L140,350 C50,350 50,500 140,500 L380,500 L620,500 L860,500 C950,500 950,650 860,650 L620,650 L380,650 L140,650" fill="none" stroke="#1e293b" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M140,200 L380,200 L620,200 L860,200 C950,200 950,350 860,350 L620,350 L380,350 L140,350 C50,350 50,500 140,500 L380,500 L620,500 L860,500 C950,500 950,650 860,650 L620,650 L380,650 L140,650" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="2 9" stroke-linecap="round"/>
+<path class="prog" d="M140,200 L380,200 L620,200 L860,200 C950,200 950,350 860,350 L620,350 L380,350 L140,350 C50,350 50,500 140,500 L380,500 L620,500 L860,500 C950,500 950,650 860,650 L620,650 L380,650 L140,650" pathLength="1000" fill="none" stroke="#6ee7b7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+<g>
+<circle class="ring rg1" cx="140" cy="200" r="34" stroke="#10b981"/>
+<g class="node nd1" style="--c:#10b981;color:#1e293b"><circle cx="140" cy="200" r="32" fill="currentColor" stroke="#10b981" stroke-width="3"/><text class="num" x="140" y="208">1</text></g>
+<g class="lbl lb1"><text class="lblt" fill="#64748b" x="140" y="256"><tspan x="140" dy="0">Admission</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg2" cx="380" cy="200" r="34" stroke="#10b981"/>
+<g class="node nd2" style="--c:#10b981;color:#1e293b"><circle cx="380" cy="200" r="32" fill="currentColor" stroke="#10b981" stroke-width="3" stroke-dasharray="5 4"/><text class="num" x="380" y="208">2</text></g>
+<g class="lbl lb2"><text class="lblt" fill="#64748b" x="380" y="256"><tspan x="380" dy="0">Lecture</tspan><tspan x="380" dy="16">Attendance</tspan></text></g>
+<text class="sub" x="380" y="158" style="font-size:10px">MSc only</text>
+</g>
+<g>
+<circle class="ring rg3" cx="620" cy="200" r="34" stroke="#10b981"/>
+<g class="node nd3" style="--c:#10b981;color:#1e293b"><circle cx="620" cy="200" r="32" fill="currentColor" stroke="#10b981" stroke-width="3"/><text class="num" x="620" y="208">3</text></g>
+<g class="lbl lb3"><text class="lblt" fill="#64748b" x="620" y="256"><tspan x="620" dy="0">Supervisor</tspan><tspan x="620" dy="16">Allocation</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg4" cx="860" cy="200" r="34" stroke="#3b82f6"/>
+<g class="node nd4" style="--c:#3b82f6;color:#1e293b"><circle cx="860" cy="200" r="32" fill="currentColor" stroke="#3b82f6" stroke-width="3"/><text class="num" x="860" y="208">4</text></g>
+<g class="lbl lb4"><text class="lblt" fill="#64748b" x="860" y="256"><tspan x="860" dy="0">Title Approval</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg5" cx="860" cy="350" r="34" stroke="#3b82f6"/>
+<g class="node nd5" style="--c:#3b82f6;color:#1e293b"><circle cx="860" cy="350" r="32" fill="currentColor" stroke="#3b82f6" stroke-width="3"/><text class="num" x="860" y="358">5</text></g>
+<g class="lbl lb5"><text class="lblt" fill="#64748b" x="860" y="406"><tspan x="860" dy="0">Proposal</tspan><tspan x="860" dy="16">Submission</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg6" cx="620" cy="350" r="34" stroke="#3b82f6"/>
+<g class="node nd6" style="--c:#3b82f6;color:#1e293b"><circle cx="620" cy="350" r="32" fill="currentColor" stroke="#3b82f6" stroke-width="3"/><text class="num" x="620" y="358">6</text></g>
+<g class="lbl lb6"><text class="lblt" fill="#64748b" x="620" y="406"><tspan x="620" dy="0">Defence</tspan><tspan x="620" dy="16">Readiness</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg7" cx="380" cy="350" r="34" stroke="#3b82f6"/>
+<g class="node nd7" style="--c:#3b82f6;color:#1e293b"><circle cx="380" cy="350" r="32" fill="currentColor" stroke="#3b82f6" stroke-width="3"/><text class="num" x="380" y="358">7</text></g>
+<g class="lbl lb7"><text class="lblt" fill="#64748b" x="380" y="406"><tspan x="380" dy="0">Proposal</tspan><tspan x="380" dy="16">Defence</tspan></text></g>
+<g><path d="M408,311 l11,11 l-11,11 l-11,-11 z" fill="#fbbf24" stroke="#78350f" stroke-width="1.5"/><text class="gtxt" x="408" y="325">G</text></g>
+</g>
+<g>
+<circle class="ring rg8" cx="140" cy="350" r="34" stroke="#f59e0b"/>
+<g class="node nd8" style="--c:#f59e0b;color:#1e293b"><circle cx="140" cy="350" r="32" fill="currentColor" stroke="#f59e0b" stroke-width="3"/><text class="num" x="140" y="358">8</text></g>
+<g class="lbl lb8"><text class="lblt" fill="#64748b" x="140" y="406"><tspan x="140" dy="0">Progress Report</tspan><tspan x="140" dy="16">Intent</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg9" cx="140" cy="500" r="34" stroke="#f59e0b"/>
+<g class="node nd9" style="--c:#f59e0b;color:#1e293b"><circle cx="140" cy="500" r="32" fill="currentColor" stroke="#f59e0b" stroke-width="3"/><text class="num" x="140" y="508">9</text></g>
+<g class="lbl lb9"><text class="lblt" fill="#64748b" x="140" y="556"><tspan x="140" dy="0">Internal</tspan><tspan x="140" dy="16">Examiner</tspan><tspan x="140" dy="16">Assignment</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg10" cx="380" cy="500" r="34" stroke="#f59e0b"/>
+<g class="node nd10" style="--c:#f59e0b;color:#1e293b"><circle cx="380" cy="500" r="32" fill="currentColor" stroke="#f59e0b" stroke-width="3"/><text class="num" x="380" y="508">10</text></g>
+<g class="lbl lb10"><text class="lblt" fill="#64748b" x="380" y="556"><tspan x="380" dy="0">Progress</tspan><tspan x="380" dy="16">Presentation</tspan></text></g>
+<g><path d="M408,461 l11,11 l-11,11 l-11,-11 z" fill="#fbbf24" stroke="#78350f" stroke-width="1.5"/><text class="gtxt" x="408" y="475">G</text></g>
+</g>
+<g>
+<circle class="ring rg11" cx="620" cy="500" r="34" stroke="#8b5cf6"/>
+<g class="node nd11" style="--c:#8b5cf6;color:#1e293b"><circle cx="620" cy="500" r="32" fill="currentColor" stroke="#8b5cf6" stroke-width="3"/><text class="num" x="620" y="508">11</text></g>
+<g class="lbl lb11"><text class="lblt" fill="#64748b" x="620" y="556"><tspan x="620" dy="0">Final</tspan><tspan x="620" dy="16">Examination</tspan><tspan x="620" dy="16">Intent</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg12" cx="860" cy="500" r="34" stroke="#8b5cf6"/>
+<g class="node nd12" style="--c:#8b5cf6;color:#1e293b"><circle cx="860" cy="500" r="32" fill="currentColor" stroke="#8b5cf6" stroke-width="3"/><text class="num" x="860" y="508">12</text></g>
+<g class="lbl lb12"><text class="lblt" fill="#64748b" x="860" y="556"><tspan x="860" dy="0">Thesis</tspan><tspan x="860" dy="16">Submission</tspan></text></g>
+<g><path d="M888,461 l11,11 l-11,11 l-11,-11 z" fill="#fbbf24" stroke="#78350f" stroke-width="1.5"/><text class="gtxt" x="888" y="475">G</text></g>
+</g>
+<g>
+<circle class="ring rg13" cx="860" cy="650" r="34" stroke="#8b5cf6"/>
+<g class="node nd13" style="--c:#8b5cf6;color:#1e293b"><circle cx="860" cy="650" r="32" fill="currentColor" stroke="#8b5cf6" stroke-width="3"/><text class="num" x="860" y="658">13</text></g>
+<g class="lbl lb13"><text class="lblt" fill="#64748b" x="860" y="706"><tspan x="860" dy="0">External</tspan><tspan x="860" dy="16">Examiner</tspan><tspan x="860" dy="16">Assignment</tspan></text></g>
+<g><path d="M888,611 l11,11 l-11,11 l-11,-11 z" fill="#fbbf24" stroke="#78350f" stroke-width="1.5"/><text class="gtxt" x="888" y="625">G</text></g>
+</g>
+<g>
+<circle class="ring rg14" cx="620" cy="650" r="34" stroke="#ec4899"/>
+<g class="node nd14" style="--c:#ec4899;color:#1e293b"><circle cx="620" cy="650" r="32" fill="currentColor" stroke="#ec4899" stroke-width="3"/><text class="num" x="620" y="658">14</text></g>
+<g class="lbl lb14"><text class="lblt" fill="#64748b" x="620" y="706"><tspan x="620" dy="0">Examiners</tspan><tspan x="620" dy="16">Comments</tspan></text></g>
+</g>
+<g>
+<circle class="ring rg15" cx="380" cy="650" r="34" stroke="#ec4899"/>
+<g class="node nd15" style="--c:#ec4899;color:#1e293b"><circle cx="380" cy="650" r="32" fill="currentColor" stroke="#ec4899" stroke-width="3"/><text class="num" x="380" y="658">15</text></g>
+<g class="lbl lb15"><text class="lblt" fill="#64748b" x="380" y="706"><tspan x="380" dy="0">Final</tspan><tspan x="380" dy="16">Compliance</tspan></text></g>
+<g><path d="M408,611 l11,11 l-11,11 l-11,-11 z" fill="#fbbf24" stroke="#78350f" stroke-width="1.5"/><text class="gtxt" x="408" y="625">G</text></g>
+</g>
+<g>
+<circle class="ring rg16" cx="140" cy="650" r="34" stroke="#ec4899"/>
+<g class="node nd16" style="--c:#ec4899;color:#1e293b"><circle cx="140" cy="650" r="32" fill="currentColor" stroke="#ec4899" stroke-width="3"/><text class="num" x="140" y="658">16</text></g>
+<g class="lbl lb16"><text class="lblt" fill="#64748b" x="140" y="706"><tspan x="140" dy="0">Signed Copies and</tspan><tspan x="140" dy="16">Completion</tspan></text></g>
+</g>
+<g class="mk" filter="url(#glow)"><circle r="10" fill="#fff"/><circle r="5" fill="#10b981"/><animateMotion dur="24.0s" repeatCount="indefinite" calcMode="linear" keyPoints="0.00000;0.00000;0.06745;0.13489;0.20234;0.26589;0.33333;0.40078;0.46822;0.53178;0.59922;0.66667;0.73411;0.79766;0.86511;0.93255;1.00000;1.00000" keyTimes="0.00000;0.02500;0.07500;0.12500;0.17500;0.22500;0.27500;0.32500;0.37500;0.42500;0.47500;0.52500;0.57500;0.62500;0.67500;0.72500;0.77500;1.00000" path="M140,200 L380,200 L620,200 L860,200 C950,200 950,350 860,350 L620,350 L380,350 L140,350 C50,350 50,500 140,500 L380,500 L620,500 L860,500 C950,500 950,650 860,650 L620,650 L380,650 L140,650"/></g>
+<rect x="120" y="772" width="760" height="64" rx="14" fill="#0f172a" stroke="#334155"/>
+<g class="bn bn1"><text class="bt1" x="500" y="802">Step 1 &#183; Admission</text><text class="bt2" x="500" y="823" fill="#10b981">Phase 1 &#183; Coursework &amp; Research Preparation</text></g>
+<g class="bn bn2"><text class="bt1" x="500" y="802">Step 2 &#183; Lecture Attendance</text><text class="bt2" x="500" y="823" fill="#10b981">Phase 1 &#183; Coursework &amp; Research Preparation</text></g>
+<g class="bn bn3"><text class="bt1" x="500" y="802">Step 3 &#183; Supervisor Allocation</text><text class="bt2" x="500" y="823" fill="#10b981">Phase 1 &#183; Coursework &amp; Research Preparation</text></g>
+<g class="bn bn4"><text class="bt1" x="500" y="802">Step 4 &#183; Title Approval</text><text class="bt2" x="500" y="823" fill="#3b82f6">Phase 2 &#183; Proposal Stage</text></g>
+<g class="bn bn5"><text class="bt1" x="500" y="802">Step 5 &#183; Proposal Submission</text><text class="bt2" x="500" y="823" fill="#3b82f6">Phase 2 &#183; Proposal Stage</text></g>
+<g class="bn bn6"><text class="bt1" x="500" y="802">Step 6 &#183; Defence Readiness</text><text class="bt2" x="500" y="823" fill="#3b82f6">Phase 2 &#183; Proposal Stage</text></g>
+<g class="bn bn7"><text class="bt1" x="500" y="802">Step 7 &#183; Proposal Defence</text><text class="bt2" x="500" y="823" fill="#3b82f6">Phase 2 &#183; Proposal Stage  &#183;  Gate</text></g>
+<g class="bn bn8"><text class="bt1" x="500" y="802">Step 8 &#183; Progress Report Intent</text><text class="bt2" x="500" y="823" fill="#f59e0b">Phase 3 &#183; Research Execution &amp; Progress</text></g>
+<g class="bn bn9"><text class="bt1" x="500" y="802">Step 9 &#183; Internal Examiner Assignment</text><text class="bt2" x="500" y="823" fill="#f59e0b">Phase 3 &#183; Research Execution &amp; Progress</text></g>
+<g class="bn bn10"><text class="bt1" x="500" y="802">Step 10 &#183; Progress Presentation</text><text class="bt2" x="500" y="823" fill="#f59e0b">Phase 3 &#183; Research Execution &amp; Progress  &#183;  Gate</text></g>
+<g class="bn bn11"><text class="bt1" x="500" y="802">Step 11 &#183; Final Examination Intent</text><text class="bt2" x="500" y="823" fill="#8b5cf6">Phase 4 &#183; Thesis Verification &amp; External Examination</text></g>
+<g class="bn bn12"><text class="bt1" x="500" y="802">Step 12 &#183; Thesis Submission</text><text class="bt2" x="500" y="823" fill="#8b5cf6">Phase 4 &#183; Thesis Verification &amp; External Examination  &#183;  Gate</text></g>
+<g class="bn bn13"><text class="bt1" x="500" y="802">Step 13 &#183; External Examiner Assignment</text><text class="bt2" x="500" y="823" fill="#8b5cf6">Phase 4 &#183; Thesis Verification &amp; External Examination  &#183;  Gate</text></g>
+<g class="bn bn14"><text class="bt1" x="500" y="802">Step 14 &#183; Examiners&#39; Comments</text><text class="bt2" x="500" y="823" fill="#ec4899">Phase 5 &#183; Post-Defence Corrections &amp; Completion</text></g>
+<g class="bn bn15"><text class="bt1" x="500" y="802">Step 15 &#183; Final Compliance</text><text class="bt2" x="500" y="823" fill="#ec4899">Phase 5 &#183; Post-Defence Corrections &amp; Completion  &#183;  Gate</text></g>
+<g class="bn bn16"><text class="bt1" x="500" y="802">Step 16 &#183; Signed Copies and Completion</text><text class="bt2" x="500" y="823" fill="#ec4899">Phase 5 &#183; Post-Defence Corrections &amp; Completion</text></g>
+<circle cx="47" cy="868" r="7" fill="#10b981"/><text class="leg" x="60" y="872">Phase 1 (1-3)</text>
+<circle cx="185" cy="868" r="7" fill="#3b82f6"/><text class="leg" x="198" y="872">Phase 2 (4-7)</text>
+<circle cx="323" cy="868" r="7" fill="#f59e0b"/><text class="leg" x="336" y="872">Phase 3 (8-10)</text>
+<circle cx="461" cy="868" r="7" fill="#8b5cf6"/><text class="leg" x="474" y="872">Phase 4 (11-13)</text>
+<circle cx="599" cy="868" r="7" fill="#ec4899"/><text class="leg" x="612" y="872">Phase 5 (14-16)</text>
+<path d="M752,858 l9,9 l-9,9 l-9,-9 z" fill="#fbbf24"/><text class="leg" x="768" y="872">Gate (decides next step)</text>
+</svg>

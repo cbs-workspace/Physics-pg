@@ -151,11 +151,13 @@ npx serve dist                # preview the built output
 - Brand constants are duplicated: `brand_()` (Code.gs:118) is authoritative at
   runtime (Script Properties + `CFG`), `BRAND` (build-pg.js:43) is what the
   static build bakes in. They drift — change both.
-- The journey stages live in **four** places that must agree: `CFG.JOURNEY_STAGES`
-  (Code.gs:56), `JOURNEY_STAGES` (index.html portal script), the public phase
-  cards, and the infographic `images/PG_Journey_Infographic.svg`. Changing a
-  stage means updating all four (this drift is exactly what left the public page
-  on 15 while the portal was on 16).
+- The journey stages live in **five** places that must agree: `CFG.JOURNEY_STAGES`
+  (Code.gs), `JOURNEY_STAGES` (index.html portal script), the public phase cards,
+  the demo mock (`tools/serve-pg.js` `STAGES`, still on the old 15-step names), and
+  the poster's own labels — `images/PG_Journey_Animated.svg`, whose 16 `<g class="lbl
+  lbN">` tspans `npm run build` now checks against `CFG.JOURNEY_STAGES` and *fails*
+  on drift. Changing a stage means updating the others (this drift is exactly what
+  left the public page on 15 while the portal was on 16).
 - Music: `HOST = 'https://physics-pg.pages.dev/'` and a single-element `TRACKS`
   (`audio/music1.mp3`, index.html:1118–1119). `build-pg.js` copies it into
   `dist/audio/` because Apps Script cannot serve binaries; edit `HOST`/`TRACKS`

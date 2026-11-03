@@ -77,7 +77,7 @@ Physics-pg/
 │                              (?page=login)
 ├── images/
 │   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
-│   ├── PG_Journey_Infographic.svg ← journey infographic on Home (set JOURNEY_IMAGE_URL)
+│   ├── PG_Journey_Animated.svg ← animated journey poster on Home (set JOURNEY_IMAGE_URL)
 │   ├── PG_Journey_Infographic.png ← full-size poster, opened from under the SVG
 │   └── PG_Journey_Infographic_preview.jpg ← ~150 KB inline preview of that poster
 ├── docs/
@@ -143,14 +143,17 @@ Physics-pg/
 - Hero background: upload `images/Phy_Complex.png` to Drive (or any host), set the
   Script Property `HERO_IMAGE_URL` to its direct image URL (`brand_()` reads it as
   `heroBgUrl`; the local harness serves the file from `images/` automatically).
-- Journey infographic: the repo ships `images/PG_Journey_Infographic.svg` (16
-  stages) and the static build bakes it in as
-  `/images/PG_Journey_Infographic.svg`. On the portal, set the Script Property
+- Journey poster: the repo ships `images/PG_Journey_Animated.svg` (a 1000×900
+  animated loop: serpentine path, 16 nodes, phase colours, gate badges, honours
+  `prefers-reduced-motion`) and the static build bakes it in as
+  `/images/PG_Journey_Animated.svg`. On the portal, set the Script Property
   `JOURNEY_IMAGE_URL` to an image URL (`brand_()` → `brand.journeyImgUrl`); until
-  then the portal's Home infographic is hidden (the phase cards still show). The
-  local harness serves `/images/…` from `images/`.
-- Full-size PNG: `images/PG_Journey_Infographic.png` is linked under the poster
-  ("Open the full-size infographic (PNG)"). The static site uses
+  then the portal's Home poster is hidden (the phase cards still show). The local
+  harness serves `/images/…` from `images/`.
+  `npm run build` fails if the poster's 16 labels drift from `CFG.JOURNEY_STAGES`.
+- Full-size PNG: `images/PG_Journey_Infographic.png` is linked under the poster;
+  the inline image is `images/PG_Journey_Infographic_preview.jpg` (760 px, ~150 KB,
+  so the page does not pull the 1.8 MB PNG). The static site uses
   `/images/PG_Journey_Infographic.png`; the portal uses
   `CFG.DEFAULT_STATIC_HOST + images/…` (override with the `JOURNEY_ARCHIVE_IMAGE_URL`
   Script Property) because Apps Script cannot serve binaries.

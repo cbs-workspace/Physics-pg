@@ -41,7 +41,7 @@ const BRAND = {
   logoUrl: "https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl",
   cbsLogoUrl: "https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ",
   heroBgUrl: "/images/Phy_Complex.png",
-  journeyImgUrl: "/images/PG_Journey_Infographic.svg",
+  journeyImgUrl: "/images/PG_Journey_Animated.svg",
   journeyArchiveImgUrl: "/images/PG_Journey_Infographic.png",
   journeyArchivePreviewUrl: "/images/PG_Journey_Infographic_preview.jpg",
 };

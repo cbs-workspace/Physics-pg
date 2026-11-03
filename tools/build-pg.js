@@ -25,8 +25,8 @@
  *     deployment (announcements + contact enquiry only; any other
  *     call rejects with "runs on the official portal")
  *
- * Assets: images/Phy_Complex.png, images/PG_Journey_Infographic.svg,
- * images/PG_Journey_Infographic.png (previous 15-step archive) and
+ * Assets: images/Phy_Complex.png, images/PG_Journey_Animated.svg,
+ * images/PG_Journey_Infographic.png + _preview.jpg (detailed poster under it) and
  * audio/music1.mp3 are copied.
  * Run: npm run build   (output in dist/, deploy that folder).
  */
@@ -50,7 +50,7 @@ const BRAND = {
   logoUrl: "https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl",
   cbsLogoUrl: "https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ",
   heroBgUrl: "/images/Phy_Complex.png",
-  journeyImgUrl: "/images/PG_Journey_Infographic.svg",
+  journeyImgUrl: "/images/PG_Journey_Animated.svg",
   journeyArchiveImgUrl: "/images/PG_Journey_Infographic.png",
   journeyArchivePreviewUrl: "/images/PG_Journey_Infographic_preview.jpg",
 };
@@ -288,6 +288,37 @@ function copyAsset(rel) {
   console.log("  " + rel + "  (asset)");
 }
 
+/** The animated poster draws the 16 stage names itself, so verify them against
+ *  CFG.JOURNEY_STAGES (Code.gs). This is the drift that once left the public
+ *  page on 15 stages while the portal was on 16 — fail the build, not the page. */
+function checkJourneyArt(rel) {
+  const gs = fs.readFileSync(path.join(ROOT, "GAS_Files", "Code.gs"), "utf8");
+  const block = gs.match(/JOURNEY_STAGES:\s*\[([\s\S]*?)\]/);
+  if (!block) throw new Error("CFG.JOURNEY_STAGES not found in GAS_Files/Code.gs");
+  const canonical = [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1].replace(/^\d+\s*-\s*/, ""));
+
+  const svg = fs.readFileSync(path.join(ROOT, rel), "utf8");
+  const labels = [...svg.matchAll(/<g class="lbl lb\d+">([\s\S]*?)<\/g>/g)].map((m) =>
+    [...m[1].matchAll(/<tspan[^>]*>([^<]*)<\/tspan>/g)]
+      .map((x) => x[1])
+      .join(" ")
+      .replace(/&amp;/g, "&")
+  );
+
+  if (labels.length !== canonical.length) {
+    throw new Error(
+      rel + " has " + labels.length + " stage labels but Code.gs has " + canonical.length
+    );
+  }
+  const drift = canonical
+    .map((c, i) => (c === labels[i] ? null : "step " + (i + 1) + ': "' + labels[i] + '" should be "' + c + '"'))
+    .filter(Boolean);
+  if (drift.length) {
+    throw new Error("Journey art labels differ from CFG.JOURNEY_STAGES — " + drift.join("; "));
+  }
+  console.log("  journey art: 16 stage labels match CFG.JOURNEY_STAGES");
+}
+
 console.log("Building static site → dist/");
 fs.rmSync(OUT, { recursive: true, force: true });
 
@@ -317,7 +348,8 @@ writeFile("login/index.html", portalFramePage({
   hint: 'Sign in with the credentials issued by the department. New student? <a href="/register/">Register here</a>. Trouble signing in? <a href="/contact/">Contact the PG Coordinator</a>.',
 }));
 copyAsset("images/Phy_Complex.png");
-copyAsset("images/PG_Journey_Infographic.svg");
+checkJourneyArt("images/PG_Journey_Animated.svg");
+copyAsset("images/PG_Journey_Animated.svg");
 // previous infographic poster, shown under the poster and opened full size
 copyAsset("images/PG_Journey_Infographic.png");
 copyAsset("images/PG_Journey_Infographic_preview.jpg");
