@@ -41,7 +41,7 @@ const BRAND = {
   logoUrl: "https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl",
   cbsLogoUrl: "https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ",
   heroBgUrl: "/images/Phy_Complex.png",
-  journeyImgUrl: "/images/PG_Journey_Infographic.png",
+  journeyImgUrl: "/images/PG_Journey_Infographic.svg",
 };
 
 const STAGES = [
@@ -1170,7 +1170,10 @@ http
       const candidates = [path.join(IMG_DIR, fname), path.join(root, fname)];
       const fpath = candidates.find((p) => p.indexOf(root) === 0 && fs.existsSync(p));
       if (fpath) {
-        const type = /\.(png)$/i.test(fname) ? "image/png" : /\.(jpe?g)$/i.test(fname) ? "image/jpeg" : "application/octet-stream";
+        const type = /\.png$/i.test(fname) ? "image/png"
+          : /\.jpe?g$/i.test(fname) ? "image/jpeg"
+          : /\.svg$/i.test(fname) ? "image/svg+xml"
+          : "application/octet-stream";
         res.writeHead(200, { "Content-Type": type, "Cache-Control": "max-age=3600" });
         return res.end(fs.readFileSync(fpath));
       }

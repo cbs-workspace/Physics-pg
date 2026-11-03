@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1646" width="1000" height="1646" role="img" aria-labelledby="jtitle jdesc" font-family="'Segoe UI', system-ui, -apple-system, Arial, sans-serif">
+<title id="jtitle">Postgraduate Journey — 16 stages across 5 phases</title>
+<desc id="jdesc">Department of Physics, University of Abuja. Stages 1 to 16 grouped into five phases, with decision gates at steps 7, 10, 12, 13 and 15.</desc>
+<rect width="1000" height="1646" fill="#ffffff"/>
+<text x="40" y="58" font-size="12.5" font-weight="700" letter-spacing="2.2" fill="#059669">DEPARTMENT OF PHYSICS · UNIVERSITY OF ABUJA</text>
+<text x="40" y="102" font-size="38" font-weight="800" fill="#0f172a">Postgraduate Journey</text>
+<text x="40" y="132" font-size="16" fill="#64748b">16 stages across 5 phases — MSc / PhD</text>
+<rect x="40" y="148" width="920" height="2" fill="#e2e8f0"/>
+<rect x="40" y="168" width="920" height="54" rx="12" fill="#0f172a"/>
+<circle cx="74" cy="195" r="17" fill="#059669"/>
+<text x="74" y="200.5" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">1</text>
+<text x="104" y="192" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#059669">PHASE 1</text>
+<text x="104" y="210" font-size="17" font-weight="700" fill="#ffffff">Coursework &amp; Research Preparation</text>
+<text x="944" y="199" font-size="12.5" font-weight="600" text-anchor="end" fill="#94a3b8">Steps 1–3</text>
+<rect x="40" y="222" width="920" height="186" fill="#f8fafc"/>
+<line x1="74" y1="253" x2="74" y2="377" stroke="#cbd5e1" stroke-width="2"/>
+<circle cx="74" cy="253" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="258.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">1</text>
+<text x="104" y="247" font-size="16.5" font-weight="700" fill="#0f172a">Admission</text>
+<text x="104" y="267" font-size="12.5" fill="#64748b">Student, PG Coordinator</text>
+<line x1="104" y1="284" x2="946" y2="284" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="315" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="320.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">2</text>
+<text x="104" y="309" font-size="16.5" font-weight="700" fill="#0f172a">Lecture Attendance</text>
+<text x="104" y="329" font-size="12.5" fill="#64748b">Student, PG Coordinator · MSc only</text>
+<line x1="104" y1="346" x2="946" y2="346" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="377" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="382.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">3</text>
+<text x="104" y="371" font-size="16.5" font-weight="700" fill="#0f172a">Supervisor Allocation</text>
+<text x="104" y="391" font-size="12.5" fill="#64748b">PG Coordinator or HoD</text>
+<rect x="40" y="222" width="920" height="186" rx="0" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+<rect x="40" y="434" width="920" height="54" rx="12" fill="#0f172a"/>
+<circle cx="74" cy="461" r="17" fill="#059669"/>
+<text x="74" y="466.5" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">2</text>
+<text x="104" y="458" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#059669">PHASE 2</text>
+<text x="104" y="476" font-size="17" font-weight="700" fill="#ffffff">Proposal Stage</text>
+<text x="944" y="465" font-size="12.5" font-weight="600" text-anchor="end" fill="#94a3b8">Steps 4–7</text>
+<rect x="40" y="488" width="920" height="248" fill="#f8fafc"/>
+<line x1="74" y1="519" x2="74" y2="705" stroke="#cbd5e1" stroke-width="2"/>
+<circle cx="74" cy="519" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="524.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">4</text>
+<text x="104" y="513" font-size="16.5" font-weight="700" fill="#0f172a">Title Approval</text>
+<text x="104" y="533" font-size="12.5" fill="#64748b">Student, Main and Co-supervisor</text>
+<line x1="104" y1="550" x2="946" y2="550" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="581" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="586.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">5</text>
+<text x="104" y="575" font-size="16.5" font-weight="700" fill="#0f172a">Proposal Submission</text>
+<text x="104" y="595" font-size="12.5" fill="#64748b">Student, Inspector, PG Coordinator</text>
+<line x1="104" y1="612" x2="946" y2="612" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="643" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="648.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">6</text>
+<text x="104" y="637" font-size="16.5" font-weight="700" fill="#0f172a">Defence Readiness</text>
+<text x="104" y="657" font-size="12.5" fill="#64748b">Student, both supervisors, PG Coordinator</text>
+<line x1="104" y1="674" x2="946" y2="674" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="705" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="710.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">7</text>
+<text x="104" y="699" font-size="16.5" font-weight="700" fill="#0f172a">Proposal Defence</text>
+<text x="104" y="719" font-size="12.5" fill="#64748b">PG Coordinator</text>
+<rect x="732" y="692" width="214" height="26" rx="13" fill="#fff7ed" stroke="#fdba74" stroke-width="1.2"/>
+<text x="839" y="709" font-size="11.5" font-weight="700" text-anchor="middle" fill="#9a3412">Gate · pass moves to Step 8</text>
+<rect x="40" y="488" width="920" height="248" rx="0" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+<rect x="40" y="762" width="920" height="54" rx="12" fill="#0f172a"/>
+<circle cx="74" cy="789" r="17" fill="#059669"/>
+<text x="74" y="794.5" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">3</text>
+<text x="104" y="786" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#059669">PHASE 3</text>
+<text x="104" y="804" font-size="17" font-weight="700" fill="#ffffff">Research Execution &amp; Progress</text>
+<text x="944" y="793" font-size="12.5" font-weight="600" text-anchor="end" fill="#94a3b8">Steps 8–10</text>
+<rect x="40" y="816" width="920" height="186" fill="#f8fafc"/>
+<line x1="74" y1="847" x2="74" y2="971" stroke="#cbd5e1" stroke-width="2"/>
+<circle cx="74" cy="847" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="852.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">8</text>
+<text x="104" y="841" font-size="16.5" font-weight="700" fill="#0f172a">Progress Report Intent</text>
+<text x="104" y="861" font-size="12.5" fill="#64748b">Student, both supervisors, PG Coordinator</text>
+<line x1="104" y1="878" x2="946" y2="878" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="909" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="914.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">9</text>
+<text x="104" y="903" font-size="16.5" font-weight="700" fill="#0f172a">Internal Examiner Assignment</text>
+<text x="104" y="923" font-size="12.5" fill="#64748b">PG Coordinator or HoD</text>
+<line x1="104" y1="940" x2="946" y2="940" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="971" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="976.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">10</text>
+<text x="104" y="965" font-size="16.5" font-weight="700" fill="#0f172a">Progress Presentation</text>
+<text x="104" y="985" font-size="12.5" fill="#64748b">Student, PG Coordinator, Inspector, Internal Examiner</text>
+<rect x="732" y="958" width="214" height="26" rx="13" fill="#fff7ed" stroke="#fdba74" stroke-width="1.2"/>
+<text x="839" y="975" font-size="11.5" font-weight="700" text-anchor="middle" fill="#9a3412">Gate · repeat / fall back</text>
+<rect x="40" y="816" width="920" height="186" rx="0" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+<rect x="40" y="1028" width="920" height="54" rx="12" fill="#0f172a"/>
+<circle cx="74" cy="1055" r="17" fill="#059669"/>
+<text x="74" y="1060.5" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">4</text>
+<text x="104" y="1052" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#059669">PHASE 4</text>
+<text x="104" y="1070" font-size="17" font-weight="700" fill="#ffffff">Thesis Verification &amp; External Examination</text>
+<text x="944" y="1059" font-size="12.5" font-weight="600" text-anchor="end" fill="#94a3b8">Steps 11–13</text>
+<rect x="40" y="1082" width="920" height="186" fill="#f8fafc"/>
+<line x1="74" y1="1113" x2="74" y2="1237" stroke="#cbd5e1" stroke-width="2"/>
+<circle cx="74" cy="1113" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="1118.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">11</text>
+<text x="104" y="1107" font-size="16.5" font-weight="700" fill="#0f172a">Final Examination Intent</text>
+<text x="104" y="1127" font-size="12.5" fill="#64748b">Student, both supervisors, PG Coordinator</text>
+<line x1="104" y1="1144" x2="946" y2="1144" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="1175" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="1180.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">12</text>
+<text x="104" y="1169" font-size="16.5" font-weight="700" fill="#0f172a">Thesis Submission</text>
+<text x="104" y="1189" font-size="12.5" fill="#64748b">Student, Inspector, PG Coordinator</text>
+<rect x="732" y="1162" width="214" height="26" rx="13" fill="#fff7ed" stroke="#fdba74" stroke-width="1.2"/>
+<text x="839" y="1179" font-size="11.5" font-weight="700" text-anchor="middle" fill="#9a3412">Gate · Inspector + Coordinator</text>
+<line x1="104" y1="1206" x2="946" y2="1206" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="1237" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="1242.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">13</text>
+<text x="104" y="1231" font-size="16.5" font-weight="700" fill="#0f172a">External Examiner Assignment</text>
+<text x="104" y="1251" font-size="12.5" fill="#64748b">PG Coordinator or HoD</text>
+<rect x="732" y="1224" width="214" height="26" rx="13" fill="#fff7ed" stroke="#fdba74" stroke-width="1.2"/>
+<text x="839" y="1241" font-size="11.5" font-weight="700" text-anchor="middle" fill="#9a3412">Gate · examiner assessment</text>
+<rect x="40" y="1082" width="920" height="186" rx="0" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+<rect x="40" y="1294" width="920" height="54" rx="12" fill="#0f172a"/>
+<circle cx="74" cy="1321" r="17" fill="#059669"/>
+<text x="74" y="1326.5" font-size="16" font-weight="800" text-anchor="middle" fill="#ffffff">5</text>
+<text x="104" y="1318" font-size="10.5" font-weight="700" letter-spacing="1.6" fill="#059669">PHASE 5</text>
+<text x="104" y="1336" font-size="17" font-weight="700" fill="#ffffff">Post-Defence Corrections &amp; Completion</text>
+<text x="944" y="1325" font-size="12.5" font-weight="600" text-anchor="end" fill="#94a3b8">Steps 14–16</text>
+<rect x="40" y="1348" width="920" height="186" fill="#f8fafc"/>
+<line x1="74" y1="1379" x2="74" y2="1503" stroke="#cbd5e1" stroke-width="2"/>
+<circle cx="74" cy="1379" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="1384.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">14</text>
+<text x="104" y="1373" font-size="16.5" font-weight="700" fill="#0f172a">Examiners Comments</text>
+<text x="104" y="1393" font-size="12.5" fill="#64748b">Student</text>
+<line x1="104" y1="1410" x2="946" y2="1410" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="1441" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="1446.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">15</text>
+<text x="104" y="1435" font-size="16.5" font-weight="700" fill="#0f172a">Final Compliance</text>
+<text x="104" y="1455" font-size="12.5" fill="#64748b">Both supervisors, Inspector, PG Coordinator</text>
+<rect x="732" y="1428" width="214" height="26" rx="13" fill="#fff7ed" stroke="#fdba74" stroke-width="1.2"/>
+<text x="839" y="1445" font-size="11.5" font-weight="700" text-anchor="middle" fill="#9a3412">Gate · supervisors + Inspector</text>
+<line x1="104" y1="1472" x2="946" y2="1472" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="74" cy="1503" r="16" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="74" y="1508.5" font-size="14" font-weight="800" text-anchor="middle" fill="#047857">16</text>
+<text x="104" y="1497" font-size="16.5" font-weight="700" fill="#0f172a">Signed Copies and Completion</text>
+<text x="104" y="1517" font-size="12.5" fill="#64748b">Student, PG Coordinator</text>
+<rect x="40" y="1348" width="920" height="186" rx="0" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="47" cy="1568" r="7" fill="#fff7ed" stroke="#fdba74" stroke-width="1.2"/>
+<text x="62" y="1572.5" font-size="12.5" fill="#64748b">Decision gate — a student may need to repeat or return to an earlier step.</text>
+<text x="960" y="1572.5" font-size="12.5" text-anchor="end" fill="#64748b">Department of Physics · University of Abuja</text>
+</svg>

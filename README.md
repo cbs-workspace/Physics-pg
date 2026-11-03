@@ -77,9 +77,10 @@ Physics-pg/
 │                              (?page=login)
 ├── images/
 │   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
-│   └── PG_Journey_Infographic.png ← journey infographic on Home (set JOURNEY_IMAGE_URL)
+│   └── PG_Journey_Infographic.svg ← journey infographic on Home (set JOURNEY_IMAGE_URL)
 ├── docs/
-│   ├── PG Journey Roadmap.docx ← reference for journey stages
+│   ├── PG_Journey_Stages.docx ← 16-stage reference (5 phases)
+│   ├── PG Journey Roadmap.docx ← older 15-step roadmap (kept for history)
 │   └── Staff.xlsx          ← internal staff roster (local only, never committed)
 ├── README.md
 ├── SeedData.md              ← seed rows + hash generator for demo accounts
@@ -109,8 +110,8 @@ Physics-pg/
 
 - **Home** — hero (department photo background) + live announcements from the
   Announcements tab (`api_publicAnnouncements`), then **Your Postgraduate Journey**:
-  the journey infographic with the five phases / 15 steps summarised and the five
-  decision gates (Steps 7, 8, 9, 10, 13) highlighted, and a **Please note** callout.
+  the journey infographic with the five phases / 16 stages summarised and the
+  decision gates (Steps 7, 10, 12, 13, 15) highlighted, and a **Please note** callout.
 - **Notice / caveat** — the site is strictly for journey navigation and departmental
   PG coordination, progress monitoring and documentation; other matters (incl. SPGS
   referrals) go to the Head, Department of Physics or the PG Coordinator. Full callout
@@ -139,12 +140,12 @@ Physics-pg/
 - Hero background: upload `images/Phy_Complex.png` to Drive (or any host), set the
   Script Property `HERO_IMAGE_URL` to its direct image URL (`brand_()` reads it as
   `heroBgUrl`; the local harness serves the file from `images/` automatically).
-- Journey infographic: host `images/PG_Journey_Infographic.png` (Drive or any host) and
-  set the Script Property `JOURNEY_IMAGE_URL` (`brand_()` → `brand.journeyImgUrl`; the
-  local harness serves `/images/…` from `images/` — the static build bakes the same
-  image as `/images/PG_Journey_Infographic.png`). Until the Script Property is set, the
-  portal's Home infographic image is hidden (the phase cards still show); the static
-  site always shows it.
+- Journey infographic: the repo ships `images/PG_Journey_Infographic.svg` (16
+  stages) and the static build bakes it in as
+  `/images/PG_Journey_Infographic.svg`. On the portal, set the Script Property
+  `JOURNEY_IMAGE_URL` to an image URL (`brand_()` → `brand.journeyImgUrl`); until
+  then the portal's Home infographic is hidden (the phase cards still show). The
+  local harness serves `/images/…` from `images/`.
 
 ---
 
@@ -210,7 +211,7 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 
 | Role | Can Do |
 |------|--------|
-| **Student** | Register (pending approval), dashboard: profile + photo update, supervisors, 15-stage journey bar, announcements, templates, new submissions; view own submissions |
+| **Student** | Register (pending approval), dashboard: profile + photo update, supervisors, 16-stage journey bar, announcements, templates, new submissions; view own submissions |
 | **PG_Coordinator** | Approve/reject registrations, assign main + co-supervisor, manage staff list, post announcements, export CSV |
 | **HoD** | Read-only: stats, programme/status breakdowns, all submissions |
 | **Staff** | See students they supervise, add supervisory notes on submissions |
@@ -244,18 +245,18 @@ Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes
 
 ---
 
-## Journey Stages (from PG Journey Roadmap.docx)
+## Journey Stages (from PG_Journey_Stages.docx — 16 stages, 5 phases)
 
 | # | Stage | | # | Stage |
 |---|-------|-|---|-------|
-| 1 | Admission (Formal) and Registration | | 9 | Compliance & QA Inspection ← decision |
-| 2 | Lecture Attendance (MSc only) | | 10 | Plagiarism Check ← decision |
-| 3 | Supervisor Allocation | | 11 | External Defence |
-| 4 | Submission of Proposal to Supervisor | | 12 | Response to Examiners' Comments |
-| 5 | Submission of Form for Proposal Defence | | 13 | Final Compliance & QA Inspection ← decision |
-| 6 | Proposal Defence | | 14 | Submission of Signed Copies |
-| 7 | Evaluation & Progression Clearance ← decision | | 15 | Completion |
-| 8 | Progress Report (Seminar) ← decision | | | |
+| 1 | Admission | | 9 | Internal Examiner Assignment |
+| 2 | Lecture Attendance (MSc only) | | 10 | Progress Presentation ← gate |
+| 3 | Supervisor Allocation | | 11 | Final Examination Intent |
+| 4 | Title Approval | | 12 | Thesis Submission ← gate |
+| 5 | Proposal Submission | | 13 | External Examiner Assignment ← gate |
+| 6 | Defence Readiness | | 14 | Examiners Comments |
+| 7 | Proposal Defence ← gate | | 15 | Final Compliance ← gate |
+| 8 | Progress Report Intent | | 16 | Signed Copies and Completion |
 
 ---
 
@@ -285,14 +286,14 @@ Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes
   `prefers-reduced-motion`. **Mobile**: public pages collapse to single columns
   (`.row-cols` at ≤640px), the top bar wraps/scrolls, inputs are 16px, and the rail
   shrinks with labels hidden.
-- Background music on all public pages + login: playlist cycles
-  `music1→2→3→1…`, starts on first interaction, EQ-style mute button + volume
+- Background music on all public pages + login: one track
+  (`audio/music1.mp3`), starts on first interaction, EQ-style mute button + volume
   slider bottom-right (muted state and volume remembered). Controls hide and
-  music pauses once signed in. Shared logic lives in the common block of `index.html`. The three
-  tracks are served from the live static host
-  (`https://kingsmetroschools.vercel.app/music*.mp3` — byte-identical copies
-  of `audio/music*.mp3` in this repo, since Apps Script cannot serve binary files);
-  edit the `MUSIC` track list in `index.html` if you host them elsewhere.
+  music pauses once signed in. Shared logic lives in the common block of
+  `index.html` (`TRACKS`). The track is served from the live static host
+  (`HOST = https://physics-pg.pages.dev/` → `dist/audio/music1.mp3`) because Apps
+  Script cannot serve binary files; `npm run build` copies it from
+  `audio/music1.mp3`.
 
 ## Local preview (no Apps Script needed)
 

@@ -25,7 +25,8 @@
  *     deployment (announcements + contact enquiry only; any other
  *     call rejects with "runs on the official portal")
  *
- * Assets: images/Phy_Complex.png and images/PG_Journey_Infographic.png are copied.
+ * Assets: images/Phy_Complex.png, images/PG_Journey_Infographic.svg and
+ * audio/music1.mp3 are copied.
  * Run: npm run build   (output in dist/, deploy that folder).
  */
 const fs = require("fs");
@@ -48,7 +49,7 @@ const BRAND = {
   logoUrl: "https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl",
   cbsLogoUrl: "https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ",
   heroBgUrl: "/images/Phy_Complex.png",
-  journeyImgUrl: "/images/PG_Journey_Infographic.png",
+  journeyImgUrl: "/images/PG_Journey_Infographic.svg",
 };
 
 /** Public views rendered statically (register stays on the portal; login is
@@ -313,10 +314,8 @@ writeFile("login/index.html", portalFramePage({
   hint: 'Sign in with the credentials issued by the department. New student? <a href="/register/">Register here</a>. Trouble signing in? <a href="/contact/">Contact the PG Coordinator</a>.',
 }));
 copyAsset("images/Phy_Complex.png");
-copyAsset("images/PG_Journey_Infographic.png");
+copyAsset("images/PG_Journey_Infographic.svg");
 copyAsset("audio/music1.mp3");
-copyAsset("audio/music2.mp3");
-copyAsset("audio/music3.mp3");
 
 /** Retired pages → Home (permanent). Cloudflare Pages serves any real file
  *  first, so these only apply while /about/ and /programmes/ do not exist. */

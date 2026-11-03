@@ -592,8 +592,8 @@
       <section class="pub-section" id="journey">
         <h2>Your Postgraduate Journey</h2>
         <div class="card" style="padding:14px">
-          <img class="journey-img" src="images/PG_Journey_Infographic.png" loading="lazy"
-               alt="Postgraduate Journey infographic — 5 phases and 15 steps"
+          <img class="journey-img" src="images/PG_Journey_Infographic.svg" loading="lazy"
+               alt="Postgraduate Journey infographic — 5 phases and 16 steps"
                onerror="this.parentNode.style.display='none'">
         </div>
         <div class="card-grid" style="margin-top:16px">
@@ -606,30 +606,30 @@
           <div class="card phase-card">
             <div class="phase-no">Phase 2</div>
             <h4>Proposal Stage</h4>
-            <p>Draft proposal to your supervisor(s), proposal-defence form (SPGS guidelines plus departmental additions), then defence at the monthly seminar with the Internal Examiner present or represented.</p>
+            <p>Title approved by both supervisors, proposal submitted, defence readiness (signed form or in-system approval), then the proposal defence at the monthly seminar.</p>
             <div class="steps">Steps 4&ndash;7</div>
             <div class="gate-badge">Gate at Step 7 &middot; fail &rarr; back to Step 5</div>
           </div>
           <div class="card phase-card">
             <div class="phase-no">Phase 3</div>
             <h4>Research Execution &amp; Progress</h4>
-            <p>Progress report presented at the departmental monthly seminar, with the Internal Examiner present or represented.</p>
-            <div class="steps">Step 8</div>
-            <div class="gate-badge">Gate at Step 8 &middot; repeat / fall back as outcome requires</div>
+            <p>Approval to present the progress report, Internal Examiner assigned (from another department), then the progress presentation (PPTX) checked by the PG Coordinator and Inspector.</p>
+            <div class="steps">Steps 8&ndash;10</div>
+            <div class="gate-badge">Gate at Step 10 &middot; repeat / fall back as outcome requires</div>
           </div>
           <div class="card phase-card">
             <div class="phase-no">Phase 4</div>
             <h4>Thesis Verification &amp; External Examination</h4>
-            <p>Compliance &amp; quality-assurance inspection by the Departmental Thesis Inspector, plagiarism check at the Library or ITMS (fees apply), then external defence.</p>
-            <div class="steps">Steps 9&ndash;11</div>
-            <div class="gate-badge">Gates at Steps 9 &amp; 10</div>
+            <p>Approval for the final examination, thesis/dissertation submitted and checked (format, similarity, Inspector and PG Coordinator), then the External Examiner is assigned.</p>
+            <div class="steps">Steps 11&ndash;13</div>
+            <div class="gate-badge">Gates at Steps 12 &amp; 13</div>
           </div>
           <div class="card phase-card">
             <div class="phase-no">Phase 5</div>
             <h4>Post-Defence Corrections &amp; Completion</h4>
-            <p>Comment-by-comment response to examiners' comments, final compliance inspection, submission of signed copies, completion.</p>
-            <div class="steps">Steps 12&ndash;15</div>
-            <div class="gate-badge">Gate at Step 13</div>
+            <p>External Examiner's comments, comment-by-comment response, final corrected version, final compliance check, signed copies and completion.</p>
+            <div class="steps">Steps 14&ndash;16</div>
+            <div class="gate-badge">Gate at Step 15</div>
           </div>
         </div>
         <p class="small muted" style="margin-top:12px">Step 2 is for MSc students only. The proposal defence and progress
@@ -648,7 +648,7 @@
           <div class="card info-card">
             <div class="card-icon">&#128204;</div>
             <h4>Track Your Journey</h4>
-            <p>Fifteen clearly defined stages — from admission and lectures to external defence and final completion — visible at a glance.</p>
+            <p>Sixteen clearly defined stages — from admission and lectures to signed copies and completion — visible at a glance.</p>
           </div>
           <div class="card info-card">
             <div class="card-icon">&#128218;</div>
@@ -1116,7 +1116,7 @@
       var MUTE_KEY = 'kms_pg_music_muted';
       var VOL_KEY = 'kms_pg_music_volume';
       var HOST = 'https://physics-pg.pages.dev/';
-      var TRACKS = [HOST + 'audio/music1.mp3', HOST + 'audio/music2.mp3', HOST + 'audio/music3.mp3'];
+      var TRACKS = [HOST + 'audio/music1.mp3'];   // single track, served from the deployed dist/audio copy
       var DEFAULT_VOL = 0.3;
       var idx = 0, started = false, consecutiveErrors = 0;
       if (!audio || !btn) return { sync: function () {} };
@@ -1328,22 +1328,27 @@
 
     var JOURNEY_STAGES = [
       '1 - Admission', '2 - Lecture Attendance', '3 - Supervisor Allocation',
-      '4 - Proposal Submission', '5 - Proposal Defence Form', '6 - Proposal Defence',
-      '7 - Progression Clearance', '8 - Progress Report', '9 - Compliance Inspection',
-      '10 - Plagiarism Check', '11 - External Defence', '12 - Examiners Comments',
-      '13 - Final Compliance', '14 - Signed Copies', '15 - Completion'
+      '4 - Title Approval', '5 - Proposal Submission', '6 - Defence Readiness',
+      '7 - Proposal Defence', '8 - Progress Report Intent', '9 - Internal Examiner Assignment',
+      '10 - Progress Presentation', '11 - Final Examination Intent', '12 - Thesis Submission',
+      '13 - External Examiner Assignment', '14 - Examiners Comments', '15 - Final Compliance',
+      '16 - Signed Copies and Completion'
     ];
     var PROGRAMMES = ['MPhil', 'MSc', 'PhD'];
     var SPECIALISATIONS = ['Experimental Solid-State Physics', 'Theoretical Solid-State Physics', 'Nuclear Physics', 'Solar Physics', 'Applied Geophysics'];
     var SUBMISSION_TYPES = ['Research Plan Form', 'Seminar Presentation', 'Research Proposal', 'Progress Report', 'Final Thesis/Dissertation',
-      'Internal Examiner and Other Observations', 'Final Correction', 'Comment-by-Comment Response (External Examiner)', 'Comment-by-Comment Response (Internal Examiner)'];
-    var PRESENTATION_KINDS = ['Proposal Presentation', 'Progress Report Presentation', 'Final Examination'];
+      'Internal Examiner and Other Observations', 'Final Correction', 'Comment-by-Comment Response (External Examiner)', 'Comment-by-Comment Response (Internal Examiner)',
+      'Signed Proposal Defence Form', 'Progress Presentation (PPTX)', 'External Examiner Comments'];
+    var PRESENTATION_KINDS = ['Proposal Defence Readiness', 'Progress Report Presentation', 'Final Examination'];
+    var TITLE_KIND = 'Title Approval';
     var PRESENTATION_INTENTS = {
-      'Proposal Presentation': { label: 'Proposal presentation', stage: '5 - Proposal Defence Form', warn: '4 - Proposal Submission' },
-      'Progress Report Presentation': { label: 'Progress report presentation', stage: '9 - Compliance Inspection', warn: '8 - Progress Report' },
-      'Final Examination': { label: 'Final examination', stage: '11 - External Defence', warn: '11 - External Defence' }
+      'Title Approval': { label: 'Thesis title approval', stage: '5 - Proposal Submission', warn: '4 - Title Approval' },
+      'Proposal Defence Readiness': { label: 'Ready for proposal defence', stage: '7 - Proposal Defence', warn: '6 - Defence Readiness' },
+      'Proposal Presentation': { label: 'Proposal presentation', stage: '7 - Proposal Defence', warn: '6 - Defence Readiness' },
+      'Progress Report Presentation': { label: 'Progress report presentation', stage: '9 - Internal Examiner Assignment', warn: '8 - Progress Report Intent' },
+      'Final Examination': { label: 'Final examination (thesis submission)', stage: '12 - Thesis Submission', warn: '11 - Final Examination Intent' }
     };
-    var ROLE_LABELS = { SuperAdmin: 'Super Admin', Student: 'Student', PG_Coordinator: 'PG Coordinator', HoD: 'Head of Department', Staff: 'Staff', Submission_Inspector: 'Submission Inspector' };
+    var ROLE_LABELS = { SuperAdmin: 'Super Admin', Student: 'Student', PG_Coordinator: 'PG Coordinator', HoD: 'Head of Department', Staff: 'Staff', Submission_Inspector: 'Submission Inspector', Examiner: 'Examiner' };
 
     /* ================= RPC ================= */
     function authed(fn) {
@@ -1399,7 +1404,8 @@
       { key: 'superadmin', label: 'Super Admin', roles: ['SuperAdmin'] },
       { key: 'audit', label: 'Audit Log', roles: ['HoD', 'PG_Coordinator', 'SuperAdmin'] },
       { key: 'staffdash', label: 'My Students', roles: ['Staff'] },
-      { key: 'inspector', label: 'Submissions Review', roles: ['Submission_Inspector', 'PG_Coordinator'] }
+      { key: 'inspector', label: 'Submissions Review', roles: ['Submission_Inspector', 'PG_Coordinator'] },
+      { key: 'examiner', label: 'My Assignments', roles: ['Examiner'] }
     ];
     function roleAllowed(key) {
       var item = NAV.filter(function (n) { return n.key === key; })[0];
@@ -1431,7 +1437,10 @@
         Promise.all([authed('api_getCoordinatorDashboard'), loadFacDep().catch(function () { return null; }), loadRecipients()]).then(function (r) { state.coordinator = r[0]; state.busy = false; render(); }).catch(setError);
       } else if (view === 'hod' && state.user && ['HoD', 'PG_Coordinator'].indexOf(state.user.role) !== -1) {
         state.busy = true; render();
-        Promise.all([authed('api_getHoDStats'), loadRecipients()]).then(function (r) { state.hod = r[0]; state.busy = false; render(); }).catch(setError);
+        Promise.all([authed('api_getHoDStats'), loadRecipients(), authed('api_getPipeline').catch(function () { return []; }), authed('api_listExaminerQueue').catch(function () { return { internal: [], external: [] }; })]).then(function (r) { state.hod = r[0]; state.pipeline = r[2]; state.examQueue = r[3]; state.busy = false; render(); }).catch(setError);
+      } else if (view === 'examiner' && state.user && state.user.role === 'Examiner') {
+        state.busy = true; render();
+        authed('api_getExaminerDashboard').then(function (d) { state.examiner = d; state.busy = false; render(); }).catch(setError);
       } else if (view === 'inbox' && state.user && ['Student', 'PG_Coordinator', 'HoD'].indexOf(state.user.role) !== -1) {
         state.busy = true; render();
         authed('api_listInquiries').then(function (d) { state.inq = d; state.busy = false; render(); }).catch(setError);
@@ -1479,6 +1488,7 @@
       if (state.user.role === 'HoD') return 'hod';
       if (state.user.role === 'Staff') return 'staffdash';
       if (state.user.role === 'Submission_Inspector') return 'inspector';
+      if (state.user.role === 'Examiner') return 'examiner';
       return 'dashboard';
     }
     function doLogout() {
@@ -1588,6 +1598,7 @@
       else if (state.view === 'audit') out += viewAudit();
       else if (state.view === 'staffdash') out += viewStaff();
       else if (state.view === 'inspector') out += viewInspector();
+      else if (state.view === 'examiner') out += viewExaminer();
       else out += viewStudentDashboard();
       out += footerHtml(false);
       return out;
@@ -1609,7 +1620,7 @@
         '<div class="logo-row"><img src="' + esc(BRAND.logoUrl) + '" alt="Logo"><h2>Department of Physics Postgraduate Journey</h2><div class="kicker">' + esc(BRAND.subtitle || 'University of Abuja') + '</div></div>' +
         headerHtml() +
         '<form id="login-form">' +
-          '<div class="field"><label>Registration Number / Staff ID</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531 or ACA1234"></div>' +
+          '<div class="field"><label>Registration Number / Staff ID</label><input type="text" name="regNumber" required placeholder="UA/pg2026/003531, ACA1234 or EXM0001"></div>' +
           '<div class="field"><label>Password</label><div class="pw-wrap"><input type="password" name="password" required><button type="button" class="pw-toggle" data-action="toggle-pw" aria-label="Show password" aria-pressed="false">' + icons.eye + '</button></div></div>' +
           '<button class="btn btn-primary btn-block" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (state.busy ? '<span class="spinner"></span>' : 'Sign In') + '</button>' +
         '</form>' +
@@ -1651,7 +1662,7 @@
         (note ? '<br><span class="small">Note: ' + esc(note) + '</span>' : '') + '</p>';
     }
     function intentFormHtml(intent, s) {
-      var kind = intent ? intent.kind : 'Proposal Presentation';
+      var kind = intent ? intent.kind : defaultIntentKind_(s.currentStage);
       var month = intent ? intent.preferredMonth : new Date().toISOString().slice(0, 7);
       var note = intent ? intent.note : '';
       return '<form id="intent-form" data-id="' + esc(intent ? intent.id : '') + '">' +
@@ -1668,13 +1679,14 @@
     }
     function intentSummaryHtml(x) {
       var meta = intentMeta(x.kind);
-      var out = '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px"><div><strong>' + esc(meta.label || x.kind) + '</strong> <span class="small muted">&middot; preferred ' + esc(x.preferredMonth) + '</span></div><div>' + statusBadge(x.status) + '</div></div>';
+      var out = '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px"><div><strong>' + esc(meta.label || x.kind) + '</strong> <span class="small muted">&middot; ' + (x.kind === TITLE_KIND ? 'both supervisors approve' : 'preferred ' + esc(x.preferredMonth)) + '</span></div><div>' + statusBadge(x.status) + '</div></div>';
+      if (x.title) out += '<p class="small" style="margin:0 0 8px"><strong>Proposed title:</strong> ' + esc(x.title) + '</p>';
       if (x.note) out += '<p class="small" style="margin:0 0 8px"><strong>Your note:</strong> ' + esc(x.note) + '</p>';
       out += intentApprovalLine(x.mainSupervisorName || 'Main Supervisor', x.mainStatus, x.mainBy, x.mainAt, x.mainNote);
       out += x.coStatus === 'Not Required'
         ? '<p class="small" style="margin:5px 0"><strong>Co-Supervisor:</strong> <span class="muted">Not required</span></p>'
         : intentApprovalLine(x.coSupervisorName || 'Co-Supervisor', x.coStatus, x.coBy, x.coAt, x.coNote);
-      out += intentApprovalLine('PG Coordinator', x.coordinatorStatus, x.coordinatorBy, x.coordinatorAt, x.coordinatorNote);
+      if (x.coordinatorRequired !== false) out += intentApprovalLine('PG Coordinator', x.coordinatorStatus, x.coordinatorBy, x.coordinatorAt, x.coordinatorNote);
       if (x.stageApplied) out += '<p class="small" style="margin:5px 0"><strong>Stage advanced to:</strong> ' + esc(x.stageApplied) + '</p>';
       if (x.warning) out += '<p class="small" style="margin:8px 0 0"><span class="badge warn">Early request</span> ' + esc(x.warning) + '</p>';
       return out;
@@ -1689,9 +1701,9 @@
     }
     function presentationIntentStudentCard(s) {
       var list = state.dashboard.presentationIntents || [];
-      var active = list.filter(function (x) { return ['Pending Supervisors', 'Pending Coordinator', 'Returned'].indexOf(x.status) > -1; })[0];
-      var out = '<div class="card"><h4 style="margin:0 0 8px">Presentation Intent</h4>' +
-        '<p class="small muted" style="margin:0 0 12px">Ask your supervisors and the PG Coordinator for a proposal, progress or final presentation. The Research Plan Form upload remains available under New Submission.</p>';
+      var active = list.filter(function (x) { return x.kind !== TITLE_KIND && ['Pending Supervisors', 'Pending Coordinator', 'Returned'].indexOf(x.status) > -1; })[0];
+      var out = '<div class="card"><h4 style="margin:0 0 8px">Approval Requests</h4>' +
+        '<p class="small muted" style="margin:0 0 12px">Ask for approval to move on: readiness for your proposal defence (Route B), your progress report presentation, or your final examination. Both supervisors approve, then the PG Coordinator approves.</p>';
       if (active) {
         out += '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-bottom:12px">' + intentSummaryHtml(active) + '</div>';
         if (active.status === 'Returned' || active.status === 'Pending Supervisors') out += intentFormHtml(active, s);
@@ -1714,7 +1726,7 @@
         out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Request</th><th>Preferred month</th><th>Approvals</th><th>Status</th><th>Action</th></tr></thead><tbody>';
         list.forEach(function (x) {
           out += '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + ' &middot; ' + esc(x.currentStage) + '</span></td>' +
-            '<td>' + esc(intentMeta(x.kind).label || x.kind) + (x.note ? '<br><span class="small muted">' + esc(x.note) + '</span>' : '') + '</td>' +
+            '<td>' + esc(intentMeta(x.kind).label || x.kind) + (x.title ? '<br><strong class="small">' + esc(x.title) + '</strong>' : '') + (x.note ? '<br><span class="small muted">' + esc(x.note) + '</span>' : '') + '</td>' +
             '<td class="small">' + esc(x.preferredMonth) + '</td>' +
             '<td class="small">Main: ' + intentApprovalBadge(x.mainStatus) + (x.mainNote ? '<br><span class="muted">' + esc(x.mainNote) + '</span>' : '') + '<br>Co: ' + intentApprovalBadge(x.coStatus) + (x.coNote ? '<br><span class="muted">' + esc(x.coNote) + '</span>' : '') + '</td>' +
             '<td>' + statusBadge(x.status) + (x.myRole ? '<br><span class="small muted">You: ' + esc(x.myRole) + '</span>' : '') + '</td>' +
@@ -1736,7 +1748,7 @@
         awaiting.forEach(function (x) {
           var target = intentMeta(x.kind).stage || x.targetStage;
           out += '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + ' &middot; ' + esc(x.currentStage) + '</span></td>' +
-            '<td>' + esc(intentMeta(x.kind).label || x.kind) + (x.note ? '<br><span class="small muted">' + esc(x.note) + '</span>' : '') + '<br><span class="small">Advance to: <strong>' + esc(target) + '</strong></span></td>' +
+            '<td>' + esc(intentMeta(x.kind).label || x.kind) + (x.title ? '<br><strong class="small">' + esc(x.title) + '</strong>' : '') + (x.note ? '<br><span class="small muted">' + esc(x.note) + '</span>' : '') + '<br><span class="small">Advance to: <strong>' + esc(target) + '</strong></span></td>' +
             '<td class="small">' + esc(x.preferredMonth) + '</td>' +
             '<td class="small">' + intentApprovalBadge(x.mainStatus) + (x.mainBy ? '<br><span class="muted">' + esc(x.mainBy) + '</span>' : '') + '</td>' +
             '<td class="small">' + intentApprovalBadge(x.coStatus) + (x.coBy ? '<br><span class="muted">' + esc(x.coBy) + '</span>' : '') + '</td>' +
@@ -1752,6 +1764,163 @@
       }
       return out + '</div>';
     }
+
+    /* ================= EXAMINATION WORKFLOW (v2) ================= */
+    function defaultIntentKind_(stage) { var i = JOURNEY_STAGES.indexOf(stage); if (i >= 10) return 'Final Examination'; if (i >= 7) return 'Progress Report Presentation'; return 'Proposal Defence Readiness'; }
+    function stageAtLeast_(s, name) { return JOURNEY_STAGES.indexOf(s.currentStage) >= JOURNEY_STAGES.indexOf(name); }
+    function tplDownload_(key, label) {
+      var id = state.dashboard && state.dashboard.templates && state.dashboard.templates[key];
+      return id ? '<a class="btn btn-outline btn-sm" href="https://drive.google.com/uc?export=download&id=' + esc(id) + '" target="_blank" rel="noopener">' + esc(label) + '</a>'
+        : '<span class="small muted">The ' + esc(label.toLowerCase()) + ' will be provided by the department.</span>';
+    }
+    function uploadBtn_(type, label) { return '<button class="btn btn-primary btn-sm" type="button" data-action="goto-upload" data-type="' + esc(type) + '">' + esc(label) + '</button>'; }
+    function subStatusLine_(type) {
+      var sub = ((state.dashboard && state.dashboard.submissions) || []).filter(function (x) { return x.type === type && x.status !== 'Draft'; })[0];
+      return sub ? '<p class="small" style="margin:6px 0">Status of your upload: ' + statusBadge(sub.status) + (sub.inspectorComments ? ' <span class="muted">&mdash; ' + esc(sub.inspectorComments) + '</span>' : '') + '</p>' : '';
+    }
+    function titleApprovalCard(s) {
+      var list = state.dashboard.presentationIntents || [], ACT = ['Pending Supervisors', 'Returned'];
+      var act = list.filter(function (x) { return x.kind === TITLE_KIND && ACT.indexOf(x.status) > -1; })[0];
+      var other = list.filter(function (x) { return x.kind !== TITLE_KIND && ['Pending Supervisors', 'Pending Coordinator', 'Returned'].indexOf(x.status) > -1; })[0];
+      var out = '<div class="card"><h4 style="margin:0 0 12px">Thesis / Dissertation Title</h4>';
+      if (s.titleLocked || s.titleStatus === 'Confirmed') {
+        out += '<p style="margin:0 0 8px"><strong>' + esc(s.thesisTitle) + '</strong> <span class="badge ok">Approved</span></p><p class="small muted" style="margin:0">Approved by your supervisor(s). It is locked until the thesis stage.</p>' + titleChangeHtml();
+      } else if (!s.mainSupervisor) {
+        out += '<p class="muted" style="margin:0">Your Main Supervisor must be assigned before you can submit a title.</p>';
+      } else {
+        if (act) out += '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-bottom:12px">' + intentSummaryHtml(act) + '</div>';
+        if (other && !act) out += '<p class="small muted" style="margin:0">Finish or withdraw your other approval request first.</p>';
+        else {
+          out += '<form id="title-intent-form" data-id="' + esc(act ? act.id : '') + '"><div class="field"><label>' + (act ? 'Edit your proposed title' : 'Proposed title of your thesis / dissertation') + '</label>' +
+            '<textarea name="title" required minlength="10" maxlength="400" rows="3" placeholder="Type the full title you want approved">' + esc(act ? act.title : (s.thesisTitle || '')) + '</textarea></div>' +
+            '<button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (act ? (act.status === 'Returned' ? 'Resubmit for approval' : 'Update title') : 'Send to my supervisors') + '</button>' +
+            (act ? ' <button class="btn btn-outline btn-sm" type="button" data-action="intent-withdraw" data-id="' + esc(act.id) + '">Withdraw</button>' : '') +
+            '<p class="small muted" style="margin:8px 0 0">' + (s.coSupervisor ? 'Your Main and Co-Supervisors must both approve.' : 'Your Main Supervisor must approve.') + ' The PG Coordinator and HoD can follow the progress. Once approved, the title is locked.</p></form>';
+        }
+      }
+      return out + '</div>';
+    }
+    function defenceReadinessCard(s) {
+      if (!stageAtLeast_(s, '6 - Defence Readiness') || JOURNEY_STAGES.indexOf(s.currentStage) > JOURNEY_STAGES.indexOf('7 - Proposal Defence')) return '';
+      return '<div class="card"><h4 style="margin:0 0 8px">Proposal Defence Readiness</h4><p class="small muted" style="margin:0 0 12px">Show that you are ready to defend. Use <strong>either</strong> route; the PG Coordinator then clears you for the defence.</p>' +
+        '<div class="grid cols-2" style="gap:12px"><div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px"><strong>Route A &mdash; signed paper form</strong>' +
+        '<ol class="small" style="margin:8px 0;padding-left:18px"><li>Download the Proposal Defence Form.</li><li>Get your Main and Co-Supervisor to sign it.</li><li>Upload the signed copy (PDF).</li></ol>' +
+        '<div class="row" style="flex-wrap:wrap;gap:8px">' + tplDownload_('Proposal Defence Form', 'Proposal Defence Form') + ' ' + uploadBtn_('Signed Proposal Defence Form', 'Upload signed form') + '</div>' + subStatusLine_('Signed Proposal Defence Form') + '</div>' +
+        '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px"><strong>Route B &mdash; approval in the system</strong>' +
+        '<p class="small" style="margin:8px 0">Choose <em>Ready for proposal defence</em> in <em>Approval Requests</em> below. Your supervisors approve online (their approval counts as their signature), then the PG Coordinator confirms.</p></div></div></div>';
+    }
+    function pptxCard(s) {
+      var i = JOURNEY_STAGES.indexOf(s.currentStage);
+      if (i < JOURNEY_STAGES.indexOf('10 - Progress Presentation') || i > JOURNEY_STAGES.indexOf('11 - Final Examination Intent')) return '';
+      return '<div class="card"><h4 style="margin:0 0 8px">Progress Presentation (PPTX)</h4><p class="small muted" style="margin:0 0 10px">Download the template, build your slides, and upload the .pptx when ready. The PG Coordinator and the Submission Inspector check it against the standard and approve it or return it. <strong>Only they (and you) can open this file.</strong></p>' +
+        '<div class="row" style="flex-wrap:wrap;gap:8px">' + tplDownload_('Progress Presentation Template', 'PowerPoint template') + ' ' + uploadBtn_('Progress Presentation (PPTX)', 'Upload my PPTX') + '</div>' + subStatusLine_('Progress Presentation (PPTX)') + '</div>';
+    }
+    function finalPackageCard(s) {
+      if (!stageAtLeast_(s, '14 - Examiners Comments')) return '';
+      var d = state.dashboard, fp = d.finalPackage || { required: [], done: {} }, r = d.examinerReport;
+      var out = '<div class="card"><h4 style="margin:0 0 8px">Examiners\u2019 Comments and Corrections</h4>';
+      if (r) out += '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-bottom:12px"><strong>External Examiner (' + esc(r.examiner) + '): ' + esc(r.recommendation) + '</strong><p class="small pre" style="margin:8px 0 0">' + esc(r.comments) + '</p>' + (r.reportUrl ? '<p class="small" style="margin:6px 0 0"><a href="' + esc(r.reportUrl) + '" target="_blank" rel="noopener">Examiner\u2019s report file</a></p>' : '') + '</div>';
+      out += '<p class="small muted" style="margin:0 0 8px">Upload all three to move to the final compliance check:</p>';
+      (fp.required || []).forEach(function (t) {
+        var done = fp.done && fp.done[t];
+        out += '<p style="margin:6px 0">' + (done ? '\u2713' : '\u25CB') + ' ' + esc(t === 'External Examiner Comments' ? 'External Examiner\u2019s comments file' : t === 'Final Correction' ? 'Final corrected version' : 'Comment-by-comment response') + ' ' + (done ? '<span class="badge ok">submitted</span>' : uploadBtn_(t, 'Upload')) + '</p>';
+      });
+      return out + '</div>';
+    }
+    function examinersInfoCard() {
+      var l = (state.dashboard.examiners || []); if (!l.length) return '';
+      return '<div class="card"><h4 style="margin:0 0 8px">My Examiners</h4>' + l.map(function (x) { return '<p style="margin:4px 0"><strong>' + esc(x.type) + ' Examiner:</strong> ' + esc(x.name) + (x.institution ? ' <span class="small muted">(' + esc(x.institution) + ')</span>' : '') + ' ' + '<span class="badge ' + (x.status === 'Assessment received' ? 'ok' : 'warn') + '">' + esc(x.status) + '</span></p>'; }).join('') + '</div>';
+    }
+
+    /* ---- Coordinator / HoD: pipeline board and examiner assignment ---- */
+    function pipelineCard() {
+      var list = state.pipeline || [], f = state.pipeFilter || '', isCo = state.user.role === 'PG_Coordinator';
+      var rows = list.filter(function (x) { return !f || x.stage === f; });
+      var out = '<div class="card"><h4 style="margin:0 0 8px">Journey pipeline (' + rows.length + ')</h4><p class="small muted" style="margin:0 0 10px">Every student\u2019s stage and exactly who or what they are waiting for: supervisors, Coordinator, Inspector, examiners or the student.</p>' +
+        '<div class="field" style="max-width:340px"><label>Show stage</label><select id="pipe-filter"><option value="">All stages</option>' + optionsHtml(JOURNEY_STAGES, null, f) + '</select></div>';
+      if (!rows.length) return out + '<p class="muted">No students at this stage.</p></div>';
+      out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Stage</th><th>Waiting on</th><th>Days</th><th>Details</th><th></th></tr></thead><tbody>' + rows.map(function (x) {
+        return '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + ' &middot; ' + esc(x.programme) + '</span></td><td class="small">' + esc(x.stage) + '</td><td class="small"><strong>' + esc(x.waitingOn) + '</strong></td><td class="small">' + esc(x.waitingDays === '' ? '' : x.waitingDays) + '</td>' +
+          '<td class="small">' + (x.title ? 'Title: ' + esc(x.title) + '<br>' : '') + (x.detail || []).map(esc).join('<br>') + '</td>' +
+          '<td>' + (isCo && x.stage === '7 - Proposal Defence' ? '<button class="btn btn-outline btn-sm" data-action="defence-outcome" data-id="' + esc(x.regNumber) + '">Record defence outcome</button>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+      return out;
+    }
+    function examinerRowHtml_(x) {
+      var e = x.examiner, act;
+      if (!e) act = '<button class="btn btn-primary btn-sm" data-action="examiner-assign" data-kind="' + x.kind + '" data-reg="' + esc(x.regNumber) + '" data-sub="' + esc(x.submissionId || '') + '">Assign ' + x.kind + ' examiner</button>';
+      else if (e.status === 'Scored') act = '<button class="btn btn-outline btn-sm" data-action="examiner-view" data-id="' + esc(e.id) + '">Read assessment</button>';
+      else act = '<button class="btn btn-outline btn-sm" data-action="examiner-revoke" data-id="' + esc(e.id) + '">Revoke</button>';
+      return '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + ' &middot; ' + esc(x.programme) + '</span></td><td class="small">' + esc(x.stage) + '</td><td class="small">' +
+        (e ? '<strong>' + esc(e.name) + '</strong><br>' + esc(e.rank) + ', ' + esc(e.department) + (x.kind === 'External' ? ' &middot; ' + esc(e.institution) : '') + '<br>' + (e.status === 'Scored' ? '<span class="badge ok">Assessed: ' + esc(e.recommendation) + ' (' + esc(e.score) + '%)</span>' : '<span class="badge warn">Assigned</span>' + (e.dueDate ? ' due ' + esc(e.dueDate) : '')) : '<span class="muted">Not assigned</span>') + '</td><td>' + act + '</td></tr>';
+    }
+    function examinerQueueCard() {
+      var q = state.examQueue || { internal: [], external: [] };
+      var tbl = function (title, note, rows) {
+        return '<h4 style="margin:12px 0 4px">' + title + ' (' + rows.length + ')</h4><p class="small muted" style="margin:0 0 8px">' + note + '</p>' + (rows.length ? '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Stage</th><th>Examiner</th><th></th></tr></thead><tbody>' + rows.map(examinerRowHtml_).join('') + '</tbody></table></div>' : '<p class="muted small">None waiting.</p>');
+      };
+      return '<div class="card"><h4 style="margin:0 0 4px">Examiner assignment</h4><p class="small muted" style="margin:0">The PG Coordinator or HoD assigns examiners. The system creates their login and emails the details.</p>' +
+        tbl('Internal Examiners', 'From a department other than the student\u2019s (not Physics). They assess the progress presentation at the seminar and do <strong>not</strong> receive the slides.', q.internal) +
+        tbl('External Examiners', 'Academic staff of another university. They read and assess the approved thesis/dissertation.', q.external) + '</div>';
+    }
+    function openExaminerModal(kind, reg, sub) {
+      var q = (state.examQueue || {})[kind === 'Internal' ? 'internal' : 'external'] || [];
+      var row = q.filter(function (x) { return x.regNumber === reg && String(x.submissionId || '') === String(sub || ''); })[0] || { studentName: reg, department: '' };
+      var ext = kind === 'External';
+      showModal('<h3 style="margin:0 0 6px">Assign ' + kind + ' Examiner</h3><p class="small muted" style="margin:0 0 12px">' + esc(row.studentName) + ' (' + esc(reg) + ')' + (row.department ? ' &middot; ' + esc(row.department) : '') + '</p>' +
+        '<form id="examiner-assign-form" data-kind="' + kind + '" data-reg="' + esc(reg) + '" data-sub="' + esc(sub || '') + '">' +
+        '<div class="row-cols" style="--cols:2"><div class="field"><label>Full name (with title)</label><input type="text" name="fullName" required placeholder="Prof. Jane Doe"></div><div class="field"><label>Email</label><input type="email" name="email" required></div></div>' +
+        '<div class="row-cols" style="--cols:2"><div class="field"><label>Academic rank</label><input type="text" name="rank" required placeholder="Professor / Senior Lecturer"></div><div class="field"><label>Department</label><input type="text" name="department" required></div></div>' +
+        (ext ? '<div class="row-cols" style="--cols:2"><div class="field"><label>University</label><input type="text" name="institution" required placeholder="Must not be University of Abuja"></div><div class="field"><label>Institutional profile page (link)</label><input type="url" name="profileUrl" required placeholder="https://..."></div></div>'
+             : '<p class="small muted" style="margin:0 0 8px">Department must differ from ' + esc(row.department || 'the student\u2019s department') + ' (and not be Physics).</p>') +
+        '<div class="field" style="max-width:240px"><label>Assessment due date (optional)</label><input type="date" name="dueDate"></div>' +
+        '<button class="btn btn-primary" type="submit">Assign and email login</button> <button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></form>');
+    }
+    function showExaminerAssessment_(id) {
+      var x = null; ['internal', 'external'].forEach(function (k) { ((state.examQueue || {})[k] || []).forEach(function (r) { if (r.examiner && r.examiner.id === id) x = r; }); });
+      if (!x) return; var e = x.examiner, sc = e.scores || {};
+      showModal('<h3 style="margin:0 0 6px">' + esc(x.kind) + ' Examiner assessment</h3><p class="small muted" style="margin:0 0 10px">' + esc(e.name) + ' &middot; ' + esc(x.studentName) + ' (' + esc(x.regNumber) + ')</p>' +
+        '<p><strong>' + esc(e.recommendation) + '</strong> &middot; average ' + esc(e.score) + '%</p>' + Object.keys(sc).map(function (k) { return '<p class="small" style="margin:2px 0">' + esc(k) + ': <strong>' + esc(sc[k]) + '</strong></p>'; }).join('') +
+        '<p class="small pre" style="margin:10px 0">' + esc(e.comments) + '</p>' + (e.reportUrl ? '<p class="small"><a href="' + esc(e.reportUrl) + '" target="_blank" rel="noopener">Examiner\u2019s report file</a></p>' : '') +
+        '<button class="btn btn-outline" type="button" data-action="close-modal">Close</button>');
+    }
+    function openDefenceModal(reg) {
+      showModal('<h3 style="margin:0 0 6px">Proposal defence outcome</h3><p class="small muted" style="margin:0 0 12px">' + esc(reg) + '</p><form id="defence-form" data-reg="' + esc(reg) + '">' +
+        '<div class="field"><label>Outcome</label><select name="outcome" required><option>Passed</option><option>Passed with corrections</option><option>Not passed</option></select></div>' +
+        '<div class="field"><label>Note (required unless Passed)</label><textarea name="note" rows="3"></textarea></div>' +
+        '<button class="btn btn-primary" type="submit">Record outcome</button> <button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></form>');
+    }
+
+    /* ---- Examiner login: My Assignments ---- */
+    function viewExaminer() {
+      var d = state.examiner; if (!d) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var out = '<h2 style="margin:0 0 6px">My Assignments</h2><p class="small muted" style="margin:0 0 16px">You see only the students assigned to you. Submit one assessment per assignment; it locks once submitted.</p>';
+      if (!d.assignments.length) return out + '<div class="empty">No assignments yet.</div>';
+      d.assignments.forEach(function (a) {
+        out += '<div class="card"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h4 style="margin:0">' + esc(a.type) + ' examination &mdash; ' + esc(a.student) + '</h4><p class="small muted" style="margin:4px 0 0">' + esc(a.programme) + (a.thesisTitle ? ' &middot; ' + esc(a.thesisTitle) : '') + '</p></div><div>' + (a.status === 'Scored' ? '<span class="badge ok">Submitted</span>' : '<span class="badge warn">Awaiting your assessment</span>') + '</div></div>' +
+          '<p class="small" style="margin:8px 0">' + esc(a.document) + (a.dueDate ? ' &middot; due ' + esc(a.dueDate) : '') + '</p>';
+        if (a.status === 'Scored') {
+          out += '<p><strong>' + esc(a.recommendation) + '</strong> &middot; average ' + esc(a.score) + '%</p>' + Object.keys(a.scores || {}).map(function (k) { return '<p class="small" style="margin:2px 0">' + esc(k) + ': ' + esc(a.scores[k]) + '</p>'; }).join('') + '<p class="small pre">' + esc(a.comments) + '</p></div>';
+          return;
+        }
+        if (a.type === 'External' && a.submissionId) out += '<p><button class="btn btn-primary btn-sm" type="button" data-action="read-files" data-id="' + esc(a.submissionId) + '">Open the thesis / dissertation</button></p>';
+        var crit = d.criteria[a.type] || [], recs = a.type === 'External' ? d.recommendations : d.internalRecommendations;
+        out += '<form id="exam-assess-form" data-id="' + esc(a.id) + '" data-type="' + esc(a.type) + '"><div class="row-cols" style="--cols:2">' +
+          crit.map(function (c, i) { return '<div class="field"><label>' + esc(c) + ' (0&ndash;100)</label><input type="number" name="score' + i + '" min="0" max="100" step="0.5" required></div>'; }).join('') + '</div>' +
+          '<div class="field"><label>Recommendation</label><select name="recommendation" required><option value="">Choose&hellip;</option>' + optionsHtml(recs, null, '') + '</select></div>' +
+          '<div class="field"><label>Comments for the student and the department</label><textarea name="comments" rows="6" required minlength="30" placeholder="Summarise strengths, required corrections and any concerns"></textarea></div>' +
+          '<div class="field"><label>Link to your marked-up report (optional, Google Drive link)</label><input type="url" name="reportUrl" placeholder="https://drive.google.com/..."></div>' +
+          '<button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit assessment</button><p class="small muted" style="margin:8px 0 0">You cannot edit it after submitting.</p></form></div>';
+      });
+      return out;
+    }
+    document.addEventListener('change', function (e) {
+      var t = e.target; if (!t) return;
+      if (t.id === 'pipe-filter') { state.pipeFilter = t.value; render(); return; }
+      if (t.name === 'type' && t.form && t.form.id === 'sub-form') {   // PPTX only for the progress presentation; documents otherwise
+        var inp = t.form.querySelector('[name=docFile]'); if (inp) inp.setAttribute('accept', t.value === 'Progress Presentation (PPTX)' ? '.pptx' : '.pdf,.doc,.docx');
+      }
+    });
 
     /* ---- Student Dashboard ---- */
     function viewStudentDashboard() {
@@ -1794,22 +1963,10 @@
       } else { out += '<p class="muted">Not yet assigned.</p>'; }
       out += '</div></div>';
 
-      // Thesis / Dissertation title
-      out += '<div class="card"><h4 style="margin:0 0 12px">Thesis / Dissertation Title</h4>';
-      if (!s.titleOpen) {
-        out += '<p class="muted">You can enter your title once you reach stage 6 &ndash; Proposal Defence.</p>';
-      } else if (s.titleLocked) {
-        out += '<p style="margin:0 0 8px"><strong>' + esc(s.thesisTitle) + '</strong> ' + titleBadge(s).trim() + '</p><p class="small muted" style="margin:0">Confirmed by the PG Coordinator. It cannot be changed before the external defence.</p>' + titleChangeHtml();
-      } else {
-        out += '<form id="title-form"><div class="field"><label>Approved title of your thesis / dissertation</label><textarea name="thesisTitle" required minlength="10" maxlength="400" rows="3" placeholder="Type your title exactly as approved at the proposal defence">' + esc(s.thesisTitle || '') + '</textarea></div>' +
-          (s.thesisTitle ? '<p class="small" style="margin:0 0 8px">Status: ' + titleBadge(s).trim() + '</p>' : '') +
-          '<p class="small muted" style="margin:0 0 10px">The PG Coordinator must confirm your title. You can edit it until it is confirmed; any edit needs confirming again.</p>' +
-          '<button class="btn btn-primary btn-sm" type="submit">' + (s.thesisTitle ? 'Update title' : 'Save title') + '</button></form>';
-      }
-      out += '</div>';
+      out += titleApprovalCard(s);
 
       // Journey stage
-      out += '<div class="card"><h4 style="margin:0 0 12px">PG Journey — Stage ' + (stageIdx + 1) + ' of 15</h4>' +
+      out += '<div class="card"><h4 style="margin:0 0 12px">PG Journey — Stage ' + (stageIdx + 1) + ' of ' + JOURNEY_STAGES.length + '</h4>' +
         '<div class="stage-bar"><div class="stage-fill" style="width:' + pct + '%">' + esc(s.currentStage) + '</div></div>' +
         '<div class="stage-list">' +
         JOURNEY_STAGES.map(function (st, i) {
@@ -1818,7 +1975,7 @@
         }).join('') +
         '</div></div>';
 
-      out += presentationIntentStudentCard(s);
+      out += defenceReadinessCard(s) + pptxCard(s) + finalPackageCard(s) + presentationIntentStudentCard(s) + examinersInfoCard();
 
       // Announcements
       out += '<div class="card"><h4 style="margin:0 0 12px">Announcements</h4>';
@@ -1828,7 +1985,7 @@
       });
       out += '</div>';
 
-      out += calendarMiniCard() + timeCard() + stageChecklistCard(s, stageIdx) + '<div class="card"><h4 style="margin:0 0 8px">Next step</h4><p class="small muted" style="margin:0 0 6px">' + pct + '% complete &middot; about ' + monthsLeft(s.programme, pct) + ' months left (typical duration)</p><p style="margin:0">' + esc(STAGE_HINTS[Math.min(stageIdx + 1, 14)] || '') + '</p><button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">Message my supervisors</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">My timeline</button> <button class="btn btn-outline btn-sm" data-action="owncard" style="margin-top:8px">Download my card</button> <button class="btn btn-outline btn-sm" data-action="ics" style="margin-top:8px">Add deadlines to calendar</button></div>';
+      out += calendarMiniCard() + timeCard() + stageChecklistCard(s, stageIdx) + '<div class="card"><h4 style="margin:0 0 8px">Next step</h4><p class="small muted" style="margin:0 0 6px">' + pct + '% complete &middot; about ' + monthsLeft(s.programme, pct) + ' months left (typical duration)</p><p style="margin:0">' + esc(STAGE_HINTS[Math.min(stageIdx + 1, 15)] || '') + '</p><button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">Message my supervisors</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">My timeline</button> <button class="btn btn-outline btn-sm" data-action="owncard" style="margin-top:8px">Download my card</button> <button class="btn btn-outline btn-sm" data-action="ics" style="margin-top:8px">Add deadlines to calendar</button></div>';
       var dls = state.dashboard.deadlines || [];
       out += '<div class="card"><h4 style="margin:0 0 12px">Upcoming Deadlines</h4>' + (dls.length ? dls.map(function (d) { return '<p style="margin:4px 0"><strong>' + esc(d.date) + '</strong> &mdash; ' + esc(d.title) + '</p>'; }).join('') : '<p class="muted">None scheduled.</p>') + '</div>';
       out += seminarsCard(state.dashboard.seminars || []);
@@ -1853,6 +2010,7 @@
       // Templates
       out += '<div class="card"><h4 style="margin:0 0 12px">Download Templates</h4><div class="row" style="flex-wrap:wrap">';
       for (var key in state.dashboard.templates) {
+        if (!state.dashboard.templates[key]) continue;
         out += '<a class="btn btn-outline btn-sm" href="https://drive.google.com/uc?export=download&id=' + esc(state.dashboard.templates[key]) + '" target="_blank">' + esc(key) + '</a>';
       }
       out += '</div></div>';
@@ -1861,8 +2019,8 @@
       out += '<div class="card"><h4 style="margin:0 0 12px">New Submission</h4>' +
         '<form id="sub-form">' +
           '<div class="field"><label>Type</label><select name="type" required>' + optionsHtml(SUBMISSION_TYPES, null, '') + '</select>' +
-          '<p class="small muted" style="margin:6px 0 0">Current stage: <strong>' + esc(state.dashboard.student.currentStage || 'not set') + '</strong>. Internal Examiner and Other Observations must be submitted before stage 11 (External Defence/final presentation). Final Correction and both Comment-by-Comment Responses are accepted from stage 12 (Examiners Comments) onward, after the presentation. The server checks this rule; request a stage update and wait for PG Coordinator approval if your stage is wrong.</p></div>' +
-          '<div class="field"><label>Upload file (PDF/DOC/DOCX, max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
+          '<p class="small muted" style="margin:6px 0 0">Current stage: <strong>' + esc(state.dashboard.student.currentStage || 'not set') + '</strong>. Each document opens at its own stage: Research Proposal at stage 5, Signed Proposal Defence Form at 6, the PPTX at 10, the thesis at 12, and the examiner-correction files at 14. The server checks this rule; request a stage update and wait for PG Coordinator approval if your stage is wrong.</p></div>' +
+          '<div class="field"><label>Upload file (PDF/DOC/DOCX; PPTX only for the progress presentation; max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
           '<button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button> <button class="btn btn-outline" type="submit" data-draft="1"' + (state.busy ? ' disabled' : '') + '>Save as draft</button>' +
           '<p class="small muted" style="margin:8px 0 0">A draft is private to you. It is not sent to reviewers until you press Submit for review in My Submissions.</p>' +
         '</form></div>';
@@ -2560,12 +2718,13 @@
         '<h2>Submissions</h2>' + (subs.length ? '<table>' + subs.map(function (x) { return '<tr><td>' + esc(x.type) + '</td><td>' + esc(x.status) + '</td><td>' + esc(x.createdAt) + '</td></tr>'; }).join('') + '</table>' : '<p>None yet.</p>') + '</div>');
     }
 
-    var STAGE_HINTS = ['Complete registration and orientation', 'Attend all required lectures', 'Await supervisor allocation', 'Submit your Research Proposal', 'Submit the Proposal Defence Form', 'Defend your proposal at the seminar', 'Obtain progression clearance', 'Present your Progress Report', 'Compliance inspection of your thesis', 'Run the plagiarism check', 'Prepare for the external defence', 'Respond to examiners\u2019 comments', 'Final compliance inspection', 'Submit signed copies', 'Journey complete'];
+    var STAGE_HINTS = ['Complete registration and orientation', 'Attend all required lectures', 'Await supervisor allocation', 'Submit your thesis title for approval by both supervisors', 'Submit your Research Proposal', 'Get your defence readiness approved', 'Defend your proposal at the seminar', 'Request approval to present your progress report', 'Await your Internal Examiner', 'Upload your progress presentation (PPTX)', 'Request approval for your final examination', 'Upload your thesis / dissertation for external examination', 'Await your External Examiner', 'Respond to the examiners\u2019 comments and upload your final correction', 'Final compliance check', 'Submit signed copies \u2014 journey complete'];
     var TIPS = {
       Student: ['Your Dashboard shows your supervisors, current stage and the next step.', 'Submit documents by uploading a PDF/Word file or pasting a link (or Save as draft first); fix and Resubmit if changes are requested.', 'Use the bell for updates and "Message my supervisors" to chat. Use Inquiries for general questions to the PG Coordinator/HoD.'],
       Staff: ['"My Students" lists the students you supervise (main or co-supervisor).', 'Use Log meeting to record supervision sessions; students are notified.', 'Add notes to submissions and reply to student messages.'],
       Submission_Inspector: ['Review Awaiting items, tick every checklist point, then Approve, Reject or Request changes.', 'Comments are required for Reject / Request changes.', 'Reviewed history keeps your past decisions; the Coordinator and HoD are notified of each one.'],
       PG_Coordinator: ['Approve registrations, add or remove students, assign supervisors and update stages.', 'Use Submissions Review for approvals and Overview & Reports for charts, reports and student cards.', 'Announcements can be emailed to all students or one programme.', 'Answer student questions in Inquiries; the HoD can reply too.'],
+      Examiner: ['"My Assignments" lists only the students assigned to you.', 'Score each criterion (0\u2013100), choose a recommendation and write your comments, then submit. It locks after submission.', 'External examiners open the thesis from the assignment; internal examiners assess the live presentation (slides are not shared).'],
       HoD: ['Overview & Reports shows charts by programme, gender, session and stage.', 'Assign supervisors, post announcements and deadlines, and print reports or student cards.', 'Submissions Review decisions appear in the submissions table and your bell.', 'Answer student questions in Inquiries; the PG Coordinator sees your replies.']
     };
     function showModal(html) { closeModal(); var m = document.createElement('div'); m.id = 'modal'; m.className = 'modal-overlay'; m.innerHTML = '<div class="modal-card">' + html + '</div>'; document.body.appendChild(m); }
@@ -2721,18 +2880,19 @@
       [{ t: 'Complete your registration and orientation' }],
       [{ t: 'Attend all required lectures' }],
       [{ t: 'Wait for the PG Coordinator to assign your supervisors', auto: 'supervisors' }],
+      [{ t: 'Submit your thesis title; both supervisors must approve it', auto: 'title' }],
       [{ t: 'Submit your Research Proposal', type: 'Research Proposal' }],
-      [{ t: 'Submit the Proposal Defence Form to the PG Coordinator' }],
-      [{ t: 'Defend your proposal at the seminar' }, { t: 'Enter your thesis / dissertation title and have it confirmed', auto: 'title' }],
-      [{ t: 'Obtain progression clearance from the PG Coordinator' }],
-      [{ t: 'Submit your Progress Report', type: 'Progress Report' }],
-      [{ t: 'Pass the compliance inspection (format check and inspector approval)' }],
-      [{ t: 'Complete the plagiarism check with the inspector' }],
-      [{ t: 'Present at the external defence' }, { t: 'Submit the Internal Examiner and Other Observations document before the defence', type: 'Internal Examiner and Other Observations' }],
-      [{ t: 'Respond to the examiners’ comments (external examiner)', type: 'Comment-by-Comment Response (External Examiner)' }, { t: 'Respond to the examiners’ comments (internal examiner)', type: 'Comment-by-Comment Response (Internal Examiner)' }, { t: 'Submit your Final Correction', type: 'Final Correction' }],
-      [{ t: 'Submit your Final Thesis / Dissertation for the final compliance inspection', type: 'Final Thesis/Dissertation' }],
-      [{ t: 'Submit signed copies to the PG Coordinator' }],
-      []
+      [{ t: 'Route A: upload the Proposal Defence Form signed by both supervisors', type: 'Signed Proposal Defence Form' }, { t: 'Route B: request readiness approval in the system (both supervisors, then the PG Coordinator)', auto: 'readiness' }],
+      [{ t: 'Defend your proposal at the seminar; the PG Coordinator records the outcome' }],
+      [{ t: 'Request approval to present your progress report (both supervisors and the PG Coordinator)', auto: 'progressIntent' }],
+      [{ t: 'The PG Coordinator or HoD assigns your Internal Examiner', auto: 'internalExaminer' }],
+      [{ t: 'Download the template and upload your presentation (PPTX); the PG Coordinator and Inspector approve it', type: 'Progress Presentation (PPTX)' }],
+      [{ t: 'Request approval for your final examination (both supervisors and the PG Coordinator)', auto: 'finalIntent' }],
+      [{ t: 'Upload your Thesis / Dissertation (format check, then Inspector and PG Coordinator approval)', type: 'Final Thesis/Dissertation' }],
+      [{ t: 'The PG Coordinator or HoD assigns your External Examiner', auto: 'externalExaminer' }],
+      [{ t: 'Upload the External Examiner\u2019s comments file', type: 'External Examiner Comments' }, { t: 'Upload your comment-by-comment response', type: 'Comment-by-Comment Response (External Examiner)' }, { t: 'Upload your final corrected version', type: 'Final Correction' }],
+      [{ t: 'Final compliance: supervisors endorse, then the Inspector and PG Coordinator approve your Final Correction', type: 'Final Correction' }],
+      [{ t: 'Submit signed copies to the PG Coordinator' }]
     ];
     function stageChecklistCard(s, idx) {
       var items = STAGE_REQS[idx] || []; if (!items.length) return '';
@@ -2743,7 +2903,15 @@
           var sub = subs.filter(function (x) { return x.type === it.type && x.status !== 'Draft'; })[0];
           if (!sub) note = 'not submitted yet'; else if (sub.status === 'Approved') { mark = '\u2713'; note = 'approved'; } else { mark = '\u23F3'; note = sub.status.toLowerCase(); }
         } else if (it.auto === 'supervisors') { if (s.mainSupervisor) { mark = '\u2713'; note = 'assigned'; } }
-        else if (it.auto === 'title') { if (s.titleLocked) { mark = '\u2713'; note = 'title confirmed'; } else if (s.thesisTitle) { mark = '\u23F3'; note = 'awaiting confirmation'; } else note = 'title not entered yet'; }
+        else if (it.auto === 'title') { if (s.titleLocked) { mark = '\u2713'; note = 'title approved'; } else if ((state.dashboard.presentationIntents || []).some(function (x) { return x.kind === TITLE_KIND && x.status === 'Pending Supervisors'; })) { mark = '\u23F3'; note = 'awaiting your supervisors'; } else note = 'title not submitted yet'; }
+        else if (['readiness', 'progressIntent', 'finalIntent'].indexOf(it.auto) > -1) {
+          var ik = { readiness: ['Proposal Defence Readiness', 'Proposal Presentation'], progressIntent: ['Progress Report Presentation'], finalIntent: ['Final Examination'] }[it.auto];
+          var ix = (state.dashboard.presentationIntents || []).filter(function (x) { return ik.indexOf(x.kind) > -1 && x.status !== 'Withdrawn'; })[0];
+          if (!ix) note = 'not requested yet'; else if (ix.status === 'Approved') { mark = '\u2713'; note = 'approved'; } else { mark = '\u23F3'; note = ix.status.toLowerCase(); }
+        } else if (it.auto === 'internalExaminer' || it.auto === 'externalExaminer') {
+          var ex = (state.dashboard.examiners || []).filter(function (x) { return x.type === (it.auto === 'internalExaminer' ? 'Internal' : 'External'); })[0];
+          if (ex) { mark = '\u2713'; note = ex.name + ' assigned'; } else note = 'waiting for the Coordinator / HoD';
+        }
         return '<p style="margin:6px 0">' + mark + ' ' + esc(it.t) + (note ? ' <span class="small muted">&mdash; ' + esc(note) + '</span>' : '') + '</p>';
       });
       return '<div class="card"><h4 style="margin:0 0 8px">To move on from stage ' + (idx + 1) + '</h4>' + rows.join('') +
@@ -2801,12 +2969,12 @@
       var done = []; try { done = JSON.parse(sub.checklist || '[]'); } catch (e) {}
       return '<div class="small" style="margin:8px 0"><strong>Checklist</strong> (all required to approve)' + (sub.checklistItems || []).map(function (it) { return '<label style="display:block;margin:2px 0"><input type="checkbox" data-chk="' + esc(sub.id) + '" value="' + esc(it) + '"' + (done.indexOf(it) > -1 ? ' checked' : '') + '> ' + esc(it) + '</label>'; }).join('') + '</div>';
     }
-    var DOC_MIME = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
+    var DOC_MIME = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' };
     var DOC_MAX = 50 * 1024 * 1024, DOC_SMALL = 8 * 1024 * 1024;
     /** PDF / Word up to 50 MB. Up to 8 MB goes in one call; bigger files are sent in 3 MB pieces. Resolves to the Drive URL. */
     function uploadDoc_(f, type, onProg) {
       var ext = String(f.name || '').split('.').pop().toLowerCase();
-      if (!DOC_MIME[ext]) return Promise.reject(new Error('Upload a PDF, DOC or DOCX file.'));
+      if (!DOC_MIME[ext]) return Promise.reject(new Error('Upload a PDF, DOC, DOCX or PPTX file.'));
       if (f.size > DOC_MAX) return Promise.reject(new Error('That file is larger than 50 MB.'));
       var typed = f.slice(0, f.size, DOC_MIME[ext]);
       if (f.size <= DOC_SMALL) return readDataUrl(typed).then(function (u) { return authed('api_uploadSubmissionFile', { name: f.name, dataUrl: u, type: type }); }).then(function (r) { return r.url; });
@@ -3062,9 +3230,9 @@
     }
     function hodExtras(h) {
       var opts = h.students.map(function (s) { return '<option value="' + esc(s.regNumber) + '">' + esc(s.fullName) + ' (' + esc(s.regNumber) + ')</option>'; }).join('');
-      var o = '<div class="card"><h4 style="margin:0 0 12px">Seminars</h4><form id="sem-form"><div class="row-cols" style="--cols:2"><div class="field"><label>Title</label><input type="text" name="title" required></div><div class="field"><label>Date</label><input type="date" name="date" required></div><div class="field"><label>Venue</label><input type="text" name="venue"></div><div class="field"><label>Presenters (reg numbers, comma-separated)</label><input type="text" name="presenters"></div></div><button class="btn btn-primary btn-sm" type="submit">Schedule</button></form>';
+      var o = pipelineCard() + examinerQueueCard() + '<div class="card"><h4 style="margin:0 0 12px">Seminars</h4><form id="sem-form"><div class="row-cols" style="--cols:2"><div class="field"><label>Title</label><input type="text" name="title" required></div><div class="field"><label>Date</label><input type="date" name="date" required></div><div class="field"><label>Venue</label><input type="text" name="venue"></div><div class="field"><label>Presenters (reg numbers, comma-separated)</label><input type="text" name="presenters"></div></div><button class="btn btn-primary btn-sm" type="submit">Schedule</button></form>';
       o += (h.seminars || []).length ? '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Date</th><th>Title</th><th>Venue</th><th>Presenters</th><th>Attended</th><th></th></tr></thead><tbody>' + h.seminars.map(function (x) { return '<tr><td>' + esc(x.date) + '</td><td>' + esc(x.title) + '</td><td>' + esc(x.venue) + '</td><td class="small">' + esc(x.presenters || '—') + '</td><td class="small">' + (x.attendees ? x.attendees.split(',').length : 0) + '</td><td><button class="btn btn-outline btn-sm" data-action="attend" data-id="' + esc(x.id) + '">Attendance</button></td></tr>'; }).join('') + '</tbody></table></div>' : '';
-      o += '</div><div class="card"><h4 style="margin:0 0 12px">Examiners &amp; Defence Scores</h4><form id="exm-form"><div class="row-cols" style="--cols:2"><div class="field"><label>Student</label><select name="regNumber" required><option value="">—</option>' + opts + '</select></div><div class="field"><label>Examiner name</label><input type="text" name="examinerName" required></div><div class="field"><label>Type</label><select name="type"><option>Internal</option><option>External</option></select></div><div class="field"><label>Email</label><input type="email" name="email"></div></div><button class="btn btn-primary btn-sm" type="submit">Assign examiner</button></form>';
+      o += '</div><div class="card"><h4 style="margin:0 0 12px">Manual examiner record (legacy)</h4><form id="exm-form"><div class="row-cols" style="--cols:2"><div class="field"><label>Student</label><select name="regNumber" required><option value="">—</option>' + opts + '</select></div><div class="field"><label>Examiner name</label><input type="text" name="examinerName" required></div><div class="field"><label>Type</label><select name="type"><option>Internal</option><option>External</option></select></div><div class="field"><label>Email</label><input type="email" name="email"></div></div><button class="btn btn-primary btn-sm" type="submit">Assign examiner</button></form>';
       o += (h.examiners || []).length ? '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Student</th><th>Examiner</th><th>Type</th><th>Score</th><th>Comments</th><th></th></tr></thead><tbody>' + h.examiners.map(function (x) { return '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + '</span></td><td>' + esc(x.examinerName) + (x.status === 'Proposed' ? ' <span class="badge warn">awaiting HoD approval</span>' : x.status === 'Declined' ? ' <span class="badge bad">declined</span>' : '') + '</td><td>' + esc(x.type) + '</td><td>' + esc(x.score === '' ? '—' : x.score) + '</td><td class="small pre">' + esc(x.comments || '—') + '</td><td>' + (x.status === 'Scored' || x.status === 'Declined' ? '' : x.status === 'Proposed' ? (state.user.role === 'HoD' ? '<button class="btn btn-primary btn-sm" data-action="exm-approve" data-id="' + esc(x.id) + '">Approve</button> <button class="btn btn-danger btn-sm" data-action="exm-decline" data-id="' + esc(x.id) + '">Decline</button>' : '<span class="small muted">HoD approves</span>') : '<button class="btn btn-outline btn-sm" data-action="exm-result" data-id="' + esc(x.id) + '">Record result</button>') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '';
       o += '</div><div class="grid cols-2"><div class="card"><h4 style="margin:0 0 12px">Graduation rate by programme</h4><div class="table-wrap"><table><thead><tr><th>Programme</th><th>Students</th><th>Completed</th><th>Rate</th></tr></thead><tbody>' + Object.keys(h.graduation || {}).map(function (p) { var x = h.graduation[p]; return '<tr><td>' + esc(p) + '</td><td>' + x.total + '</td><td>' + x.completed + '</td><td>' + Math.round(x.completed / x.total * 100) + '%</td></tr>'; }).join('') + '</tbody></table></div></div>' +
         '<div class="card"><h4 style="margin:0 0 12px">Average days to reach each stage</h4>' + barChart(h.avgDays, true) + '</div></div>';
@@ -3477,6 +3645,17 @@
         case 'intent-withdraw':
           if (confirm('Withdraw this presentation intent? Your supervisors and the PG Coordinator will be notified.')) act(authed('api_withdrawPresentationIntent', id), 'Presentation intent withdrawn.', function () { loadView('dashboard'); });
           break;
+        case 'goto-upload': {
+          var gsel = document.querySelector('#sub-form [name=type]');
+          if (gsel) { gsel.value = el.getAttribute('data-type'); gsel.dispatchEvent(new Event('change', { bubbles: true })); gsel.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          break;
+        }
+        case 'examiner-assign': openExaminerModal(el.getAttribute('data-kind'), el.getAttribute('data-reg'), el.getAttribute('data-sub')); break;
+        case 'examiner-view': showExaminerAssessment_(id); break;
+        case 'examiner-revoke':
+          if (confirm('Revoke this examiner? Their access ends and a replacement can be assigned.')) act(authed('api_revokeExaminer', id), 'Examiner revoked.', function () { loadView('hod'); });
+          break;
+        case 'defence-outcome': openDefenceModal(id); break;
         case 'read-files': openViewer(id); break;
         case 'viewer-pick': if (state.viewer) showViewer(state.viewer, parseInt(id, 10)); break;
         case 'stu-check':
@@ -3627,6 +3806,26 @@
         var prep = f ? (pu ? pu.promise : uploadDoc_(f, d.type)).then(function (url) { d.driveFileUrls = url; }) : Promise.resolve();
         d.asDraft = !!(e.submitter && e.submitter.getAttribute('data-draft') === '1');
         act(prep.then(function () { return authed('api_createSubmission', d); }).then(function (r) { if (r && r.id && !r.draft) authed('api_runComplianceCheck', r.id).catch(function () {}); return r; }), d.asDraft ? 'Draft saved. Find it in My Submissions.' : 'Submission created.', function () { loadView(d.asDraft ? 'submissions' : 'dashboard'); });
+      }
+      else if (form.id === 'title-intent-form') {
+        var tix = collect(form);
+        act(authed('api_savePresentationIntent', { kind: TITLE_KIND, title: tix.title, id: form.getAttribute('data-id') || '' }), 'Title sent to your supervisors. Both must approve it.', function () { loadView('dashboard'); });
+      }
+      else if (form.id === 'examiner-assign-form') {
+        if (!enforceForm(form)) return;
+        var ea = collect(form), ek = form.getAttribute('data-kind');
+        ea.type = ek; if (ek === 'Internal') ea.regNumber = form.getAttribute('data-reg'); else ea.submissionId = form.getAttribute('data-sub');
+        act(authed('api_assignExaminer', ea), 'Examiner assigned. Login details were emailed to them.', function () { closeModal(); loadView('hod'); });
+      }
+      else if (form.id === 'defence-form') {
+        var dfm = collect(form);
+        act(authed('api_recordProposalDefence', form.getAttribute('data-reg'), dfm.outcome, dfm.note || ''), 'Defence outcome recorded.', function () { closeModal(); loadView('hod'); });
+      }
+      else if (form.id === 'exam-assess-form') {
+        var xa = collect(form), xt = form.getAttribute('data-type'), crit = (state.examiner.criteria[xt] || []), sc = {};
+        crit.forEach(function (c, i) { sc[c] = xa['score' + i]; });
+        if (!confirm('Submit this assessment? You will not be able to edit it afterwards.')) return;
+        act(authed('api_submitExaminerAssessment', form.getAttribute('data-id'), { scores: sc, recommendation: xa.recommendation, comments: xa.comments, reportUrl: xa.reportUrl || '' }), 'Assessment submitted. Thank you.', function () { loadView('examiner'); });
       }
       else if (form.id === 'staff-form') {
         if (!enforceForm(form)) return;
