@@ -51,6 +51,7 @@ const BRAND = {
   cbsLogoUrl: "https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ",
   heroBgUrl: "/images/Phy_Complex.png",
   journeyImgUrl: "/images/PG_Journey_Infographic.svg",
+  journeyArchiveImgUrl: "/images/PG_Journey_Infographic.png",
 };
 
 /** Public views rendered statically (register stays on the portal; login is

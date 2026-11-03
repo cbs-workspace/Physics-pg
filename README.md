@@ -78,7 +78,7 @@ Physics-pg/
 ├── images/
 │   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
 │   ├── PG_Journey_Infographic.svg ← journey infographic on Home (set JOURNEY_IMAGE_URL)
-│   └── PG_Journey_Infographic.png ← previous 15-step infographic (archive, not linked)
+│   └── PG_Journey_Infographic.png ← full-size infographic (linked under the poster)
 ├── docs/
 │   ├── PG_Journey_Stages.docx ← 16-stage reference (5 phases)
 │   ├── PG Journey Roadmap.docx ← older 15-step roadmap (kept for history)
@@ -112,7 +112,8 @@ Physics-pg/
 - **Home** — hero (department photo background) + live announcements from the
   Announcements tab (`api_publicAnnouncements`), then **Your Postgraduate Journey**:
   the journey infographic with the five phases / 16 stages summarised and the
-  decision gates (Steps 7, 10, 12, 13, 15) highlighted, and a **Please note** callout.
+  decision gates (Steps 7, 10, 12, 13, 15) highlighted, a link to the full-size
+  PNG, and a **Please note** callout.
 - **Notice / caveat** — the site is strictly for journey navigation and departmental
   PG coordination, progress monitoring and documentation; other matters (incl. SPGS
   referrals) go to the Head, Department of Physics or the PG Coordinator. Full callout
@@ -147,6 +148,11 @@ Physics-pg/
   `JOURNEY_IMAGE_URL` to an image URL (`brand_()` → `brand.journeyImgUrl`); until
   then the portal's Home infographic is hidden (the phase cards still show). The
   local harness serves `/images/…` from `images/`.
+- Full-size PNG: `images/PG_Journey_Infographic.png` is linked under the poster
+  ("Open the full-size infographic (PNG)"). The static site uses
+  `/images/PG_Journey_Infographic.png`; the portal uses
+  `CFG.DEFAULT_STATIC_HOST + images/…` (override with the `JOURNEY_ARCHIVE_IMAGE_URL`
+  Script Property) because Apps Script cannot serve binaries.
 
 ---
 

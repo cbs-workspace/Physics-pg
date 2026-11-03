@@ -32,6 +32,9 @@ var CFG = {
   DEFAULT_FOOTER_TEXT: '© 2026 Capacity Building and Support. All rights reserved.',
   DEFAULT_LOGO_URL: 'https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl',
   DEFAULT_CBS_LOGO_URL: 'https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ',
+  /* Static site host (Cloudflare Pages). Needed for binary assets the portal
+     cannot serve itself — e.g. the full-size journey infographic PNG. */
+  DEFAULT_STATIC_HOST: 'https://physics-pg.pages.dev/',
   SESSION_TTL_SECONDS: 21600,
   LOGIN_MAX_FAILURES: 5,
   LOGIN_LOCKOUT_SECONDS: 900,
@@ -124,7 +127,11 @@ function brand_() {
     logoUrl: p.getProperty('SCHOOL_LOGO_URL') || CFG.DEFAULT_LOGO_URL,
     cbsLogoUrl: p.getProperty('CBS_LOGO_URL') || CFG.DEFAULT_CBS_LOGO_URL,
     heroBgUrl: p.getProperty('HERO_IMAGE_URL') || '',
-    journeyImgUrl: p.getProperty('JOURNEY_IMAGE_URL') || ''
+    journeyImgUrl: p.getProperty('JOURNEY_IMAGE_URL') || '',
+    /* Full-size PNG of the journey infographic — the static host, because
+       Apps Script cannot serve binary files. */
+    journeyArchiveImgUrl: p.getProperty('JOURNEY_ARCHIVE_IMAGE_URL') ||
+      (CFG.DEFAULT_STATIC_HOST + 'images/PG_Journey_Infographic.png')
   };
 }
 

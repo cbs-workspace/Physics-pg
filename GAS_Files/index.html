@@ -325,6 +325,8 @@
 
     /* ---- journey (Home) ---- */
     .journey-img { display: block; width: 100%; max-width: 980px; height: auto; margin: 0 auto; border-radius: 10px; }
+    .journey-archive { text-align: center; margin: 10px 0 0; font-size: 12.5px; color: var(--text-muted); }
+    .journey-archive a { color: var(--primary-strong); font-weight: 600; }
     .phase-card { border-top: 4px solid var(--primary); }
     .phase-card .phase-no { color: var(--primary-soft-text); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
     .phase-card h4 { margin: 4px 0 6px; font-size: 15px; }
@@ -596,6 +598,9 @@
                alt="Postgraduate Journey infographic — 5 phases and 16 steps"
                onerror="this.parentNode.style.display='none'">
         </div>
+        <p class="journey-archive" id="journey-archive" hidden>Prefer the full-size poster?
+          <a id="journey-archive-link" href="images/PG_Journey_Infographic.png" target="_blank" rel="noopener">Open the full-size infographic (PNG)</a>
+        </p>
         <div class="card-grid" style="margin-top:16px">
           <div class="card phase-card">
             <div class="phase-no">Phase 1</div>
@@ -826,6 +831,14 @@
     if (BRAND.journeyImgUrl) {
       var ji = document.querySelector('.journey-img');
       if (ji) ji.src = BRAND.journeyImgUrl;
+    }
+    /* Full-size PNG of the journey infographic, linked under the poster.
+       On the static host this is /images/…; on Apps Script (which cannot
+       serve binaries) brand_() points it at the static host. */
+    if (BRAND.journeyArchiveImgUrl) {
+      var ja = document.getElementById('journey-archive');
+      var jal = document.getElementById('journey-archive-link');
+      if (ja && jal) { jal.href = BRAND.journeyArchiveImgUrl; ja.hidden = false; }
     }
 
     /* Embed mode (?embed=1): this render is shown inside an in-site iframe

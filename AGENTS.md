@@ -101,7 +101,8 @@ npx serve dist                # preview the built output
 
 - Script Properties actually read: `SPREADSHEET_ID` (via `PROP_SHEET_ID`),
   `SCHOOL_NAME`, `FOOTER_TEXT`, `SCHOOL_LOGO_URL`, `CBS_LOGO_URL`,
-  `HERO_IMAGE_URL`, `JOURNEY_IMAGE_URL`, `ENQUIRIES_EMAIL`, `SENDER_DISPLAY_NAME`.
+  `HERO_IMAGE_URL`, `JOURNEY_IMAGE_URL`, `JOURNEY_ARCHIVE_IMAGE_URL`,
+  `ENQUIRIES_EMAIL`, `SENDER_DISPLAY_NAME`.
 - `PROP_DRIVE_ID = 'DRIVE_FOLDER_ID'` (Code.gs:20) is **defined but never read**.
   The passport/attachments/backups folder comes from the **Config sheet row
   `PASSPORT_FOLDER_ID`** via `getSetting_` (fallback
@@ -158,7 +159,12 @@ npx serve dist                # preview the built output
 - Music: `HOST = 'https://physics-pg.pages.dev/'` and a single-element `TRACKS`
   (`audio/music1.mp3`, index.html:1118–1119). `build-pg.js` copies it into
   `dist/audio/` because Apps Script cannot serve binaries; edit `HOST`/`TRACKS`
-  to move or change the track.
+  to move or change the track. The Cloudflare host is hardcoded **twice** —
+  `HOST` (index.html, audio) and `CFG.DEFAULT_STATIC_HOST` (Code.gs, the full-size
+  journey PNG linked under the poster) — a host change must touch both.
+- The full-size infographic PNG is linked, not embedded: `#journey-archive` is
+  `hidden` markup that the `BRAND.journeyArchiveImgUrl` block unhides, so the line
+  disappears if that URL is ever empty.
 - Public JSONP endpoints in `doGet`: `?public=announcements`, `?public=enquiry`,
   `?public=facdep`. The static bridge only exposes the first two.
 - `tools/make-guides.ps1` regenerates the `.docx` guides via Word COM (needs
