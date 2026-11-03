@@ -77,7 +77,8 @@ Physics-pg/
 │                              (?page=login)
 ├── images/
 │   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
-│   └── PG_Journey_Infographic.svg ← journey infographic on Home (set JOURNEY_IMAGE_URL)
+│   ├── PG_Journey_Infographic.svg ← journey infographic on Home (set JOURNEY_IMAGE_URL)
+│   └── PG_Journey_Infographic.png ← previous 15-step infographic (archive, not linked)
 ├── docs/
 │   ├── PG_Journey_Stages.docx ← 16-stage reference (5 phases)
 │   ├── PG Journey Roadmap.docx ← older 15-step roadmap (kept for history)

@@ -25,7 +25,8 @@
  *     deployment (announcements + contact enquiry only; any other
  *     call rejects with "runs on the official portal")
  *
- * Assets: images/Phy_Complex.png, images/PG_Journey_Infographic.svg and
+ * Assets: images/Phy_Complex.png, images/PG_Journey_Infographic.svg,
+ * images/PG_Journey_Infographic.png (previous 15-step archive) and
  * audio/music1.mp3 are copied.
  * Run: npm run build   (output in dist/, deploy that folder).
  */
@@ -315,6 +316,8 @@ writeFile("login/index.html", portalFramePage({
 }));
 copyAsset("images/Phy_Complex.png");
 copyAsset("images/PG_Journey_Infographic.svg");
+// previous 15-step infographic, kept as an archive so the old URL still resolves
+copyAsset("images/PG_Journey_Infographic.png");
 copyAsset("audio/music1.mp3");
 
 /** Retired pages → Home (permanent). Cloudflare Pages serves any real file
