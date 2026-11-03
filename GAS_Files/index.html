@@ -203,6 +203,26 @@
     .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; }
     .feature .icon { font-size: 28px; margin-bottom: 12px; }
     .feature h4 { margin: 0 0 6px; font-size: 15px; } .feature p { margin: 0; color: var(--text-muted); font-size: 13px; }
+
+    /* ---- personal journey tracker ---- */
+    .jt { display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px 6px; margin: 14px 0 4px; }
+    .jt-n { text-align: center; position: relative; min-width: 0; }
+    .jt-dot { width: 38px; height: 38px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; border: 2px solid var(--ph, #94a3b8); color: var(--ph, #94a3b8); background: var(--surface); position: relative; }
+    .jt-n.done .jt-dot { background: var(--ph); color: #fff; }
+    .jt-n.cur .jt-dot { background: var(--ph); color: #fff; animation: jtpulse 1.8s ease-out infinite; transform: scale(1.12); }
+    .jt-n.todo .jt-dot { opacity: .55; }
+    .jt-n.optional .jt-dot { border-style: dashed; }
+    .jt-g { position: absolute; top: -7px; right: calc(50% - 28px); width: 15px; height: 15px; background: #fbbf24; color: #78350f; font-size: 9px; font-weight: 800; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; border-radius: 2px; }
+    .jt-g b { transform: rotate(-45deg); }
+    .jt-l { font-size: 11px; line-height: 1.25; margin-top: 6px; color: var(--text-muted); word-break: break-word; }
+    .jt-n.cur .jt-l { color: var(--text); font-weight: 700; }
+    .jt-leg { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 11.5px; color: var(--text-muted); }
+    .jt-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+    @keyframes jtpulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 100% { box-shadow: 0 0 0 14px rgba(16,185,129,0); } }
+    @media (max-width: 640px) { .jt { grid-template-columns: repeat(4, 1fr); } }
+    @media (prefers-reduced-motion: reduce) { .jt-n.cur .jt-dot { animation: none; } }
+    .gate-box { border-left: 4px solid #fbbf24; }
+    .gate-box ul { margin: 6px 0 0 18px; padding: 0; font-size: 13px; }
     .stage-bar { background: var(--border); border-radius: 8px; overflow: hidden; height: 32px; display: flex; align-items: center; }
     .stage-fill { background: var(--primary); color: var(--primary-contrast); height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; white-space: nowrap; padding: 0 12px; min-width: fit-content; }
     .stage-list { margin-top: 12px; max-height: 280px; overflow-y: auto; }
@@ -325,9 +345,6 @@
 
     /* ---- journey (Home) ---- */
     .journey-img { display: block; width: 100%; max-width: 980px; height: auto; margin: 0 auto; border-radius: 10px; }
-    .journey-archive { margin-top: 16px; text-align: center; }
-    .journey-archive-img { display: block; width: 100%; max-width: 760px; height: auto; margin: 0 auto; border-radius: 10px; cursor: zoom-in; }
-    .journey-archive-note { margin: 8px 0 0; font-size: 12.5px; color: var(--text-muted); }
     .phase-card { border-top: 4px solid var(--primary); }
     .phase-card .phase-no { color: var(--primary-soft-text); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
     .phase-card h4 { margin: 4px 0 6px; font-size: 15px; }
@@ -595,19 +612,9 @@
       <section class="pub-section" id="journey">
         <h2>Your Postgraduate Journey</h2>
         <div class="card" style="padding:14px">
-          <img class="journey-img" src="images/PG_Journey_Animated.svg" loading="lazy"
-               alt="Postgraduate Journey — 5 phases and 16 steps, animated"
+          <img class="journey-img" src="images/PG_Journey_Infographic.svg" loading="lazy"
+               alt="Postgraduate Journey infographic — 5 phases and 16 steps"
                onerror="this.parentNode.style.display='none'">
-        </div>
-        <div class="journey-archive" id="journey-archive" hidden>
-          <div class="card" style="padding:14px">
-            <a id="journey-archive-link" href="images/PG_Journey_Infographic.png" target="_blank" rel="noopener">
-              <img id="journey-archive-img" class="journey-archive-img" src="images/PG_Journey_Infographic_preview.jpg"
-                   loading="lazy" decoding="async" alt="Full-size postgraduate journey infographic (opens the PNG)"
-                   onerror="document.getElementById('journey-archive').hidden=true">
-            </a>
-          </div>
-          <p class="journey-archive-note">Full-size version &mdash; tap the image to open the PNG.</p>
         </div>
         <div class="card-grid" style="margin-top:16px">
           <div class="card phase-card">
@@ -839,21 +846,6 @@
     if (BRAND.journeyImgUrl) {
       var ji = document.querySelector('.journey-img');
       if (ji) ji.src = BRAND.journeyImgUrl;
-    }
-    /* Full-size PNG of the journey infographic, shown under the poster: the
-       inline <img> is a small JPEG preview (1.8 MB PNG → ~150 KB) and the
-       anchor opens the real thing. On the static host these are /images/…;
-       on Apps Script (which cannot serve binaries) brand_() points them at
-       the static host. */
-    if (BRAND.journeyArchiveImgUrl) {
-      var ja = document.getElementById('journey-archive');
-      var jal = document.getElementById('journey-archive-link');
-      var jai = document.getElementById('journey-archive-img');
-      if (ja && jal) {
-        jal.href = BRAND.journeyArchiveImgUrl;
-        if (jai && BRAND.journeyArchivePreviewUrl) jai.src = BRAND.journeyArchivePreviewUrl;
-        ja.hidden = false;
-      }
     }
 
     /* Embed mode (?embed=1): this render is shown inside an in-site iframe
@@ -1951,6 +1943,55 @@
     });
 
     /* ---- Student Dashboard ---- */
+    var JT_PHASES = [
+      { name: 'Coursework & Research Preparation', col: '#10b981', from: 0, to: 2 },
+      { name: 'Proposal Stage', col: '#3b82f6', from: 3, to: 6 },
+      { name: 'Research Execution & Progress', col: '#f59e0b', from: 7, to: 9 },
+      { name: 'Thesis Verification & External Examination', col: '#8b5cf6', from: 10, to: 12 },
+      { name: 'Post-Defence Corrections & Completion', col: '#ec4899', from: 13, to: 15 }
+    ];
+    var JT_GATES = {
+      6: { t: 'Proposal Defence', o: ['Passed \u2014 you move on to the Progress Report Intent (Step 8).', 'Passed with corrections \u2014 you move on, and the corrections noted by the panel must be made.', 'Not passed \u2014 you stay at this stage; the Coordinator records what must be redone and the roadmap sends you back to revise the proposal (Step 5).'] },
+      9: { t: 'Progress Presentation', o: ['Satisfactory \u2014 you can proceed to the Final Examination Intent (Step 11).', 'Satisfactory with recommendations \u2014 you proceed and address the recommendations.', 'Needs improvement / unsatisfactory \u2014 you repeat the presentation or fall back as the outcome requires.'] },
+      11: { t: 'Thesis Submission', o: ['Approved \u2014 the thesis passes the format, similarity and Inspector / Coordinator checks and goes for external examination.', 'Changes requested \u2014 fix the listed issues and resubmit; nothing moves until it is approved.'] },
+      12: { t: 'External Examiner Assignment', o: ['An External Examiner from another university is appointed and reads the thesis.', 'The examiner recommends one of: accept as submitted, accept with minor corrections, major corrections, re-examination, or reject. Your next steps follow that recommendation.'] },
+      14: { t: 'Final Compliance', o: ['Approved \u2014 your corrected final copy is accepted; you proceed to signed copies and completion (Step 16).', 'Changes requested \u2014 correct the points raised and resubmit.'] }
+    };
+    function journeyTrackerCard(s, stageIdx) {
+      var isMsc = /msc/i.test(String(s.programme || ''));
+      var nodes = JOURNEY_STAGES.map(function (st, i) {
+        var ph = JT_PHASES.filter(function (p) { return i >= p.from && i <= p.to; })[0] || JT_PHASES[0];
+        var cls = i < stageIdx ? 'done' : i === stageIdx ? 'cur' : 'todo';
+        if (i === 1 && !isMsc) cls += ' optional';
+        var label = String(st).replace(/^\d+\s*-\s*/, '');
+        return '<div class="jt-n ' + cls + '" style="--ph:' + ph.col + '" title="' + esc(st) + '">' +
+          (JT_GATES[i] ? '<span class="jt-g" title="Gate"><b>G</b></span>' : '') +
+          '<div class="jt-dot">' + (i < stageIdx ? '\u2713' : (i + 1)) + '</div><div class="jt-l">' + esc(label) + '</div></div>';
+      }).join('');
+      var leg = JT_PHASES.map(function (p, k) { return '<span><i style="background:' + p.col + '"></i>Phase ' + (k + 1) + '</span>'; }).join('') +
+        '<span><i style="background:#fbbf24;border-radius:2px"></i>Gate (outcome decides next step)</span>';
+      return '<div class="jt">' + nodes + '</div><div class="jt-leg">' + leg + '</div>';
+    }
+    function gateExplainerCard(stageIdx) {
+      var g = JT_GATES[stageIdx]; if (!g) return '';
+      return '<div class="card gate-box"><h4 style="margin:0 0 4px">You are at a gate: ' + esc(g.t) + '</h4>' +
+        '<p class="small muted" style="margin:0">What can happen here, and what it means for you:</p><ul>' +
+        g.o.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+    }
+    function examinerWorkloadCard(list) {
+      var act = (list || []).filter(function (x) { return ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; }), by = {};
+      act.forEach(function (x) {
+        var k = (x.email || x.examinerName || '').toLowerCase(); if (!k) return;
+        var o = by[k] || (by[k] = { name: x.examinerName, type: x.type, inst: x.institution || x.department || '', open: 0, done: 0, overdue: 0 });
+        var done = String(x.status) === 'Scored' || !!x.submittedAt;
+        if (done) o.done++; else { o.open++; if (x.dueDate && String(x.dueDate) < new Date().toISOString().slice(0, 10)) o.overdue++; }
+      });
+      var rows = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.open - a.open; });
+      return '<div class="card"><h4 style="margin:0 0 4px">Examiner workload</h4><p class="small muted" style="margin:0 0 8px">Open and completed assessments per examiner, with overdue ones flagged.</p>' +
+        (rows.length ? '<div class="table-wrap"><table><thead><tr><th>Examiner</th><th>Type</th><th>Institution / Dept</th><th>Open</th><th>Done</th><th>Overdue</th></tr></thead><tbody>' +
+          rows.map(function (r) { return '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.type) + '</td><td>' + esc(r.inst) + '</td><td>' + r.open + '</td><td>' + r.done + '</td><td>' + (r.overdue ? '<span class="badge warn">' + r.overdue + '</span>' : '0') + '</td></tr>'; }).join('') + '</tbody></table></div>'
+          : '<p class="muted">No examiners assigned yet.</p>') + '</div>';
+    }
     function viewStudentDashboard() {
       if (!state.dashboard) return '<div class="page-loading"><span class="spinner"></span></div>';
       var s = state.dashboard.student;
@@ -1996,12 +2037,8 @@
       // Journey stage
       out += '<div class="card"><h4 style="margin:0 0 12px">PG Journey — Stage ' + (stageIdx + 1) + ' of ' + JOURNEY_STAGES.length + '</h4>' +
         '<div class="stage-bar"><div class="stage-fill" style="width:' + pct + '%">' + esc(s.currentStage) + '</div></div>' +
-        '<div class="stage-list">' +
-        JOURNEY_STAGES.map(function (st, i) {
-          var cls = i < stageIdx ? 'done' : i === stageIdx ? 'current' : '';
-          return '<div class="stage-item ' + cls + '">' + esc(st) + '</div>';
-        }).join('') +
-        '</div></div>';
+        journeyTrackerCard(s, stageIdx) +
+        '</div>' + gateExplainerCard(stageIdx);
 
       out += defenceReadinessCard(s) + pptxCard(s) + finalPackageCard(s) + presentationIntentStudentCard(s) + examinersInfoCard();
 
@@ -2663,6 +2700,7 @@
         '<div class="card"><h4 style="margin:0 0 12px">Students by Session</h4>' + barChart(h.bySession, true) + '</div>' +
         '<div class="card"><h4 style="margin:0 0 12px">Submissions by Status</h4>' + barChart(h.bySubmissionStatus) + '</div></div>';
       out += '<div class="card"><h4 style="margin:0 0 12px">Students by Journey Stage</h4>' + barChart(h.byStage, true) + '</div>';
+      out += examinerWorkloadCard(h.examiners);
 
       out += '<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h4 style="margin:0">All Students (' + h.students.length + ')</h4>' + studentViewControls() + '</div>';
       if (state.studentDisplay === 'cards') out += studentCardsHtml(h.students, 'hod');
@@ -3328,42 +3366,150 @@
       return o + '</tbody></table></div></div>';
     }
     function viewStaff() {
-      if (!state.staff) return '<div class="page-loading"><span class="spinner"></span></div>';
-      var st = state.staff, out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>' + annCard_(st.announcements) + calendarMiniCard();
-      var attn = st.students.filter(function (s) { return s.stalled; }).map(function (s) { return esc(s.fullName) + ' — stalled at ' + esc(s.currentStage); })
-        .concat(st.submissions.filter(function (x) { return x.status === 'Rejected' || x.status === 'Changes Requested'; }).map(function (x) { return esc(x.studentName) + ' — ' + esc(x.type) + ' ' + esc(x.status.toLowerCase()); }));
-      attn = attn.concat(st.submissions.filter(function (x) { return x.needsEndorsement && !x.endorsedBy && ['Submitted', 'Under Review'].indexOf(x.status) > -1 && x.waitingDays >= 3; }).map(function (x) { return esc(x.studentName) + ' \u2014 ' + esc(x.type) + ' waiting ' + x.waitingDays + ' days for your endorsement'; }));
-      attn = attn.concat((st.presentationIntents || []).filter(function (x) { return x.canAct; }).map(function (x) { return esc(x.studentName) + ' \u2014 ' + esc(intentMeta(x.kind).label) + ' for ' + esc(x.preferredMonth) + ' is awaiting your approval'; }));
-      if (attn.length) out += '<div class="card"><h4 style="margin:0 0 8px">Needs attention (' + attn.length + ')</h4>' + attn.map(function (t) { return '<p style="margin:3px 0">&bull; ' + t + '</p>'; }).join('') + '</div>';
-      out += presentationIntentStaffCard(st) + msgFormHtml();
-      out += '<div class="card"><h4 style="margin:0 0 12px">My Supervised Students</h4>';
-      if (!st.students.length) out += '<p class="muted">No students assigned to you yet.</p>';
-      else {
-        out += '<div class="table-wrap"><table><thead><tr><th>Photo</th><th>Student</th><th>Programme</th><th>Stage</th><th>My role</th><th>Other supervisor</th><th>Contact</th><th></th></tr></thead><tbody>';
-        st.students.forEach(function (s) {
-          out += '<tr><td>' + (s.passportFileId ? '<img src="' + thumb(s.passportFileId) + '" style="width:36px;height:36px;border-radius:6px;object-fit:cover">' : '<div class="photo-placeholder" style="width:36px;height:36px;font-size:14px">?</div>') + '</td>' +
-            '<td>' + esc(s.fullName) + '<br><span class="small muted">' + esc(s.regNumber) + '</span></td><td>' + esc(s.programme) + '<br><span class="small muted">' + esc(s.specialisation) + '</span></td>' +
-            '<td class="small">' + esc(s.currentStage) + (s.stalled ? ' <span class="badge warn">stalled</span>' : '') + '</td>' +
-            '<td><span class="badge ' + (s.myRole === 'Main Supervisor' ? 'ok' : 'info') + '">' + esc(s.myRole) + '</span></td>' +
-            '<td class="small">' + (s.other ? esc(s.other.name) + (s.other.email ? '<br><a href="mailto:' + esc(s.other.email) + '">' + esc(s.other.email) + '</a>' : '') : '—') + '</td>' +
-            '<td class="small"><a href="mailto:' + esc(s.email) + '">' + esc(s.email) + '</a><br>' + esc(s.phoneNumber) + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" data-action="sched-meeting" data-id="' + esc(s.regNumber) + '">Schedule</button> <button class="btn btn-outline btn-sm" data-action="log-meeting" data-id="' + esc(s.regNumber) + '">Log meeting</button> <button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '">Messages</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '">Journey</button></td></tr>';
-        });
-        out += '</tbody></table></div>';
-      }
-      out += '</div><div class="card"><h4 style="margin:0 0 12px">Submissions from My Students</h4>';
-      if (!st.submissions.length) out += '<p class="muted">No submissions yet.</p>';
-      else {
-        out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Type</th><th>Status</th><th>Files</th><th>Inspector comments</th><th>Endorsed</th><th></th></tr></thead><tbody>';
-        st.submissions.forEach(function (sub) {
-          out += '<tr><td>' + esc(sub.studentName) + '</td><td>' + esc(sub.type) + '</td><td>' + statusBadge(sub.status) + '</td><td class="small">' + (fileLinks(sub.driveFileUrls) ? readBtn(sub) + '<br>' + fileLinks(sub.driveFileUrls) : '—') + '</td>' +
-            '<td class="small">' + esc(sub.inspectorComments || '—') + '</td><td class="small">' + (sub.endorsedBy ? '&#10003; ' + esc(sub.endorsedBy) : '—') + '</td>' +
-            '<td><button class="btn btn-outline btn-sm" data-action="add-note" data-id="' + esc(sub.id) + '">Add Note</button> ' + (sub.endorsedBy ? '' : '<button class="btn btn-primary btn-sm" data-action="endorse" data-id="' + esc(sub.id) + '">Endorse</button>') + '</td></tr>';
-        });
-        out += '</tbody></table></div>';
-      }
-      return out + '</div>' + meetingsCardHtml(st);
-    }
+  if (!state.staff) return '<div class="page-loading"><span class="spinner"></span></div>';
+  var st = state.staff, out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>' + annCard_(st.announcements) + calendarMiniCard();
+  var stageFilter = '', programmeFilter = '', stalledFilter = false;
+
+  // Summary tiles
+  out += '<div class="card-grid cols-4" style="margin-bottom:20px">';
+  out += '<div class="card"><div class="stat"><div class="stat-value">' + (st.totalStudents || 0) + '</div><div class="stat-label">Students Supervised</div></div></div>';
+  out += '<div class="card"><div class="stat"><div class="stat-value">' + (st.stalledCount || 0) + '</div><div class="stat-label">Stalled (>90 days)</div></div></div>';
+  out += '<div class="card"><div class="stat"><div class="stat-value">' + (st.awaitingEndorsement || 0) + '</div><div class="stat-label">Awaiting Endorsement</div></div></div>';
+  out += '<div class="card"><div class="stat"><div class="stat-value">' + (st.meetingsThisMonth || 0) + '</div><div class="stat-label">Meetings This Month</div></div></div>';
+  out += '</div>';
+
+  // Filter and sort controls
+  out += '<p class="small muted" style="margin:8px 0 0">Show: <select id="staff-stage-filter" class="sel-box"><option value="">All stages</option>' + (CFG.JOURNEY_STAGES || []).map(function (s) { return '<option value="' + esc(s) + '"' + (s === stageFilter ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '</select> | <select id="staff-prog-filter" class="sel-box"><option value="">All programmes</option>' + (function () { var p = new Set(); (st.students || []).forEach(function (s) { p.add(s.programme); }); return Array.from(p).map(function (pr) { return '<option value="' + esc(pr) + '"' + (pr === programmeFilter ? ' selected' : '') + '>' + esc(pr) + '</option>'; }).join(''); })() + '</select> | <input type="checkbox" id="staff-stalled-filter" ' + (stalledFilter ? 'checked' : '') + ' style="margin-left:4px"> Show stalled only</p>';
+
+  // Filter and sort for My Students
+  var filteredStudents = st.students.filter(function (s) {
+    var stageOk = !stageFilter || s.currentStage === stageFilter;
+    var progOk = !programmeFilter || s.programme === programmeFilter;
+    var stalledOk = stalledFilter !== true || (s.health === 'red');
+    return stageOk && progOk && stalledOk;
+  });
+
+  // Sort by health priority (red first, then amber, then green)
+  filteredStudents.sort(function (a, b) {
+    var da = a.health === 'red' ? 0 : a.health === 'amber' ? 30 : 90;
+    var db = b.health === 'red' ? 0 : b.health === 'amber' ? 30 : 90;
+    return db - da;
+  });
+
+  // Add health indicator and last contact date
+  filteredStudents = filteredStudents.map(function (s) {
+    var health = s.health || 'green';
+    if (s.health === 'red') health = 'red';
+    else if (daysSince_(s.updatedAt) > 60) health = 'amber';
+    var lastMeet = ''; // placeholder - populated from Meetings table in production
+    var roleBadge = s.myRole === 'Main Supervisor' ? 'ok' : 'info';
+    return {
+      regNumber: s.regNumber, fullName: fullNameOf_(s), programme: s.programme, specialisation: s.specialisation,
+      currentStage: s.currentStage, health: health, lastMeetingDate: lastMeet,
+      myRole: s.myRole, other: s.other,
+      roleBadge: roleBadge
+    };
+  });
+
+  // Students with quick action flags
+  var actionList = (st.actionList || []).map(function (a) {
+    return { regNumber: a.regNumber, studentName: a.studentName, type: a.type,
+      waitingDays: a.waitingDays, needsEndorsement: a.needsEndorsement || false };
+  });
+
+  out += '<div class="card"><h4 style="margin:0 0 8px">Action Items</h4>';
+  if (actionList.length) {
+    out += '<ul>';
+    actionList.forEach(function (a) {
+      var badge = a.needsEndorsement ? '<span class="badge warn">needs endorsement</span>' : '';
+      out += '<li>' + esc(a.studentName) + ' — ' + esc(a.type) + ' waiting ' + a.waitingDays + ' days ' + badge +
+        '<button class="btn btn-sm btn-outline" data-action="endorse" data-id="' + a.regNumber + '">Endorse</button> ' +
+        '<button class="btn btn-sm btn-outline" data-action="nudge" data-id="' + a.regNumber + '">Nudge</button> ' +
+        '<button class="btn btn-sm btn-outline" data-action="sched-meeting" data-id="' + a.regNumber + '">Schedule</button></li>';
+    });
+    out += '</ul>';
+  } else {
+    out += '<p class="muted">No action items.</p>';
+  }
+  out += '</div>';
+
+  // Calendar: upcoming meetings
+  out += '<div class="card"><h4 style="margin:0 0 8px">Upcoming Meetings</h4>';
+  var calendar = st.calendar || [];
+  if (calendar.length) {
+    out += '<ul>';
+    calendar.forEach(function (m) {
+      out += '<li>' + esc(m.studentName) + ' — ' + esc(m.date) + ' ' + (m.time || '') + ' <button class="btn btn-sm btn-outline" data-action="meet-complete" data-id="' + m.id + '">Notes</button></li>';
+    });
+    out += '</ul>';
+  } else {
+    out += '<p class="muted">No upcoming meetings.</p>';
+  }
+  out += '</div>';
+
+  // Co-supervisor coordination status
+  out += '<div class="card"><h4 style="margin:0 0 8px">Co-Supervision Status</h4>';
+  var coSup = st.coSupervision || {};
+  if (Object.keys(coSup).length) {
+    out += '<ul>';
+    Object.keys(coSup).forEach(function (reg) {
+      var s = coSup[reg];
+      out += '<li>' + esc(reg) + ': Main ' + esc(s.mainSupervisorId || '—') + ', Co ' + esc(s.coSupervisorId || '—') + ' seen: ' + esc(s.coSeen);
+    });
+    out += '</ul>';
+  } else {
+    out += '<p class="muted">No co-supervision data.</p>';
+  }
+  out += '</div>';
+
+  // Capacity view
+  out += '<div class="card"><h4 style="margin:0 0 8px">Capacity View</h4>';
+  var cap = st.capacity || [];
+  if (cap.length) {
+    out += '<ul>';
+    cap.forEach(function (c) {
+      out += '<li>' + esc(c.programme) + ': ' + Object.keys(c.stages || {}).length + ' students across ' + Object.values(c.stages || {}).length + ' stages</li>';
+    });
+    out += '</ul>';
+  } else {
+    out += '<p class="muted">No capacity data.</p>';
+  }
+  out += '</div>';
+
+  // Students table with health indicators
+  out += '<div class="card"><h4 style="margin:0 0 8px">My Supervised Students</h4>';
+  if (!filteredStudents.length) out += '<p class="muted">No students match the current filters.</p>';
+  else {
+    out += '<div class="table-wrap"><table><thead><tr><th>Photo</th><th>Student</th><th>Programme</th><th>Stage</th><th>Health</th><th>My role</th><th>Other supervisor</th><th>Contact</th><th></th></tr></thead><tbody>';
+    filteredStudents.forEach(function (s) {
+      var healthClass = s.health === 'green' ? 'ok' : s.health === 'amber' ? 'warn' : 'bad';
+      var roleBadge = s.myRole === 'Main Supervisor' ? 'ok' : 'info';
+      out += '<tr>' +
+        '<td>' + (s.passportFileId ? '<img src="' + thumb(s.passportFileId) + '" style="width:36px;height:36px;border-radius:6px;object-fit:cover">' : '<div class="photo-placeholder" style="width:36px;height:36px;font-size:14px">?</div>') + '</td>' +
+        '<td>' + esc(s.fullName) + '<br><span class="small muted">' + esc(s.regNumber) + '</span></td>' +
+        '<td>' + esc(s.programme) + '<br><span class="small muted">' + esc(s.specialisation) + '</span></td>' +
+        '<td class="small">' + esc(s.currentStage) + (s.health === 'red' ? ' <span class="badge bad">red</span>' : (s.health === 'amber' ? ' <span class="badge warn">amber</span>' : '')) + '</td>' +
+        '<td><span class="badge ' + roleBadge + '">' + esc(s.myRole) + '</span></td>' +
+        '<td class="small">' + (s.other ? esc(s.other.name) + (s.other.email ? '<br><a href="mailto:' + esc(s.other.email) + '">' + esc(s.other.email) + '</a>' : '') : '—') + '</td>' +
+        '<td class="small"><a href="mailto:' + esc(s.email) + '">' + esc(s.email) + '</a><br>' + esc(s.phoneNumber) + '</td>' +
+        '<td><button class="btn btn-outline btn-sm" data-action="sched-meeting" data-id="' + esc(s.regNumber) + '">Schedule</button> <button class="btn btn-outline btn-sm" data-action="log-meeting" data-id="' + esc(s.regNumber) + '">Log</button> <button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '">Msgs</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '">Journey</button></tr>';
+    });
+    out += '</tbody></table></div>';
+  }
+
+  out += '</div>' + meetingsCardHtml(st) + '<div class="card"><h4 style="margin:0 0 12px">Submissions from My Students</h4>';
+  if (!st.submissions.length) out += '<p class="muted">No submissions yet.</p>';
+  else {
+    out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Type</th><th>Status</th><th>Files</th><th>Inspector comments</th><th>Endorsed</th><th></th></tr></thead><tbody>';
+    st.submissions.forEach(function (sub) {
+      out += '<tr><td>' + esc(sub.studentName) + '</td><td>' + esc(sub.type) + '</td><td>' + statusBadge(sub.status) + '</td><td class="small">' + (fileLinks(sub.driveFileUrls) ? readBtn(sub) + '<br>' + fileLinks(sub.driveFileUrls) : '—') + '</td>' +
+        '<td class="small">' + esc(sub.inspectorComments || '—') + '</td><td class="small">' + (sub.endorsedBy ? '&#10003; ' + esc(sub.endorsedBy) : '—') + '</td>' +
+        '<td><button class="btn btn-outline btn-sm" data-action="add-note" data-id="' + esc(sub.id) + '">Add Note</button> ' + (sub.endorsedBy ? '' : '<button class="btn btn-primary btn-sm" data-action="endorse" data-id="' + esc(sub.id) + '">Endorse</button>') + '</td></tr>';
+    });
+    out += '</tbody></table></div>';
+  }
+  return out + '</div>';
+}
 
     /* ---- Inspector / Coordinator submissions review ---- */
     function simBlock(sub) {

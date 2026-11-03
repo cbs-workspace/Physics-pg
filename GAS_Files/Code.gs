@@ -81,12 +81,12 @@ var S_ = { TITLE: '4 - Title Approval', PROPOSAL: '5 - Proposal Submission', REA
 /** Sheet tabs and their column order (fields). Order is authoritative. */
 var HEADERS = {
   Users: ['id', 'regNumber', 'email', 'passwordHash', 'salt', 'role', 'fullName', 'firstLogin', 'active', 'status', 'createdAt', 'emailPref'],
-  Students: ['id', 'regNumber', 'surname', 'firstName', 'otherNames', 'gender', 'phoneNumber', 'email', 'faculty', 'department', 'programme', 'specialisation', 'passportFileId', 'passportUrl', 'mainSupervisorId', 'coSupervisorId', 'currentStage', 'yearOfAdmission', 'createdAt', 'updatedAt', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt', 'admissionLetterUrl', 'lastNudgeAt', 'File - Research Plan Form', 'File - Seminar Presentation', 'File - Research Proposal', 'File - Progress Report', 'File - Final Thesis or Dissertation', 'File - Internal Examiner Observations', 'File - Final Correction', 'File - Response to External Examiner', 'File - Response to Internal Examiner', 'Latest Upload Date', 'Latest Upload Type'],
+  Students: ['id', 'regNumber', 'surname', 'firstName', 'otherNames', 'gender', 'phoneNumber', 'email', 'faculty', 'department', 'programme', 'specialisation', 'passportFileId', 'passportUrl', 'mainSupervisorId', 'coSupervisorId', 'currentStage', 'yearOfAdmission', 'createdAt', 'updatedAt', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt', 'admissionLetterUrl', 'lastNudgeAt', 'File - Research Plan Form', 'File - Seminar Presentation', 'File - Research Proposal', 'File - Progress Report', 'File - Final Thesis or Dissertation', 'File - Internal Examiner Observations', 'File - Final Correction', 'File - Response to External Examiner', 'File - Response to Internal Examiner', 'Latest Upload Date', 'Latest Upload Type', 'lastMeetingDate', 'healthStatus'],
   Staff: ['id', 'fullName', 'email', 'rank', 'specialisation', 'active', 'createdAt', 'role'],
   Submissions: ['id', 'regNumber', 'type', 'driveFileUrls', 'status', 'inspectorComments', 'supervisorNotes', 'createdBy', 'createdAt', 'updatedAt', 'reviewedBy', 'reviewedAt', 'checklist', 'endorsedBy', 'assignedTo', 'history', 'compliance', 'similarity', 'similarityUrl', 'similarityBy', 'similarityAt', 'lastRemindedAt'],
   Announcements: ['id', 'title', 'body', 'active', 'createdBy', 'createdAt', 'audience'],
   Config: ['key', 'value', 'updatedAt'],
-  Meetings: ['id', 'regNumber', 'date', 'notes', 'actions', 'createdBy', 'createdAt', 'time', 'venue', 'status', 'ackAt'],
+  Meetings: ['id', 'regNumber', 'date', 'notes', 'actions', 'createdBy', 'createdAt', 'time', 'venue', 'status', 'ackAt', 'coSupervisorSeen'],
   Deadlines: ['id', 'title', 'date', 'createdBy', 'createdAt'],
   Notifications: ['id', 'regNumber', 'text', 'read', 'createdAt'],
   Messages: ['id', 'regNumber', 'fromName', 'fromRole', 'text', 'createdAt', 'readBy'],
@@ -2446,23 +2446,134 @@ function api_getStaffDashboard(token) {
   var ids = [String(user.id), String(user.regNumber)];
   var lab = function (id) { var st = id && findById_('Staff', id); return st ? { name: st.fullName, email: st.email || '' } : null; };
   var subs = filterWhere_('Submissions', function (s) { return regMap[s.regNumber] && String(s.status) !== 'Draft' && !isRestrictedType_(s.type); });
+
+  // Summary tiles
+  var totalStudents = my.length;
+  var stalledCount = my.filter(function (s) { return isStalled_(s); }).length;
+  var awaitingEndorsement = subs.filter(function (s) { return s.needsEndorsement || false; }).length;
+  var meetingsThisMonth = filterWhere_('Meetings', function (m) {
+    var d = String(m.date || '').slice(0, 10);
+    return d && new Date(d) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  }).length;
+
+  // Filter and sort for My Students
+  var filteredStudents = my.filter(function (s) {
+    var stageOk = !stageFilter || s.currentStage === stageFilter;
+    var progOk = !programmeFilter || s.programme === programmeFilter;
+    var stalledOk = stalledFilter !== true || isStalled_(s);
+    return stageOk && progOk && stalledOk;
+  });
+
+  // Sort by days at current stage (descending)
+  filteredStudents.sort(function (a, b) {
+    var da = daysSince_(a.createdAt);
+    var db = daysSince_(b.createdAt);
+    return db - da;
+  });
+
+  // Add last contact date and health indicator
+  filteredStudents = filteredStudents.map(function (s) {
+    var health = 'green';
+    if (isStalled_(s)) health = 'red';
+    else if (daysSince_(s.updatedAt) > 60) health = 'amber';
+    return {
+      regNumber: s.regNumber, fullName: fullNameOf_(s), programme: s.programme, specialisation: s.specialisation,
+      currentStage: s.currentStage, lastMeetingDate: '',
+      myRole: ids.indexOf(String(s.mainSupervisorId)) > -1 ? 'Main Supervisor' : 'Co-Supervisor',
+      other: lab(ids.indexOf(String(s.mainSupervisorId)) > -1 ? s.coSupervisorId : s.mainSupervisorId),
+      health: health
+    };
+  });
+
+  // Students with quick action flags (need endorsement, overdue submissions, etc.)
+  var actionList = subs.filter(function (s) {
+    var overdue = s.waitingDays > 14;
+    var needsEnd = s.needsEndorsement || false;
+    return overdue || needsEnd;
+  }).map(function (s) {
+    return { regNumber: s.regNumber, studentName: s.regNumber, type: s.type,
+      waitingDays: s.waitingDays, needsEndorsement: s.needsEndorsement || false };
+  });
+
+  // Helper: upcoming calendar entries for supervisor's students
+  function upcomingCalendar_() {
+    var cRegMap = {};
+    var cMy = filterWhere_('Students', function (s) { return supOf_(user, s); });
+    cMy.forEach(function (s) { cRegMap[s.regNumber] = 1; });
+    return filterWhere_('Meetings', function (m) { return cRegMap[m.regNumber]; })
+      .map(function (m) {
+        var stu = findWhere_('Students', function (x) { return String(x.regNumber) === String(m.regNumber); });
+        return { id: m.id, regNumber: m.regNumber, date: String(m.date || ''), time: m.time || '',
+          venue: m.venue || '', notes: m.notes || '', studentName: stu ? fullNameOf_(stu) : m.regNumber,
+          status: m.status || 'Logged', actions: m.actions || '' };
+      }).sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); }).slice(0, 20);
+  }
+
+  // Helper: co-supervisor coordination status
+  function coSupervisionStatus_() {
+    var result = {};
+    var myStudents = filterWhere_('Students', function (s) { return supOf_(user, s); });
+    myStudents.forEach(function (s) {
+      var mRow = findWhere_('Meetings', function (mt) { return String(mt.regNumber) === String(s.regNumber); });
+      result[s.regNumber] = {
+        mainSupervisorId: s.mainSupervisorId,
+        coSupervisorId: s.coSupervisorId,
+        coSeen: mRow ? String(mRow.coSupervisorSeen || '') : 'no'
+      };
+    });
+    return result;
+  }
+
+  // Helper: capacity view - students by programme and stage
+  function capacityView_() {
+    var cRegMap = {};
+    myStudents.forEach(function (s) { cRegMap[s.programme] = cRegMap[s.programme] || {}; cRegMap[s.programme][s.currentStage] = (cRegMap[s.programme][s.currentStage] || 0) + 1; });
+    return Object.keys(cRegMap).map(function (prog) { return ({ programme: prog, stages: cRegMap[prog]; }); });
+  }
+
   return {
-    announcements: announcementsFor_('Staff', 10),
+    // Summary tiles
+    totalStudents: totalStudents,
+    stalledCount: stalledCount,
+    awaitingEndorsement: awaitingEndorsement,
+    meetingsThisMonth: meetingsThisMonth,
+
+    // Filter/sort state (for client to persist)
+    stageFilter: stageFilter,
+    programmeFilter: programmeFilter,
+    stalledFilter: stalledFilter,
+
+    // Filtered and sorted students with health info
+    students: filteredStudents,
+
+    // Action items needing attention
+    actionList: actionList,
+
+    // Calendar: upcoming meetings for all supervisor's students
+    calendar: upcomingCalendar_(),
+
+    // Co-supervisor coordination: shared notes status
+    coSupervision: coSupervisionStatus_(),
+
+    // Capacity view: students by programme and stage
+    capacity: capacityView_(),
+
+    // Announcements
+    announcements: announcementsFor_('Staff', 5),
+
+    // Meetings (recent)
     meetings: filterWhere_('Meetings', function (m) { return regMap[m.regNumber]; }).map(function (m) {
       var o = stripRow_(m), stu = findWhere_('Students', function (x) { return String(x.regNumber) === String(m.regNumber); });
       o.status = o.status || 'Logged'; o.studentName = stu ? fullNameOf_(stu) : String(m.regNumber); return o;
-    }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); }).slice(0, 40),
-    students: my.map(function (s) {
-      var main = ids.indexOf(String(s.mainSupervisorId)) > -1;
-      return { regNumber: s.regNumber, fullName: fullNameOf_(s), programme: s.programme, specialisation: s.specialisation, currentStage: s.currentStage,
-        passportFileId: s.passportFileId || '', email: s.email, phoneNumber: s.phoneNumber, stalled: isStalled_(s),
-        myRole: main ? 'Main Supervisor' : 'Co-Supervisor', other: lab(main ? s.coSupervisorId : s.mainSupervisorId) };
-    }),
+    }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); }).slice(0, 20),
+
+    // Submissions
     submissions: subs.map(function (s) {
       var stu = findWhere_('Students', function (x) { return String(x.regNumber) === String(s.regNumber); });
       return { id: s.id, regNumber: s.regNumber, studentName: stu ? fullNameOf_(stu) : '', type: s.type, status: s.status, supervisorNotes: s.supervisorNotes,
         inspectorComments: s.inspectorComments || '', driveFileUrls: s.driveFileUrls || '', endorsedBy: s.endorsedBy || '', createdAt: s.createdAt, needsEndorsement: needsEndorsement_(s), waitingDays: daysSince_(s.createdAt) };
     }),
+
     presentationIntents: presentationIntentsForStaff_(user)
   };
 }

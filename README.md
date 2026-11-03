@@ -78,8 +78,7 @@ Physics-pg/
 ├── images/
 │   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
 │   ├── PG_Journey_Animated.svg ← animated journey poster on Home (set JOURNEY_IMAGE_URL)
-│   ├── PG_Journey_Infographic.png ← full-size poster, opened from under the SVG
-│   └── PG_Journey_Infographic_preview.jpg ← ~150 KB inline preview of that poster
+│   └── PG_Journey_Infographic.png ← older 15-step poster (not shown; kept for its URL)
 ├── docs/
 │   ├── PG_Journey_Stages.docx ← 16-stage reference (5 phases)
 │   ├── PG Journey Roadmap.docx ← older 15-step roadmap (kept for history)
@@ -112,9 +111,9 @@ Physics-pg/
 
 - **Home** — hero (department photo background) + live announcements from the
   Announcements tab (`api_publicAnnouncements`), then **Your Postgraduate Journey**:
-  the journey infographic with the five phases / 16 stages summarised and the
-  decision gates (Steps 7, 10, 12, 13, 15) highlighted, a link to the full-size
-  PNG, and a **Please note** callout.
+  the animated 16-stage poster (opens full size in a new tab) with the five phases
+  summarised as cards and the decision gates (Steps 7, 10, 12, 13, 15) highlighted,
+  and a **Please note** callout.
 - **Notice / caveat** — the site is strictly for journey navigation and departmental
   PG coordination, progress monitoring and documentation; other matters (incl. SPGS
   referrals) go to the Head, Department of Physics or the PG Coordinator. Full callout
@@ -151,12 +150,10 @@ Physics-pg/
   then the portal's Home poster is hidden (the phase cards still show). The local
   harness serves `/images/…` from `images/`.
   `npm run build` fails if the poster's 16 labels drift from `CFG.JOURNEY_STAGES`.
-- Full-size PNG: `images/PG_Journey_Infographic.png` is linked under the poster;
-  the inline image is `images/PG_Journey_Infographic_preview.jpg` (760 px, ~150 KB,
-  so the page does not pull the 1.8 MB PNG). The static site uses
-  `/images/PG_Journey_Infographic.png`; the portal uses
-  `CFG.DEFAULT_STATIC_HOST + images/…` (override with the `JOURNEY_ARCHIVE_IMAGE_URL`
-  Script Property) because Apps Script cannot serve binaries.
+- The older 15-step poster `images/PG_Journey_Infographic.png` is no longer shown
+  or linked on the page (its step names differ from the 16 canonical stages), but
+  the build still copies it so `/images/PG_Journey_Infographic.png` keeps
+  resolving.
 
 ---
 
