@@ -131,7 +131,9 @@ function brand_() {
     /* Full-size PNG of the journey infographic — the static host, because
        Apps Script cannot serve binary files. */
     journeyArchiveImgUrl: p.getProperty('JOURNEY_ARCHIVE_IMAGE_URL') ||
-      (CFG.DEFAULT_STATIC_HOST + 'images/PG_Journey_Infographic.png')
+      (CFG.DEFAULT_STATIC_HOST + 'images/PG_Journey_Infographic.png'),
+    /* Downscaled JPEG of the same poster, shown inline under the 16-stage SVG. */
+    journeyArchivePreviewUrl: CFG.DEFAULT_STATIC_HOST + 'images/PG_Journey_Infographic_preview.jpg'
   };
 }
 

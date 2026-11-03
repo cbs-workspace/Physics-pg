@@ -325,8 +325,9 @@
 
     /* ---- journey (Home) ---- */
     .journey-img { display: block; width: 100%; max-width: 980px; height: auto; margin: 0 auto; border-radius: 10px; }
-    .journey-archive { text-align: center; margin: 10px 0 0; font-size: 12.5px; color: var(--text-muted); }
-    .journey-archive a { color: var(--primary-strong); font-weight: 600; }
+    .journey-archive { margin-top: 16px; text-align: center; }
+    .journey-archive-img { display: block; width: 100%; max-width: 760px; height: auto; margin: 0 auto; border-radius: 10px; cursor: zoom-in; }
+    .journey-archive-note { margin: 8px 0 0; font-size: 12.5px; color: var(--text-muted); }
     .phase-card { border-top: 4px solid var(--primary); }
     .phase-card .phase-no { color: var(--primary-soft-text); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
     .phase-card h4 { margin: 4px 0 6px; font-size: 15px; }
@@ -598,9 +599,16 @@
                alt="Postgraduate Journey infographic — 5 phases and 16 steps"
                onerror="this.parentNode.style.display='none'">
         </div>
-        <p class="journey-archive" id="journey-archive" hidden>Prefer the full-size poster?
-          <a id="journey-archive-link" href="images/PG_Journey_Infographic.png" target="_blank" rel="noopener">Open the full-size infographic (PNG)</a>
-        </p>
+        <div class="journey-archive" id="journey-archive" hidden>
+          <div class="card" style="padding:14px">
+            <a id="journey-archive-link" href="images/PG_Journey_Infographic.png" target="_blank" rel="noopener">
+              <img id="journey-archive-img" class="journey-archive-img" src="images/PG_Journey_Infographic_preview.jpg"
+                   loading="lazy" decoding="async" alt="Full-size postgraduate journey infographic (opens the PNG)"
+                   onerror="document.getElementById('journey-archive').hidden=true">
+            </a>
+          </div>
+          <p class="journey-archive-note">Full-size version &mdash; tap the image to open the PNG.</p>
+        </div>
         <div class="card-grid" style="margin-top:16px">
           <div class="card phase-card">
             <div class="phase-no">Phase 1</div>
@@ -832,13 +840,20 @@
       var ji = document.querySelector('.journey-img');
       if (ji) ji.src = BRAND.journeyImgUrl;
     }
-    /* Full-size PNG of the journey infographic, linked under the poster.
-       On the static host this is /images/…; on Apps Script (which cannot
-       serve binaries) brand_() points it at the static host. */
+    /* Full-size PNG of the journey infographic, shown under the poster: the
+       inline <img> is a small JPEG preview (1.8 MB PNG → ~150 KB) and the
+       anchor opens the real thing. On the static host these are /images/…;
+       on Apps Script (which cannot serve binaries) brand_() points them at
+       the static host. */
     if (BRAND.journeyArchiveImgUrl) {
       var ja = document.getElementById('journey-archive');
       var jal = document.getElementById('journey-archive-link');
-      if (ja && jal) { jal.href = BRAND.journeyArchiveImgUrl; ja.hidden = false; }
+      var jai = document.getElementById('journey-archive-img');
+      if (ja && jal) {
+        jal.href = BRAND.journeyArchiveImgUrl;
+        if (jai && BRAND.journeyArchivePreviewUrl) jai.src = BRAND.journeyArchivePreviewUrl;
+        ja.hidden = false;
+      }
     }
 
     /* Embed mode (?embed=1): this render is shown inside an in-site iframe

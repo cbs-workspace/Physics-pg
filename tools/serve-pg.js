@@ -43,6 +43,7 @@ const BRAND = {
   heroBgUrl: "/images/Phy_Complex.png",
   journeyImgUrl: "/images/PG_Journey_Infographic.svg",
   journeyArchiveImgUrl: "/images/PG_Journey_Infographic.png",
+  journeyArchivePreviewUrl: "/images/PG_Journey_Infographic_preview.jpg",
 };
 
 const STAGES = [

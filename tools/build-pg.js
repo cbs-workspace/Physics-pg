@@ -52,6 +52,7 @@ const BRAND = {
   heroBgUrl: "/images/Phy_Complex.png",
   journeyImgUrl: "/images/PG_Journey_Infographic.svg",
   journeyArchiveImgUrl: "/images/PG_Journey_Infographic.png",
+  journeyArchivePreviewUrl: "/images/PG_Journey_Infographic_preview.jpg",
 };
 
 /** Public views rendered statically (register stays on the portal; login is
@@ -317,9 +318,21 @@ writeFile("login/index.html", portalFramePage({
 }));
 copyAsset("images/Phy_Complex.png");
 copyAsset("images/PG_Journey_Infographic.svg");
-// previous 15-step infographic, kept as an archive so the old URL still resolves
+// previous infographic poster, shown under the poster and opened full size
 copyAsset("images/PG_Journey_Infographic.png");
+copyAsset("images/PG_Journey_Infographic_preview.jpg");
 copyAsset("audio/music1.mp3");
+
+/* The inline preview is a downscaled JPEG of the poster (1.8 MB → ~150 KB).
+   Nothing regenerates it automatically, so warn when the PNG is newer. */
+{
+  const full = path.join(ROOT, "images", "PG_Journey_Infographic.png");
+  const prev = path.join(ROOT, "images", "PG_Journey_Infographic_preview.jpg");
+  if (fs.existsSync(full) && fs.existsSync(prev) &&
+      fs.statSync(prev).mtimeMs < fs.statSync(full).mtimeMs) {
+    console.warn("  ! PG_Journey_Infographic_preview.jpg is older than the PNG — regenerate the preview");
+  }
+}
 
 /** Retired pages → Home (permanent). Cloudflare Pages serves any real file
  *  first, so these only apply while /about/ and /programmes/ do not exist. */
