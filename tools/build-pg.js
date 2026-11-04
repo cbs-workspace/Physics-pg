@@ -49,10 +49,9 @@ const BRAND = {
   footerText: "\u00a9 2026 Capacity Building and Support. All rights reserved.",
   logoUrl: "https://drive.google.com/thumbnail?id=1LDjsF_70W2BpttMyLxfmltABCyUSPeHl",
   cbsLogoUrl: "https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ",
+  cbsLogoUrl: "https://drive.google.com/thumbnail?id=1rovoohmsc10VxMnig2NbrDv5_aaH9ukJ",
   heroBgUrl: "/images/Phy_Complex.png",
   journeyImgUrl: "/images/PG_Journey_Animated.svg",
-  journeyArchiveImgUrl: "/images/PG_Journey_Infographic.png",
-  journeyArchivePreviewUrl: "/images/PG_Journey_Infographic_preview.jpg",
 };
 
 /** Public views rendered statically (register stays on the portal; login is
@@ -350,21 +349,9 @@ writeFile("login/index.html", portalFramePage({
 copyAsset("images/Phy_Complex.png");
 checkJourneyArt("images/PG_Journey_Animated.svg");
 copyAsset("images/PG_Journey_Animated.svg");
-// previous infographic poster, shown under the poster and opened full size
+// the previous 15-step poster is no longer shown, but keep its URL resolving
 copyAsset("images/PG_Journey_Infographic.png");
-copyAsset("images/PG_Journey_Infographic_preview.jpg");
 copyAsset("audio/music1.mp3");
-
-/* The inline preview is a downscaled JPEG of the poster (1.8 MB → ~150 KB).
-   Nothing regenerates it automatically, so warn when the PNG is newer. */
-{
-  const full = path.join(ROOT, "images", "PG_Journey_Infographic.png");
-  const prev = path.join(ROOT, "images", "PG_Journey_Infographic_preview.jpg");
-  if (fs.existsSync(full) && fs.existsSync(prev) &&
-      fs.statSync(prev).mtimeMs < fs.statSync(full).mtimeMs) {
-    console.warn("  ! PG_Journey_Infographic_preview.jpg is older than the PNG — regenerate the preview");
-  }
-}
 
 /** Retired pages → Home (permanent). Cloudflare Pages serves any real file
  *  first, so these only apply while /about/ and /programmes/ do not exist. */

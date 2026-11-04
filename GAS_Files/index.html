@@ -101,7 +101,7 @@
     .tb-actions { display: flex; gap: 8px; }
     .content { flex: 1; padding: 24px; } .content-inner { max-width: 1200px; margin: 0 auto; }
     .footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
-    .footer img { height: 30px; width: auto; object-fit: contain; background: #fff; border-radius: 4px; padding: 2px 4px; } .footer .text { color: var(--text-muted); font-size: 12px; }
+    .footer img { height: 30px; width: auto; object-fit: contain; background: transparent; border-radius: 4px; padding: 2px 4px; mix-blend-mode: multiply; } .footer .text { color: var(--text-muted); font-size: 12px; }
     .footer.dark { border-color: var(--border-soft); } .footer.dark .text { color: var(--text-muted); }
     h2, h3, h4 { color: var(--text-strong); }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); } .card + .card { margin-top: 20px; }
@@ -204,6 +204,9 @@
     .feature .icon { font-size: 28px; margin-bottom: 12px; }
     .feature h4 { margin: 0 0 6px; font-size: 15px; } .feature p { margin: 0; color: var(--text-muted); font-size: 13px; }
 
+
+    .stat .value[style*="--warn"] { }
+    [data-sf] { max-width: 220px; }
     /* ---- personal journey tracker ---- */
     .jt { display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px 6px; margin: 14px 0 4px; }
     .jt-n { text-align: center; position: relative; min-width: 0; }
@@ -1417,20 +1420,24 @@
       { key: 'dashboard', label: 'Dashboard', roles: ['Student'] },
       { key: 'calendar', label: 'Programme Calendar', roles: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Submission_Inspector', 'SuperAdmin'] },
       { key: 'submissions', label: 'My Submissions', roles: ['Student'] },
+      { key: 'staffdash', label: 'My Students', roles: ['Staff', 'PG_Coordinator', 'HoD'] },
       { key: 'inbox', label: 'Inquiries', roles: ['Student', 'PG_Coordinator', 'HoD'] },
       { key: 'coordinator', label: 'Coordinator', roles: ['PG_Coordinator'] },
       { key: 'hod', label: 'Overview & Reports', roles: ['HoD', 'PG_Coordinator'] },
-      { key: 'help', label: 'Help & FAQ', roles: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Submission_Inspector'] },
+      { key: 'inspector', label: 'Submissions Review', roles: ['Submission_Inspector', 'PG_Coordinator'] },
+      { key: 'examiner', label: 'My Assignments', roles: ['Examiner'] },
       { key: 'superadmin', label: 'Super Admin', roles: ['SuperAdmin'] },
       { key: 'audit', label: 'Audit Log', roles: ['HoD', 'PG_Coordinator', 'SuperAdmin'] },
-      { key: 'staffdash', label: 'My Students', roles: ['Staff'] },
-      { key: 'inspector', label: 'Submissions Review', roles: ['Submission_Inspector', 'PG_Coordinator'] },
-      { key: 'examiner', label: 'My Assignments', roles: ['Examiner'] }
+      { key: 'help', label: 'Help & FAQ', roles: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Submission_Inspector'] }
     ];
     function roleAllowed(key) {
       var item = NAV.filter(function (n) { return n.key === key; })[0];
       if (!item) return true;
-      return !state.user || item.roles.indexOf(state.user.role) !== -1;
+      if (!state.user) return true;
+      if (item.roles.indexOf(state.user.role) === -1) return false;
+      // PG Coordinator / HoD only get "My Students" when they are assigned as a Main or Co-supervisor
+      if (key === 'staffdash' && state.user.role !== 'Staff' && !state.user.supervises) return false;
+      return true;
     }
     function navigate(view) {
       clearMsgs();
@@ -1470,7 +1477,7 @@
       } else if (view === 'audit' && state.user && ['HoD', 'PG_Coordinator', 'SuperAdmin'].indexOf(state.user.role) !== -1) {
         state.busy = true; render();
         authed('api_getAuditLog').then(function (d) { state.audit = d; state.busy = false; render(); }).catch(setError);
-      } else if (view === 'staffdash' && state.user && state.user.role === 'Staff') {
+      } else if (view === 'staffdash' && state.user && ['Staff', 'PG_Coordinator', 'HoD'].indexOf(state.user.role) !== -1 && (state.user.role === 'Staff' || state.user.supervises)) {
         state.busy = true; render();
         Promise.all([authed('api_getStaffDashboard'), loadRecipients()]).then(function (r) { state.staff = r[0]; state.busy = false; render(); }).catch(setError);
       } else if (view === 'inspector' && state.user && ['Submission_Inspector', 'PG_Coordinator'].indexOf(state.user.role) !== -1) {
@@ -1591,7 +1598,8 @@
 
     function headerHtml() {
       var out = '';
-      if (state.impersonator && state.user) out += '<div class="alert" style="background:#fef3c7;color:#78350f;border:1px solid #f59e0b;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span><strong>Signed in as ' + esc(state.user.fullName) + '</strong> (' + esc(ROLE_LABELS[state.user.role] || state.user.role) + ', ' + esc(state.user.regNumber) + '). Everything you do is recorded under your Super Admin account. This session ends after 60 minutes.</span><button class="btn btn-primary btn-sm" data-action="stop-imp">Return to Super Admin</button></div>';
+      if (state.impersonator && state.user && state.user.previewReadOnly) out += '<div class="alert" style="background:#dbeafe;color:#1e3a8a;border:1px solid #3b82f6;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span><strong>Read-only preview of ' + esc(state.user.fullName) + '</strong> (' + esc(ROLE_LABELS[state.user.role] || state.user.role) + ', ' + esc(state.user.regNumber) + '). Nothing you see here can be changed or saved. Logged under your Super Admin account as a preview. This session ends after 20 minutes.</span><button class="btn btn-primary btn-sm" data-action="stop-imp">Return to Super Admin</button></div>';
+      else if (state.impersonator && state.user) out += '<div class="alert" style="background:#fef3c7;color:#78350f;border:1px solid #f59e0b;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span><strong>Signed in as ' + esc(state.user.fullName) + '</strong> (' + esc(ROLE_LABELS[state.user.role] || state.user.role) + ', ' + esc(state.user.regNumber) + '). Everything you do is recorded under your Super Admin account. This session ends after 60 minutes.</span><button class="btn btn-primary btn-sm" data-action="stop-imp">Return to Super Admin</button></div>';
       if (state.error) out += '<div class="alert error">' + esc(state.error) + '</div>';
       if (state.notice) out += '<div class="alert success">' + esc(state.notice) + '</div>';
       return out;
@@ -1943,6 +1951,140 @@
     });
 
     /* ---- Student Dashboard ---- */
+    /* ================= SUPERVISION ENHANCEMENTS (UI) ================= */
+    var HEALTH_ = { green: ['#10b981', 'On track'], amber: ['#f59e0b', 'Needs a check-in'], red: ['#ef4444', 'At risk'], done: ['#64748b', 'Completed'] };
+    function healthDot_(h) { var x = HEALTH_[h] || HEALTH_.green; return '<span title="' + esc(x[1]) + '" style="display:inline-flex;align-items:center;gap:5px;font-size:12px"><i style="width:10px;height:10px;border-radius:50%;background:' + x[0] + ';display:inline-block"></i>' + esc(x[1]) + '</span>'; }
+    function tile_(label, val, tone) { return '<div class="stat"><div class="label">' + esc(label) + '</div><div class="value"' + (tone ? ' style="color:var(--' + tone + ')"' : '') + '>' + esc(val) + '</div></div>'; }
+    function downloadText_(name, mime, text) { var b = new Blob([text], { type: mime }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+    function icsEvents_(events) {
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; }, esc2 = function (t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); };
+      var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PG Journey Portal//EN'];
+      events.forEach(function (e, i) {
+        var d = String(e.date).replace(/-/g, ''), t = String(e.time || '10:00').split(':'), h = parseInt(t[0], 10) || 10, mi = t[1] || '00';
+        L.push('BEGIN:VEVENT', 'UID:pg-' + i + '-' + d + '@pg-portal', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z', 'DTSTART:' + d + 'T' + pad(h) + mi + '00', 'DTEND:' + d + 'T' + pad(Math.min(h + 1, 23)) + mi + '00', 'SUMMARY:' + esc2(e.title), 'LOCATION:' + esc2(e.venue), 'END:VEVENT');
+      });
+      L.push('END:VCALENDAR'); return L.join('\r\n');
+    }
+    function staffTilesHtml(st) {
+      var s = st.stats; if (!s) return '';
+      return '<div class="grid cols-4" style="margin-bottom:16px">' + tile_('Students supervised', s.students) + tile_('At risk / stalled', s.atRisk + ' / ' + s.stalled, s.atRisk || s.stalled ? 'warn' : '') +
+        tile_('Awaiting my endorsement', s.awaitingEndorsement + (s.overdueFeedback ? ' (' + s.overdueFeedback + ' overdue)' : ''), s.overdueFeedback ? 'warn' : '') + tile_('Meetings this month', s.meetingsThisMonth) +
+        tile_('Open actions', s.openActions + (s.overdueActions ? ' (' + s.overdueActions + ' overdue)' : ''), s.overdueActions ? 'warn' : '') + '</div>';
+    }
+    function staffAttentionHtml(st) {
+      var items = [], B = function (a, id, label) { return ' <button class="btn btn-outline btn-sm" data-action="' + a + '" data-id="' + esc(id) + '">' + label + '</button>'; };
+      st.students.forEach(function (s) {
+        if (s.stalled) items.push({ t: esc(s.fullName) + ' \u2014 stalled at ' + esc(s.currentStage), b: B('sched-meeting', s.regNumber, 'Schedule meeting') + B('thread', s.regNumber, 'Message') });
+        else if (s.noContactDays > 30 && s.currentStage.indexOf('Complete') === -1 && s.health !== 'done') items.push({ t: esc(s.fullName) + ' \u2014 no logged meeting for ' + s.noContactDays + ' days', b: B('sched-meeting', s.regNumber, 'Schedule meeting') + B('thread', s.regNumber, 'Message') });
+        if (s.checkIn && s.checkIn.status !== 'On track') items.push({ t: esc(s.fullName) + ' reports progress is <strong>' + esc(s.checkIn.status) + '</strong>: ' + esc(s.checkIn.note || ''), b: B('thread', s.regNumber, 'Reply') + B('sched-meeting', s.regNumber, 'Schedule meeting') });
+      });
+      st.submissions.forEach(function (x) {
+        if (x.status === 'Rejected' || x.status === 'Changes Requested') items.push({ t: esc(x.studentName) + ' \u2014 ' + esc(x.type) + ' ' + esc(x.status.toLowerCase()), b: B('sub-thread', x.id, 'Feedback') });
+        else if (x.awaitingMe && x.dueIn !== null && x.dueIn <= 2) items.push({ t: esc(x.studentName) + ' \u2014 ' + esc(x.type) + (x.dueIn < 0 ? ' feedback is <strong>' + (-x.dueIn) + ' day(s) overdue</strong>' : ' feedback due in ' + x.dueIn + ' day(s)'), b: B('endorse', x.id, 'Endorse') + B('sub-thread', x.id, 'Feedback') });
+      });
+      (st.presentationIntents || []).filter(function (x) { return x.canAct; }).forEach(function (x) { items.push({ t: esc(x.studentName) + ' \u2014 ' + esc(intentMeta(x.kind).label) + ' for ' + esc(x.preferredMonth) + ' is awaiting your approval', b: '' }); });
+      (st.actions || []).filter(function (a) { return a.overdue && a.owner === 'Supervisor'; }).forEach(function (a) { items.push({ t: 'Your action for ' + esc(a.studentName) + ' is overdue: ' + esc(a.text), b: B('act-done', a.id, 'Mark done') }); });
+      if (!items.length) return '';
+      return '<div class="card"><h4 style="margin:0 0 8px">Needs attention (' + items.length + ')</h4>' + items.map(function (i) { return '<p style="margin:5px 0">&bull; ' + i.t + i.b + '</p>'; }).join('') + '</div>';
+    }
+    var SF_ = { stage: '', prog: '', health: '', sort: 'name', q: '' };
+    function staffStudentsCard(st) {
+      var f = state.sf || (state.sf = { stage: '', prog: '', health: '', sort: 'name', q: '' });
+      var o = '<div class="card"><h4 style="margin:0 0 12px">My Supervised Students (' + st.students.length + ')</h4>';
+      if (!st.students.length) return o + '<p class="muted">No students assigned to you yet.</p></div>';
+      var uniq = function (k) { var m = {}; st.students.forEach(function (s) { if (s[k]) m[s[k]] = 1; }); return Object.keys(m).sort(); };
+      var sel = function (key, label, list, lab) { return '<select data-sf="' + key + '" aria-label="' + label + '"><option value="">' + label + '</option>' + list.map(function (v) { return '<option value="' + esc(v) + '"' + (f[key] === v ? ' selected' : '') + '>' + esc(lab ? lab[v] : v) + '</option>'; }).join('') + '</select>'; };
+      o += '<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><input type="search" data-sf="q" placeholder="Search name or reg. no." value="' + esc(f.q) + '" style="min-width:180px">' +
+        sel('stage', 'All stages', uniq('currentStage')) + sel('prog', 'All programmes', uniq('programme')) + sel('health', 'Any status', ['red', 'amber', 'green', 'done'], { red: 'At risk', amber: 'Needs a check-in', green: 'On track', done: 'Completed' }) +
+        '<select data-sf="sort" aria-label="Sort"><option value="name"' + (f.sort === 'name' ? ' selected' : '') + '>Sort: name</option><option value="stalled"' + (f.sort === 'stalled' ? ' selected' : '') + '>Sort: days at stage</option><option value="contact"' + (f.sort === 'contact' ? ' selected' : '') + '>Sort: longest since contact</option><option value="health"' + (f.sort === 'health' ? ' selected' : '') + '>Sort: needs attention first</option></select></div>';
+      var rank = { red: 0, amber: 1, green: 2, done: 3 }, q = f.q.toLowerCase();
+      var rows = st.students.filter(function (s) { return (!f.stage || s.currentStage === f.stage) && (!f.prog || s.programme === f.prog) && (!f.health || s.health === f.health) && (!q || (s.fullName + ' ' + s.regNumber).toLowerCase().indexOf(q) > -1); });
+      rows.sort(function (a, b) { return f.sort === 'stalled' ? b.daysAtStage - a.daysAtStage : f.sort === 'contact' ? b.noContactDays - a.noContactDays : f.sort === 'health' ? rank[a.health] - rank[b.health] : a.fullName.localeCompare(b.fullName); });
+      if (!rows.length) return o + '<p class="muted">No students match these filters.</p></div>';
+      o += '<div class="table-wrap"><table><thead><tr><th>Photo</th><th>Student</th><th>Stage</th><th>Status</th><th>Last meeting</th><th>My role / other supervisor</th><th>Contact</th><th></th></tr></thead><tbody>';
+      rows.forEach(function (s) {
+        var bt = function (a, label) { return '<button class="btn btn-outline btn-sm" data-action="' + a + '" data-id="' + esc(s.regNumber) + '">' + label + '</button> '; };
+        o += '<tr><td>' + (s.passportFileId ? '<img src="' + thumb(s.passportFileId) + '" style="width:36px;height:36px;border-radius:6px;object-fit:cover">' : '<div class="photo-placeholder" style="width:36px;height:36px;font-size:14px">?</div>') + '</td>' +
+          '<td>' + esc(s.fullName) + '<br><span class="small muted">' + esc(s.regNumber) + ' &middot; ' + esc(s.programme) + '</span></td>' +
+          '<td class="small">' + esc(s.currentStage) + '<br><span class="muted">' + s.daysAtStage + ' day(s) here</span>' + (s.stalled ? ' <span class="badge warn">stalled</span>' : '') + '</td>' +
+          '<td>' + healthDot_(s.health) + (s.checkIn ? '<br><span class="small muted">Check-in: ' + esc(s.checkIn.status) + '</span>' : '') + (s.review ? '<br><span class="small muted">Review: ' + esc(s.review.recommendation) + '</span>' : '') + (s.openActions ? '<br><span class="small muted">' + s.openActions + ' open action(s)' + (s.overdueActions ? ' (' + s.overdueActions + ' overdue)' : '') + '</span>' : '') + '</td>' +
+          '<td class="small">' + (s.lastContact ? esc(s.lastContact) + '<br><span class="muted">' + s.noContactDays + ' day(s) ago</span>' : '<span class="muted">none logged</span>') + '</td>' +
+          '<td class="small"><span class="badge ' + (s.myRole === 'Main Supervisor' ? 'ok' : 'info') + '">' + esc(s.myRole) + '</span><br>' + (s.other ? esc(s.other.name) : '\u2014') + '</td>' +
+          '<td class="small"><a href="mailto:' + esc(s.email) + '">' + esc(s.email) + '</a><br>' + esc(s.phoneNumber) + '</td>' +
+          '<td style="min-width:200px">' + bt('sched-meeting', 'Schedule') + bt('log-meeting', 'Log meeting') + bt('thread', 'Messages') + bt('act-new', 'Add action') + bt('review-new', 'Review') + bt('handover', 'Handover') + bt('timeline', 'Timeline') + bt('concern-new', 'Raise concern') + '</td></tr>';
+      });
+      return o + '</tbody></table></div></div>';
+    }
+    function capacityCard(st) {
+      var c = st.capacity; if (!c) return '';
+      var pct = Math.min(100, Math.round(c.total / c.max * 100)), over = c.total > c.max, full = c.total === c.max;
+      return '<div class="card"><h4 style="margin:0 0 8px">My capacity</h4><p class="small muted" style="margin:0 0 8px">' + c.total + ' of the recommended maximum of ' + c.max + ' students' + (over ? ' &mdash; <strong>over capacity</strong>' : full ? ' &mdash; at capacity' : '') + '.</p>' +
+        '<div class="stage-bar" style="height:18px"><div class="stage-fill" style="width:' + pct + '%;background:' + (over ? '#ef4444' : full ? '#f59e0b' : '') + '"></div></div>' +
+        '<div class="grid cols-2" style="margin-top:12px"><div><div class="small muted" style="margin-bottom:4px">By programme</div>' + barChart(c.byProgramme) + '</div><div><div class="small muted" style="margin-bottom:4px">By stage</div>' + barChart(c.byStage, true) + '</div></div></div>';
+    }
+    function supCalendarEvents_(st) {
+      var t = new Date().toISOString().slice(0, 10), ev = [];
+      (st.meetings || []).forEach(function (m) { if ((m.status || 'Logged') === 'Scheduled' && m.date >= t) ev.push({ date: m.date, time: m.time, title: 'Supervision meeting \u2014 ' + m.studentName, venue: m.venue, kind: 'Meeting' }); });
+      (st.deadlines || []).forEach(function (d) { if (d.date >= t) ev.push({ date: d.date, title: d.title, kind: 'Deadline' }); });
+      (st.seminars || []).forEach(function (s) { if (s.date >= t) ev.push({ date: s.date, title: s.title, venue: s.venue, kind: 'Seminar' }); });
+      (st.actions || []).forEach(function (a) { if (a.status === 'Open' && a.owner === 'Supervisor' && a.dueDate && a.dueDate >= t) ev.push({ date: a.dueDate, title: 'Action due: ' + a.text + ' (' + a.studentName + ')', kind: 'Action' }); });
+      return ev.sort(function (a, b) { return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); });
+    }
+    function supCalendarCard(st) {
+      var ev = supCalendarEvents_(st), tone = { Meeting: 'info', Deadline: 'warn', Seminar: 'ok', Action: '' };
+      return '<div class="card"><div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h4 style="margin:0">My upcoming calendar</h4>' + (ev.length ? '<button class="btn btn-outline btn-sm" data-action="sup-cal-ics">Download .ics</button>' : '') + '</div>' +
+        (ev.length ? ev.slice(0, 12).map(function (e) { return '<p style="margin:6px 0"><strong>' + esc(e.date) + (e.time ? ' ' + esc(e.time) : '') + '</strong> <span class="badge ' + tone[e.kind] + '">' + e.kind + '</span> ' + esc(e.title) + (e.venue ? ' <span class="small muted">at ' + esc(e.venue) + '</span>' : '') + '</p>'; }).join('') : '<p class="muted" style="margin:8px 0 0">Nothing scheduled yet.</p>') + '</div>';
+    }
+    function actionsCard(list, role) {
+      list = list || []; var open = list.filter(function (a) { return a.status === 'Open'; }), done = list.filter(function (a) { return a.status !== 'Open'; }).slice(0, 5);
+      var row = function (a) {
+        var can = role === 'staff' || a.owner === 'Student';
+        return '<div style="padding:7px 0;border-bottom:1px solid var(--border-soft)">' + (a.status === 'Open' ? '' : '<span class="badge ok">Done</span> ') + esc(a.text) + '<br><span class="small muted">' + (role === 'staff' ? esc(a.studentName) + ' &middot; ' : '') + 'For: ' + esc(a.owner === 'Student' ? 'student' : (a.ownerName || 'supervisor')) + (a.dueDate ? ' &middot; due ' + esc(a.dueDate) : '') + '</span>' + (a.overdue ? ' <span class="badge warn">overdue</span>' : '') +
+          (a.status === 'Open' && can ? ' <button class="btn btn-outline btn-sm" data-action="act-done" data-id="' + esc(a.id) + '">Mark done</button>' : '') + '</div>';
+      };
+      return '<div class="card"><h4 style="margin:0 0 8px">Action items' + (open.length ? ' (' + open.length + ' open)' : '') + '</h4>' +
+        (open.length ? open.map(row).join('') : '<p class="muted" style="margin:0">No open action items.</p>') + (done.length ? '<div class="small muted" style="margin:10px 0 2px">Recently completed</div>' + done.map(row).join('') : '') + '</div>';
+    }
+    function studentCheckInCard(d) {
+      var c = d.checkIn, f = '<div class="field"><label>How is your research going this month?</label><select id="ck-status">' + ['On track', 'Slow', 'Blocked'].map(function (x) { return '<option' + (c && c.status === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field"><label>Note (required if slow or blocked)</label><textarea id="ck-note" rows="2" maxlength="800">' + esc(c ? c.note : '') + '</textarea></div><button class="btn btn-primary btn-sm" data-action="checkin-save">' + (c ? 'Update check-in' : 'Send check-in') + '</button>';
+      return '<div class="card"><h4 style="margin:0 0 4px">Monthly check-in</h4><p class="small muted" style="margin:0 0 10px">' + (c ? 'You checked in for ' + esc(d.checkInMonth) + ' as <strong>' + esc(c.status) + '</strong>. You can update it.' : 'A one-minute note helps your supervisors support you early.') + '</p>' + f + '</div>';
+    }
+    function studentReviewsCard(d) {
+      var r = d.reviews || []; if (!r.length) return '';
+      return '<div class="card"><h4 style="margin:0 0 8px">Supervisor progress reviews</h4>' + r.map(function (x) { return '<div style="padding:7px 0;border-bottom:1px solid var(--border-soft)"><strong>' + esc(x.period) + '</strong> &middot; ' + esc(x.rating) + ' <span class="badge ' + (x.recommendation === 'Continue' ? 'ok' : 'warn') + '">' + esc(x.recommendation) + '</span><br><span class="small muted">by ' + esc(x.createdBy) + ', ' + esc(String(x.createdAt).slice(0, 10)) + '</span>' + (x.comments ? '<br>' + esc(x.comments) : '') + '</div>'; }).join('') + '</div>';
+    }
+    function supervisionCard(sv) {
+      if (!sv) return '';
+      var T = function (title, body) { return '<div class="card"><h4 style="margin:0 0 8px">' + title + '</h4>' + body + '</div>'; }, none = '<p class="muted" style="margin:0">None.</p>';
+      var concerns = sv.concerns.map(function (c) {
+        var open = c.status === 'Open';
+        return '<div style="padding:8px 0;border-bottom:1px solid var(--border-soft)"><span class="badge ' + (open ? 'warn' : 'ok') + '">' + esc(c.status) + '</span> <strong>' + esc(c.studentName) + '</strong> (' + esc(c.regNumber) + ') &middot; ' + esc(c.category) + '<br>' + esc(c.text) + '<br><span class="small muted">Raised by ' + esc(c.createdBy) + ' on ' + esc(String(c.createdAt).slice(0, 10)) + (c.note ? ' &middot; Resolution: ' + esc(c.note) : '') + '</span>' + (open ? ' <button class="btn btn-outline btn-sm" data-action="concern-resolve" data-id="' + esc(c.id) + '">Resolve</button>' : '') + '</div>';
+      }).join('');
+      var tiles = '<div class="grid cols-4" style="margin-bottom:16px">' + tile_('Open concerns', sv.concerns.filter(function (c) { return c.status === 'Open'; }).length, 'warn') + tile_('Feedback overdue (>' + sv.feedbackDays + ' days)', sv.overdueFeedback.length, sv.overdueFeedback.length ? 'warn' : '') + tile_('Students reporting slow / blocked', sv.flaggedCheckIns.length) + tile_('Overdue action items', sv.overdueActions + ' of ' + sv.openActions) + '</div>';
+      return '<h3 style="margin:24px 0 12px">Supervision overview</h3>' + tiles +
+        T('Confidential concerns (not visible to students)', concerns || none) +
+        T('Feedback waiting too long on a supervisor', sv.overdueFeedback.length ? '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Document</th><th>Waiting</th><th>Main supervisor</th></tr></thead><tbody>' + sv.overdueFeedback.map(function (x) { return '<tr><td>' + esc(x.studentName) + '</td><td>' + esc(x.type) + '</td><td><span class="badge warn">' + x.waitingDays + ' days</span></td><td>' + esc(x.supervisor) + '</td></tr>'; }).join('') + '</tbody></table></div>' : none) +
+        T('Students reporting a slow or blocked month', sv.flaggedCheckIns.length ? sv.flaggedCheckIns.map(function (x) { return '<p style="margin:5px 0"><strong>' + esc(x.studentName) + '</strong> <span class="badge ' + (x.status === 'Blocked' ? 'bad' : 'warn') + '">' + esc(x.status) + '</span> ' + esc(x.note || '') + '</p>'; }).join('') : none) +
+        T('Latest supervisor reviews flagging concern / at risk', sv.atRiskReviews.length ? sv.atRiskReviews.map(function (x) { return '<p style="margin:5px 0"><strong>' + esc(x.studentName) + '</strong> <span class="badge warn">' + esc(x.recommendation) + '</span> ' + esc(x.period) + ' by ' + esc(x.by) + (x.comments ? ' \u2014 ' + esc(x.comments) : '') + '</p>'; }).join('') : none) +
+        T('Supervisor capacity (recommended maximum ' + sv.maxStudents + ')', sv.capacity.length ? '<div class="table-wrap"><table><thead><tr><th>Supervisor</th><th>Active students</th><th></th></tr></thead><tbody>' + sv.capacity.map(function (c) { return '<tr><td>' + esc(c.name) + '</td><td>' + c.count + '</td><td>' + (c.over ? '<span class="badge warn">over capacity</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : none);
+    }
+    function openThread_(id) {
+      authed('api_listSubComments', id).then(function (list) {
+        showModal('<h3 style="margin:0 0 12px">Feedback thread</h3><div style="max-height:300px;overflow:auto;margin-bottom:10px">' + (list.length ? list.map(function (c) { return '<div style="padding:7px 0;border-bottom:1px solid var(--border-soft)"><strong>' + esc(c.byName) + '</strong> <span class="small muted">' + esc(c.byRole) + ' &middot; ' + esc(String(c.createdAt).replace('T', ' ').slice(0, 16)) + '</span><br><span class="pre">' + esc(c.text) + '</span></div>'; }).join('') : '<p class="muted">No comments yet.</p>') + '</div>' +
+          '<div class="field"><textarea id="thr-text" rows="3" maxlength="1500" placeholder="Write a comment\u2026"></textarea></div><div class="row"><button class="btn btn-primary" data-action="sub-thread-send" data-id="' + esc(id) + '">Send</button><button class="btn btn-outline" data-action="close-modal">Close</button></div>');
+      }).catch(setError);
+    }
+    function handoverHtml_(h) {
+      var s = h.student, L = function (title, items, fn) { return '<h4 style="margin:14px 0 4px">' + title + '</h4>' + (items.length ? items.map(fn).join('') : '<p class="small muted" style="margin:0">None recorded.</p>'); };
+      return '<h3 style="margin:0 0 4px">Handover \u2014 ' + esc(s.name) + '</h3><p class="small muted" style="margin:0">' + esc(s.regNumber) + ' &middot; ' + esc(s.programme) + ' &middot; ' + esc(s.specialisation) + '<br>Stage: ' + esc(s.stage) + ' (' + s.daysAtStage + ' days here)' + (s.title ? '<br>Title: ' + esc(s.title) : '') + '<br>Supervisors: ' + esc(s.main || '\u2014') + (s.co ? ' / ' + esc(s.co) : '') + '</p><div style="max-height:380px;overflow:auto">' +
+        L('Open action items', h.actions, function (a) { return '<p class="small" style="margin:3px 0">&bull; ' + esc(a.text) + (a.dueDate ? ' (due ' + esc(a.dueDate) + ')' : '') + ' \u2014 ' + esc(a.owner) + '</p>'; }) +
+        L('Progress reviews', h.reviews, function (r) { return '<p class="small" style="margin:3px 0">&bull; ' + esc(r.period) + ': ' + esc(r.rating) + ' / ' + esc(r.recommendation) + (r.comments ? ' \u2014 ' + esc(r.comments) : '') + '</p>'; }) +
+        L('Monthly check-ins', h.checkIns, function (c) { return '<p class="small" style="margin:3px 0">&bull; ' + esc(c.month) + ': ' + esc(c.status) + (c.note ? ' \u2014 ' + esc(c.note) : '') + '</p>'; }) +
+        L('Recent meetings', h.meetings, function (m) { return '<p class="small" style="margin:3px 0"><strong>' + esc(m.date) + '</strong> (' + esc(m.by) + '): ' + esc(String(m.notes).slice(0, 220)) + (m.actions ? ' <em>Actions: ' + esc(m.actions) + '</em>' : '') + '</p>'; }) +
+        L('Submissions', h.submissions, function (x) { return '<p class="small" style="margin:3px 0">&bull; ' + esc(x.type) + ' \u2014 ' + esc(x.status) + ' (' + esc(String(x.createdAt).slice(0, 10)) + ')' + (x.notes ? ' \u2014 ' + esc(x.notes) : '') + '</p>'; }) +
+        '</div><div class="row" style="margin-top:12px"><button class="btn btn-outline" data-action="close-modal">Close</button></div>';
+    }
     var JT_PHASES = [
       { name: 'Coursework & Research Preparation', col: '#10b981', from: 0, to: 2 },
       { name: 'Proposal Stage', col: '#3b82f6', from: 3, to: 6 },
@@ -2033,6 +2175,7 @@
       out += '</div></div>';
 
       out += titleApprovalCard(s);
+      out += actionsCard(state.dashboard.actions, 'student') + studentCheckInCard(state.dashboard) + studentReviewsCard(state.dashboard);
 
       // Journey stage
       out += '<div class="card"><h4 style="margin:0 0 12px">PG Journey — Stage ' + (stageIdx + 1) + ' of ' + JOURNEY_STAGES.length + '</h4>' +
@@ -2057,7 +2200,7 @@
       var mts = state.dashboard.meetings || [];
       out += '<div class="card"><h4 style="margin:0 0 12px">Supervision Meetings</h4>' + (mts.length ? mts.map(function (m) {
         var st = m.status || 'Logged', row = '<div style="padding:8px 0;border-bottom:1px solid var(--border-soft)">';
-        if (st === 'Scheduled') return row + '<strong>' + esc(m.date) + (m.time ? ' ' + esc(m.time) : '') + '</strong> <span class="badge info">Scheduled</span>' + (m.venue ? ' <span class="small muted">at ' + esc(m.venue) + '</span>' : '') + (m.notes ? '<br><span class="small">Agenda: ' + esc(m.notes) + '</span>' : '') + '</div>';
+        if (st === 'Scheduled') return row + '<strong>' + esc(m.date) + (m.time ? ' ' + esc(m.time) : '') + '</strong> <span class="badge info">Scheduled</span>' + (m.venue ? ' <span class="small muted">at ' + esc(m.venue) + '</span>' : '') + (m.notes ? '<br><span class="small">Agenda: ' + esc(m.notes) + '</span>' : '') + (m.studentAgenda ? '<br><span class="small"><strong>Your points:</strong> ' + esc(m.studentAgenda) + '</span>' : '') + '<br><button class="btn btn-outline btn-sm" style="margin-top:6px" data-action="agenda-edit" data-id="' + esc(m.id) + '">' + (m.studentAgenda ? 'Edit my agenda points' : 'Add my agenda points') + '</button> <button class="btn btn-outline btn-sm" style="margin-top:6px" data-action="meet-ics" data-id="' + esc(m.id) + '">Add to calendar</button></div>';
         if (st === 'Cancelled') return row + '<span class="small muted"><s>' + esc(m.date) + '</s> &mdash; cancelled</span></div>';
         return row + '<strong>' + esc(m.date) + '</strong> <span class="small muted">by ' + esc(m.createdBy) + '</span><br>' + esc(m.notes) + (m.actions ? '<br><span class="small"><strong>Actions:</strong> ' + esc(m.actions) + '</span>' : '') +
           '<br>' + (m.ackAt ? '<span class="badge ok">Acknowledged</span>' : '<button class="btn btn-outline btn-sm" style="margin-top:6px" data-action="ack-meeting" data-id="' + esc(m.id) + '">Acknowledge notes</button>') + '</div>';
@@ -2100,7 +2243,7 @@
       if (!state.submissions.length) return out + '<div class="empty">No submissions yet.</div>';
       out += '<div class="table-wrap"><table><thead><tr><th>Type</th><th>Status</th><th>Date</th><th>Inspector Comments</th><th>Supervisor Notes</th><th></th></tr></thead><tbody>';
       state.submissions.forEach(function (s) {
-        out += '<tr><td>' + esc(s.type) + (s.status === 'Draft' && fileLinks(s.driveFileUrls) ? '<br><span class="small">' + fileLinks(s.driveFileUrls) + '</span>' : '') + '</td><td>' + statusBadge(s.status) + '</td><td class="small">' + esc(s.createdAt) + '</td><td class="small pre">' + esc(s.inspectorComments || '—') + '</td><td class="small">' + esc(s.supervisorNotes || '—') + '</td><td>' + (s.status === 'Rejected' || s.status === 'Changes Requested' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<label class="btn btn-outline btn-sm" style="cursor:pointer">Resubmit file<input type="file" accept=".pdf,.doc,.docx" data-resubmit="' + esc(s.id) + '" style="display:none"></label> <button class="btn btn-outline btn-sm" data-action="resubmit" data-id="' + esc(s.id) + '">Use a link</button>' : s.status === 'Draft' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<button class="btn btn-primary btn-sm" data-action="draft-submit" data-id="' + esc(s.id) + '">Submit for review</button> <button class="btn btn-danger btn-sm" data-action="draft-delete" data-id="' + esc(s.id) + '">Delete</button>' : '') + '</td></tr>';
+        out += '<tr><td>' + esc(s.type) + (s.status === 'Draft' && fileLinks(s.driveFileUrls) ? '<br><span class="small">' + fileLinks(s.driveFileUrls) + '</span>' : '') + '</td><td>' + statusBadge(s.status) + '</td><td class="small">' + esc(s.createdAt) + '<br><button class="btn btn-outline btn-sm" style="margin-top:6px" data-action="sub-thread" data-id="' + esc(s.id) + '">Feedback</button></td><td class="small pre">' + esc(s.inspectorComments || '—') + '</td><td class="small">' + esc(s.supervisorNotes || '—') + '</td><td>' + (s.status === 'Rejected' || s.status === 'Changes Requested' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<label class="btn btn-outline btn-sm" style="cursor:pointer">Resubmit file<input type="file" accept=".pdf,.doc,.docx" data-resubmit="' + esc(s.id) + '" style="display:none"></label> <button class="btn btn-outline btn-sm" data-action="resubmit" data-id="' + esc(s.id) + '">Use a link</button>' : s.status === 'Draft' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<button class="btn btn-primary btn-sm" data-action="draft-submit" data-id="' + esc(s.id) + '">Submit for review</button> <button class="btn btn-danger btn-sm" data-action="draft-delete" data-id="' + esc(s.id) + '">Delete</button>' : '') + '</td></tr>';
       });
       out += '</tbody></table></div>';
       return out;
@@ -2362,6 +2505,8 @@
       html += '</div><div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' + (r.pdf && r.pdf.length ? '<button class="btn btn-primary btn-sm" data-action="pdf-check" data-id="' + esc(subId) + '" data-file="' + esc(r.pdf[0].id) + '">' + (r.source === 'pdf' ? 'Re-analyse PDF' : 'Analyse PDF in browser') + '</button>' : '') + '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(subId) + '">Check again</button><button class="btn btn-outline btn-sm" data-action="close-modal">Close</button></div>';
       showModal(html);
     }
+    document.addEventListener('input', function (e) { var t = e.target; if (t && t.matches && t.matches('input[data-sf]')) { state.sf = state.sf || {}; state.sf[t.getAttribute('data-sf')] = t.value; var pos = t.selectionStart; render(); var n = document.querySelector('input[data-sf="q"]'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} } } });
+    document.addEventListener('change', function (e) { var t = e.target; if (t && t.matches && t.matches('select[data-sf]')) { state.sf = state.sf || {}; state.sf[t.getAttribute('data-sf')] = t.value; render(); } });
     document.addEventListener('change', function (e) {   // student resubmits a corrected file: uploads to Drive straight away, then resubmits
       var rsId = e.target && e.target.getAttribute && e.target.getAttribute('data-resubmit'); if (!rsId) return;
       var rsF = e.target.files && e.target.files[0], rsSub = (state.submissions || []).filter(function (x) { return String(x.id) === String(rsId); })[0];
@@ -2642,7 +2787,8 @@
       out += loginsCard(c);
       // Export
       out += '<div class="card"><h4 style="margin:0 0 12px">Export Data</h4>' +
-        '<button class="btn btn-outline" data-action="export-csv">Download CSV</button></div>';
+        '<button class="btn btn-outline" data-action="export-csv">Download CSV</button> ' +
+        '<button class="btn btn-primary" data-action="backup" style="margin-left:8px">&#128190; Back up all data now</button> <span class="small muted">Copies the spreadsheet into a Backups folder.</span></div>';
 
       return out;
     }
@@ -2700,7 +2846,7 @@
         '<div class="card"><h4 style="margin:0 0 12px">Students by Session</h4>' + barChart(h.bySession, true) + '</div>' +
         '<div class="card"><h4 style="margin:0 0 12px">Submissions by Status</h4>' + barChart(h.bySubmissionStatus) + '</div></div>';
       out += '<div class="card"><h4 style="margin:0 0 12px">Students by Journey Stage</h4>' + barChart(h.byStage, true) + '</div>';
-      out += examinerWorkloadCard(h.examiners);
+      out += examinerWorkloadCard(h.examiners) + supervisionCard(h.supervision);
 
       out += '<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h4 style="margin:0">All Students (' + h.students.length + ')</h4>' + studentViewControls() + '</div>';
       if (state.studentDisplay === 'cards') out += studentCardsHtml(h.students, 'hod');
@@ -3307,7 +3453,7 @@
     function loginsCard(c) {
       var o = '<div class="card"><h4 style="margin:0 0 12px">Staff Logins &amp; Roles</h4><div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>' + (c.logins || []).map(function (u) { return '<tr><td>' + esc(u.regNumber) + '</td><td>' + esc(u.fullName) + '<br><span class="small muted">' + esc(u.email) + '</span></td><td>' + esc(ROLE_LABELS[u.role] || u.role) + '</td><td>' + (u.active ? '<span class="badge ok">Active</span>' : '<span class="badge bad">Inactive</span>') + '</td><td>' + (String(u.id) === String(state.user.id) ? '' : '<button class="btn btn-outline btn-sm" data-action="login-toggle" data-id="' + esc(u.id) + '" data-on="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
       o += '<h4 style="margin:16px 0 8px">Create or update a login</h4><form id="login-form"><div class="row-cols" style="--cols:4"><div class="field"><label>Staff ID</label><input type="text" name="regNumber" required placeholder="ACA1234"></div><div class="field"><label>Full name</label><input type="text" name="fullName" required></div><div class="field"><label>Email</label><input type="email" name="email" required></div><div class="field"><label>Role</label><select name="role"><option value="Staff">Staff</option><option value="Submission_Inspector">Submission Inspector</option><option value="HoD">Head of Department</option><option value="PG_Coordinator">PG Coordinator</option></select></div></div><button class="btn btn-primary btn-sm" type="submit">Save login</button></form>' +
-        '<p style="margin:12px 0 0"><button class="btn btn-outline btn-sm" data-action="backup">Back up all data now</button> <span class="small muted">Copies the spreadsheet into a Backups folder.</span></p></div>';
+        '</div>';
       return o;
     }
     function viewAudit() {
@@ -3323,13 +3469,14 @@
     }
     function viewSuperAdmin() {
       if (!state.impUsers) return '<div class="page-loading"><span class="spinner"></span></div>';
-      var out = '<h2 style="margin:0 0 4px">Super Admin</h2><p class="muted" style="margin:0 0 16px">Sign in as any active user with that user&rsquo;s full access. Every sign-in, sign-out and action is written to the Audit Log under your name.</p>' + calendarMiniCard() +
+      var out = '<h2 style="margin:0 0 4px">Super Admin</h2><p class="muted" style="margin:0 0 16px">Sign in as any active user with that user&rsquo;s full access, or open a read-only preview to see their dashboard without being able to change anything. Both are written to the Audit Log under your name &mdash; sign-ins and previews are logged separately.</p>' + calendarMiniCard() +
         '<div class="card"><div class="field"><label>Find a user</label><input type="search" id="imp-search" placeholder="Name, ID, email or role" autocomplete="off"></div>';
       if (!state.impUsers.length) return out + '<p class="muted">No other active users.</p></div>';
       out += '<div class="table-wrap"><table><thead><tr><th>Name</th><th>ID</th><th>Role</th><th>Email</th><th></th></tr></thead><tbody>';
       state.impUsers.forEach(function (u) {
         out += '<tr data-imp="' + esc((u.fullName + ' ' + u.regNumber + ' ' + u.email + ' ' + (ROLE_LABELS[u.role] || u.role)).toLowerCase()) + '"><td>' + esc(u.fullName) + '</td><td class="small">' + esc(u.regNumber) + '</td><td>' + esc(ROLE_LABELS[u.role] || u.role) + '</td><td class="small">' + esc(u.email) + '</td>' +
-          '<td><button class="btn btn-outline btn-sm" data-action="impersonate" data-id="' + esc(u.regNumber) + '">Sign in as</button></td></tr>';
+          '<td><button class="btn btn-outline btn-sm" data-action="impersonate" data-id="' + esc(u.regNumber) + '">Sign in as</button> ' +
+          '<button class="btn btn-outline btn-sm" data-action="preview" data-id="' + esc(u.regNumber) + '">Preview (read-only)</button></td></tr>';
       });
       return out + '</tbody></table></div></div>';
     }
@@ -3360,156 +3507,29 @@
         var stt = m.status || 'Logged';
         var badge = stt === 'Scheduled' ? '<span class="badge info">Scheduled</span>' : stt === 'Cancelled' ? '<span class="badge">Cancelled</span>' : (m.ackAt ? '<span class="badge ok">Acknowledged</span>' : '<span class="badge warn">Awaiting acknowledgement</span>');
         o += '<tr><td>' + esc(m.studentName) + '</td><td class="small">' + esc(m.date) + (m.time ? ' ' + esc(m.time) : '') + (m.venue ? '<br>' + esc(m.venue) : '') + '</td><td>' + badge + '</td>' +
-          '<td class="small pre">' + esc(m.notes || '\u2014') + (m.actions ? '\nActions: ' + esc(m.actions) : '') + '</td>' +
-          '<td>' + (stt === 'Scheduled' ? '<button class="btn btn-primary btn-sm" data-action="meet-complete" data-id="' + esc(m.id) + '">Record notes</button> <button class="btn btn-outline btn-sm" data-action="meet-cancel" data-id="' + esc(m.id) + '">Cancel</button>' : '') + '</td></tr>';
+          '<td class="small pre">' + esc(m.notes || '\u2014') + (m.studentAgenda ? '\nStudent\u2019s agenda: ' + esc(m.studentAgenda) : '') + (m.actions ? '\nActions: ' + esc(m.actions) : '') + (m.seenBy ? '\nSeen by: ' + esc(m.seenBy) : '') + '</td>' +
+          '<td>' + (stt === 'Logged' && state.user && ['Staff', 'PG_Coordinator', 'HoD'].indexOf(state.user.role) !== -1 && String(m.seenBy || '').indexOf(state.user.fullName) === -1 && m.createdBy !== state.user.fullName ? '<button class="btn btn-outline btn-sm" data-action="meet-seen" data-id="' + esc(m.id) + '">Mark seen</button>' : '') + (stt === 'Scheduled' ? '<button class="btn btn-primary btn-sm" data-action="meet-complete" data-id="' + esc(m.id) + '">Record notes</button> <button class="btn btn-outline btn-sm" data-action="meet-cancel" data-id="' + esc(m.id) + '">Cancel</button>' : '') + '</td></tr>';
       });
       return o + '</tbody></table></div></div>';
     }
     function viewStaff() {
-  if (!state.staff) return '<div class="page-loading"><span class="spinner"></span></div>';
-  var st = state.staff, out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>' + annCard_(st.announcements) + calendarMiniCard();
-  var stageFilter = '', programmeFilter = '', stalledFilter = false;
-
-  // Summary tiles
-  out += '<div class="card-grid cols-4" style="margin-bottom:20px">';
-  out += '<div class="card"><div class="stat"><div class="stat-value">' + (st.totalStudents || 0) + '</div><div class="stat-label">Students Supervised</div></div></div>';
-  out += '<div class="card"><div class="stat"><div class="stat-value">' + (st.stalledCount || 0) + '</div><div class="stat-label">Stalled (>90 days)</div></div></div>';
-  out += '<div class="card"><div class="stat"><div class="stat-value">' + (st.awaitingEndorsement || 0) + '</div><div class="stat-label">Awaiting Endorsement</div></div></div>';
-  out += '<div class="card"><div class="stat"><div class="stat-value">' + (st.meetingsThisMonth || 0) + '</div><div class="stat-label">Meetings This Month</div></div></div>';
-  out += '</div>';
-
-  // Filter and sort controls
-  out += '<p class="small muted" style="margin:8px 0 0">Show: <select id="staff-stage-filter" class="sel-box"><option value="">All stages</option>' + (CFG.JOURNEY_STAGES || []).map(function (s) { return '<option value="' + esc(s) + '"' + (s === stageFilter ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '</select> | <select id="staff-prog-filter" class="sel-box"><option value="">All programmes</option>' + (function () { var p = new Set(); (st.students || []).forEach(function (s) { p.add(s.programme); }); return Array.from(p).map(function (pr) { return '<option value="' + esc(pr) + '"' + (pr === programmeFilter ? ' selected' : '') + '>' + esc(pr) + '</option>'; }).join(''); })() + '</select> | <input type="checkbox" id="staff-stalled-filter" ' + (stalledFilter ? 'checked' : '') + ' style="margin-left:4px"> Show stalled only</p>';
-
-  // Filter and sort for My Students
-  var filteredStudents = st.students.filter(function (s) {
-    var stageOk = !stageFilter || s.currentStage === stageFilter;
-    var progOk = !programmeFilter || s.programme === programmeFilter;
-    var stalledOk = stalledFilter !== true || (s.health === 'red');
-    return stageOk && progOk && stalledOk;
-  });
-
-  // Sort by health priority (red first, then amber, then green)
-  filteredStudents.sort(function (a, b) {
-    var da = a.health === 'red' ? 0 : a.health === 'amber' ? 30 : 90;
-    var db = b.health === 'red' ? 0 : b.health === 'amber' ? 30 : 90;
-    return db - da;
-  });
-
-  // Add health indicator and last contact date
-  filteredStudents = filteredStudents.map(function (s) {
-    var health = s.health || 'green';
-    if (s.health === 'red') health = 'red';
-    else if (daysSince_(s.updatedAt) > 60) health = 'amber';
-    var lastMeet = ''; // placeholder - populated from Meetings table in production
-    var roleBadge = s.myRole === 'Main Supervisor' ? 'ok' : 'info';
-    return {
-      regNumber: s.regNumber, fullName: fullNameOf_(s), programme: s.programme, specialisation: s.specialisation,
-      currentStage: s.currentStage, health: health, lastMeetingDate: lastMeet,
-      myRole: s.myRole, other: s.other,
-      roleBadge: roleBadge
-    };
-  });
-
-  // Students with quick action flags
-  var actionList = (st.actionList || []).map(function (a) {
-    return { regNumber: a.regNumber, studentName: a.studentName, type: a.type,
-      waitingDays: a.waitingDays, needsEndorsement: a.needsEndorsement || false };
-  });
-
-  out += '<div class="card"><h4 style="margin:0 0 8px">Action Items</h4>';
-  if (actionList.length) {
-    out += '<ul>';
-    actionList.forEach(function (a) {
-      var badge = a.needsEndorsement ? '<span class="badge warn">needs endorsement</span>' : '';
-      out += '<li>' + esc(a.studentName) + ' — ' + esc(a.type) + ' waiting ' + a.waitingDays + ' days ' + badge +
-        '<button class="btn btn-sm btn-outline" data-action="endorse" data-id="' + a.regNumber + '">Endorse</button> ' +
-        '<button class="btn btn-sm btn-outline" data-action="nudge" data-id="' + a.regNumber + '">Nudge</button> ' +
-        '<button class="btn btn-sm btn-outline" data-action="sched-meeting" data-id="' + a.regNumber + '">Schedule</button></li>';
-    });
-    out += '</ul>';
-  } else {
-    out += '<p class="muted">No action items.</p>';
-  }
-  out += '</div>';
-
-  // Calendar: upcoming meetings
-  out += '<div class="card"><h4 style="margin:0 0 8px">Upcoming Meetings</h4>';
-  var calendar = st.calendar || [];
-  if (calendar.length) {
-    out += '<ul>';
-    calendar.forEach(function (m) {
-      out += '<li>' + esc(m.studentName) + ' — ' + esc(m.date) + ' ' + (m.time || '') + ' <button class="btn btn-sm btn-outline" data-action="meet-complete" data-id="' + m.id + '">Notes</button></li>';
-    });
-    out += '</ul>';
-  } else {
-    out += '<p class="muted">No upcoming meetings.</p>';
-  }
-  out += '</div>';
-
-  // Co-supervisor coordination status
-  out += '<div class="card"><h4 style="margin:0 0 8px">Co-Supervision Status</h4>';
-  var coSup = st.coSupervision || {};
-  if (Object.keys(coSup).length) {
-    out += '<ul>';
-    Object.keys(coSup).forEach(function (reg) {
-      var s = coSup[reg];
-      out += '<li>' + esc(reg) + ': Main ' + esc(s.mainSupervisorId || '—') + ', Co ' + esc(s.coSupervisorId || '—') + ' seen: ' + esc(s.coSeen);
-    });
-    out += '</ul>';
-  } else {
-    out += '<p class="muted">No co-supervision data.</p>';
-  }
-  out += '</div>';
-
-  // Capacity view
-  out += '<div class="card"><h4 style="margin:0 0 8px">Capacity View</h4>';
-  var cap = st.capacity || [];
-  if (cap.length) {
-    out += '<ul>';
-    cap.forEach(function (c) {
-      out += '<li>' + esc(c.programme) + ': ' + Object.keys(c.stages || {}).length + ' students across ' + Object.values(c.stages || {}).length + ' stages</li>';
-    });
-    out += '</ul>';
-  } else {
-    out += '<p class="muted">No capacity data.</p>';
-  }
-  out += '</div>';
-
-  // Students table with health indicators
-  out += '<div class="card"><h4 style="margin:0 0 8px">My Supervised Students</h4>';
-  if (!filteredStudents.length) out += '<p class="muted">No students match the current filters.</p>';
-  else {
-    out += '<div class="table-wrap"><table><thead><tr><th>Photo</th><th>Student</th><th>Programme</th><th>Stage</th><th>Health</th><th>My role</th><th>Other supervisor</th><th>Contact</th><th></th></tr></thead><tbody>';
-    filteredStudents.forEach(function (s) {
-      var healthClass = s.health === 'green' ? 'ok' : s.health === 'amber' ? 'warn' : 'bad';
-      var roleBadge = s.myRole === 'Main Supervisor' ? 'ok' : 'info';
-      out += '<tr>' +
-        '<td>' + (s.passportFileId ? '<img src="' + thumb(s.passportFileId) + '" style="width:36px;height:36px;border-radius:6px;object-fit:cover">' : '<div class="photo-placeholder" style="width:36px;height:36px;font-size:14px">?</div>') + '</td>' +
-        '<td>' + esc(s.fullName) + '<br><span class="small muted">' + esc(s.regNumber) + '</span></td>' +
-        '<td>' + esc(s.programme) + '<br><span class="small muted">' + esc(s.specialisation) + '</span></td>' +
-        '<td class="small">' + esc(s.currentStage) + (s.health === 'red' ? ' <span class="badge bad">red</span>' : (s.health === 'amber' ? ' <span class="badge warn">amber</span>' : '')) + '</td>' +
-        '<td><span class="badge ' + roleBadge + '">' + esc(s.myRole) + '</span></td>' +
-        '<td class="small">' + (s.other ? esc(s.other.name) + (s.other.email ? '<br><a href="mailto:' + esc(s.other.email) + '">' + esc(s.other.email) + '</a>' : '') : '—') + '</td>' +
-        '<td class="small"><a href="mailto:' + esc(s.email) + '">' + esc(s.email) + '</a><br>' + esc(s.phoneNumber) + '</td>' +
-        '<td><button class="btn btn-outline btn-sm" data-action="sched-meeting" data-id="' + esc(s.regNumber) + '">Schedule</button> <button class="btn btn-outline btn-sm" data-action="log-meeting" data-id="' + esc(s.regNumber) + '">Log</button> <button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '">Msgs</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '">Journey</button></tr>';
-    });
-    out += '</tbody></table></div>';
-  }
-
-  out += '</div>' + meetingsCardHtml(st) + '<div class="card"><h4 style="margin:0 0 12px">Submissions from My Students</h4>';
-  if (!st.submissions.length) out += '<p class="muted">No submissions yet.</p>';
-  else {
-    out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Type</th><th>Status</th><th>Files</th><th>Inspector comments</th><th>Endorsed</th><th></th></tr></thead><tbody>';
-    st.submissions.forEach(function (sub) {
-      out += '<tr><td>' + esc(sub.studentName) + '</td><td>' + esc(sub.type) + '</td><td>' + statusBadge(sub.status) + '</td><td class="small">' + (fileLinks(sub.driveFileUrls) ? readBtn(sub) + '<br>' + fileLinks(sub.driveFileUrls) : '—') + '</td>' +
-        '<td class="small">' + esc(sub.inspectorComments || '—') + '</td><td class="small">' + (sub.endorsedBy ? '&#10003; ' + esc(sub.endorsedBy) : '—') + '</td>' +
-        '<td><button class="btn btn-outline btn-sm" data-action="add-note" data-id="' + esc(sub.id) + '">Add Note</button> ' + (sub.endorsedBy ? '' : '<button class="btn btn-primary btn-sm" data-action="endorse" data-id="' + esc(sub.id) + '">Endorse</button>') + '</td></tr>';
-    });
-    out += '</tbody></table></div>';
-  }
-  return out + '</div>';
-}
+      if (!state.staff) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var st = state.staff, out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>' + annCard_(st.announcements) + calendarMiniCard();
+      out += staffTilesHtml(st) + staffAttentionHtml(st) + '<div class="grid cols-2" style="margin-bottom:20px">' + supCalendarCard(st) + capacityCard(st) + '</div>';
+      out += presentationIntentStaffCard(st) + msgFormHtml();
+      out += staffStudentsCard(st) + '<div class="card"><h4 style="margin:0 0 12px">Submissions from My Students</h4>';
+      if (!st.submissions.length) out += '<p class="muted">No submissions yet.</p>';
+      else {
+        out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Type</th><th>Status</th><th>Files</th><th>Inspector comments</th><th>Endorsed</th><th></th></tr></thead><tbody>';
+        st.submissions.forEach(function (sub) {
+          out += '<tr><td>' + esc(sub.studentName) + '</td><td>' + esc(sub.type) + '</td><td>' + statusBadge(sub.status) + (sub.awaitingMe && sub.dueIn !== null ? '<br><span class="small ' + (sub.dueIn < 0 ? 'badge warn' : 'muted') + '">' + (sub.dueIn < 0 ? (-sub.dueIn) + ' day(s) overdue' : 'reply due in ' + sub.dueIn + ' day(s)') + '</span>' : '') + '</td><td class="small">' + (fileLinks(sub.driveFileUrls) ? readBtn(sub) + '<br>' + fileLinks(sub.driveFileUrls) : '—') + '</td>' +
+            '<td class="small">' + esc(sub.inspectorComments || '—') + '</td><td class="small">' + (sub.endorsedBy ? '&#10003; ' + esc(sub.endorsedBy) : '—') + '</td>' +
+            '<td><button class="btn btn-outline btn-sm" data-action="sub-thread" data-id="' + esc(sub.id) + '">Feedback</button> <button class="btn btn-outline btn-sm" data-action="add-note" data-id="' + esc(sub.id) + '">Add Note</button> ' + (sub.endorsedBy ? '' : '<button class="btn btn-primary btn-sm" data-action="endorse" data-id="' + esc(sub.id) + '">Endorse</button>') + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      return out + '</div>' + meetingsCardHtml(st) + actionsCard(st.actions, 'staff');
+    }
 
     /* ---- Inspector / Coordinator submissions review ---- */
     function simBlock(sub) {
@@ -3576,6 +3596,16 @@
           if (!confirm('Sign in as this user? You will have their full access, and your actions are recorded under your Super Admin account.')) break;
           state.busy = true; clearMsgs(); render();
           authed('api_impersonate', id).then(function (r) {
+            state.adminToken = state.token; state.adminUser = state.user;
+            sessionStorage.setItem('pgs_admin_token', state.token);
+            state.token = r.token; sessionStorage.setItem('pgs_token', r.token);
+            state.user = r.user; state.impersonator = r.impersonator;
+            resetData_(); state.busy = false; navigate(defaultView_());
+            }).catch(function (err) { state.busy = false; setError(err); });
+          break;
+        case 'preview':
+          state.busy = true; clearMsgs(); render();
+          authed('api_previewAsUser', id).then(function (r) {
             state.adminToken = state.token; state.adminUser = state.user;
             sessionStorage.setItem('pgs_admin_token', state.token);
             state.token = r.token; sessionStorage.setItem('pgs_token', r.token);
@@ -3660,7 +3690,7 @@
           authed('api_getNotifications').then(function (r) {
             state.unread = 0; showModal('<h3 style="margin:0 0 12px">Notifications</h3><div style="max-height:320px;overflow:auto">' + (r.items.length ? r.items.map(function (n) { return '<div style="padding:6px 0;border-bottom:1px solid var(--border-soft)">' + (n.read ? '' : '<span class="badge info">new</span> ') + esc(n.text) + '<br><span class="small muted">' + esc(n.at) + '</span></div>'; }).join('') : '<p class="muted">Nothing yet.</p>') + '</div><button class="btn btn-outline" data-action="close-modal" style="margin-top:12px">Close</button>');
             var b = document.getElementById('bell-n'); if (b) b.textContent = '';
-            return authed('api_markNotificationsRead');
+            return authed('api_markNotificationsRead').catch(function () {});   // a no-op under a read-only preview; not worth surfacing
           }).catch(setError);
           break;
         case 'close-tour': try { localStorage.setItem('pgTour_' + state.user.regNumber, '1'); } catch (e) {} closeModal(); break;
@@ -3751,8 +3781,9 @@
           break;
         }
         case 'sched-meeting': {
-          var smToday = new Date().toISOString().slice(0, 10);
-          showModal('<h3 style="margin:0 0 12px">Schedule a meeting &mdash; ' + esc(id) + '</h3><div class="field"><label>Date</label><input type="date" id="sm-date" min="' + smToday + '"></div><div class="field"><label>Time</label><input type="time" id="sm-time" value="10:00"></div>' +
+          var smToday = new Date().toISOString().slice(0, 10), smSlots = '', smD = new Date(); smD.setDate(smD.getDate() + 1);
+          for (var smN = 0; smN < 4;) { if (smD.getDay() % 6 !== 0) { var smIso = smD.toISOString().slice(0, 10); ['10:00', '14:00'].forEach(function (tm) { smSlots += '<button type="button" class="btn btn-outline btn-sm" style="margin:0 6px 6px 0" data-action="sm-slot" data-d="' + smIso + '" data-t="' + tm + '">' + smD.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + tm + '</button>'; }); smN++; } smD.setDate(smD.getDate() + 1); }
+          showModal('<h3 style="margin:0 0 12px">Schedule a meeting &mdash; ' + esc(id) + '</h3><div class="field"><label>Suggested slots</label><div>' + smSlots + '</div></div><div class="field"><label>Date</label><input type="date" id="sm-date" min="' + smToday + '"></div><div class="field"><label>Time</label><input type="time" id="sm-time" value="10:00"></div>' +
             '<div class="field"><label>Venue</label><input type="text" id="sm-venue" maxlength="200"></div><div class="field"><label>Agenda (optional)</label><textarea id="sm-agenda" rows="3" maxlength="1000"></textarea></div>' +
             '<p class="small muted">The student and supervisors get an email with a calendar file they can open to add the meeting to their calendar.</p><div class="row"><button class="btn btn-primary" data-action="sched-save" data-id="' + esc(id) + '">Schedule</button><button class="btn btn-outline" data-action="close-modal">Cancel</button></div>');
           break;
@@ -3923,6 +3954,66 @@
           break;
         case 'reset-pw':
           if (confirm('Reset the password for ' + id + '? A new one-time password will be emailed to the student.')) act(authed('api_resetStudentPassword', id).then(function (r) { if (r && r.emailed === false) alert('The email could not be sent. Give the student this one-time password:\n\n' + r.tempPassword); }), 'Password reset.', function () { loadView('coordinator'); });
+          break;
+        case 'act-new':
+          showModal('<h3 style="margin:0 0 12px">Add an action item \u2014 ' + esc(id) + '</h3><div class="field"><label>Action</label><textarea id="ac-text" rows="3" maxlength="500"></textarea></div><div class="field"><label>Who should do it?</label><select id="ac-owner"><option value="Student">The student</option><option value="Supervisor">Me (supervisor)</option></select></div><div class="field"><label>Due date (optional)</label><input type="date" id="ac-due" min="' + new Date().toISOString().slice(0, 10) + '"></div><div class="row"><button class="btn btn-primary" data-action="act-save" data-id="' + esc(id) + '">Add</button><button class="btn btn-outline" data-action="close-modal">Cancel</button></div>');
+          break;
+        case 'act-save':
+          act(authed('api_addAction', id, document.getElementById('ac-text').value, document.getElementById('ac-owner').value, document.getElementById('ac-due').value, ''), 'Action item added.', function () { closeModal(); loadView(state.view); });
+          break;
+        case 'act-done':
+          act(authed('api_completeAction', id), 'Marked as done.', function () { loadView(state.view); });
+          break;
+        case 'review-new': {
+          var rvY = new Date().getFullYear();
+          showModal('<h3 style="margin:0 0 12px">Progress review \u2014 ' + esc(id) + '</h3><div class="field"><label>Period</label><input type="text" id="rv-period" maxlength="60" value="' + (rvY - 1) + '/' + rvY + ' ' + (new Date().getMonth() < 6 ? 'second' : 'first') + ' semester"></div><div class="field"><label>Progress</label><select id="rv-rating"><option>Excellent</option><option selected>Good</option><option>Satisfactory</option><option>Unsatisfactory</option></select></div><div class="field"><label>Recommendation</label><select id="rv-rec"><option>Continue</option><option>Concern</option><option>At risk</option></select></div><div class="field"><label>Comments (required for Concern / At risk)</label><textarea id="rv-cm" rows="3" maxlength="1500"></textarea></div><p class="small muted">The student and the PG Coordinator can see this review.</p><div class="row"><button class="btn btn-primary" data-action="review-save" data-id="' + esc(id) + '">Save review</button><button class="btn btn-outline" data-action="close-modal">Cancel</button></div>');
+          break;
+        }
+        case 'review-save':
+          act(authed('api_saveReview', id, document.getElementById('rv-period').value, document.getElementById('rv-rating').value, document.getElementById('rv-rec').value, document.getElementById('rv-cm').value), 'Review saved; the student has been notified.', function () { closeModal(); loadView(state.view); });
+          break;
+        case 'concern-new':
+          showModal('<h3 style="margin:0 0 12px">Raise a confidential concern \u2014 ' + esc(id) + '</h3><div class="field"><label>Category</label><select id="cn-cat">' + ['Not responding / out of contact', 'Welfare or wellbeing', 'Academic progress', 'Funding or resources', 'Supervisor relationship', 'Other'].map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></div><div class="field"><label>What is the concern?</label><textarea id="cn-text" rows="4" maxlength="1500"></textarea></div><p class="small muted">This goes only to the PG Coordinator. The student cannot see it.</p><div class="row"><button class="btn btn-primary" data-action="concern-save" data-id="' + esc(id) + '">Send to coordinator</button><button class="btn btn-outline" data-action="close-modal">Cancel</button></div>');
+          break;
+        case 'concern-save':
+          act(authed('api_raiseConcern', id, document.getElementById('cn-cat').value, document.getElementById('cn-text').value), 'Concern sent to the PG Coordinator.', function () { closeModal(); loadView(state.view); });
+          break;
+        case 'concern-resolve': {
+          var crn = prompt('Resolution note (optional):'); if (crn === null) break;
+          act(authed('api_resolveConcern', id, crn), 'Concern marked as resolved.', function () { loadView(state.view); });
+          break;
+        }
+        case 'handover':
+          authed('api_getHandover', id).then(function (h) { showModal(handoverHtml_(h)); }).catch(setError);
+          break;
+        case 'sub-thread': openThread_(id); break;
+        case 'sub-thread-send': {
+          var thT = document.getElementById('thr-text').value; if (!thT.trim()) break;
+          authed('api_addSubComment', id, thT).then(function () { openThread_(id); }).catch(setError);
+          break;
+        }
+        case 'checkin-save':
+          act(authed('api_submitCheckIn', document.getElementById('ck-status').value, document.getElementById('ck-note').value), 'Check-in sent. Thank you.', function () { loadView(state.view); });
+          break;
+        case 'agenda-edit': {
+          var agM = ((state.dashboard && state.dashboard.meetings) || []).filter(function (m) { return String(m.id) === String(id); })[0];
+          var agT = prompt('Points you would like to discuss at this meeting:', agM ? (agM.studentAgenda || '') : ''); if (agT === null) break;
+          act(authed('api_saveMeetingAgenda', id, agT), 'Agenda saved; your supervisors have been told.', function () { loadView(state.view); });
+          break;
+        }
+        case 'meet-ics': {
+          var icM = ((state.dashboard && state.dashboard.meetings) || []).filter(function (m) { return String(m.id) === String(id); })[0];
+          if (icM) downloadText_('supervision-meeting.ics', 'text/calendar', icsEvents_([{ date: icM.date, time: icM.time, title: 'Supervision meeting', venue: icM.venue }]));
+          break;
+        }
+        case 'meet-seen':
+          act(authed('api_markMeetingSeen', id), 'Marked as seen.', function () { loadView(state.view); });
+          break;
+        case 'sup-cal-ics':
+          downloadText_('my-supervision-calendar.ics', 'text/calendar', icsEvents_(supCalendarEvents_(state.staff)));
+          break;
+        case 'sm-slot':
+          document.getElementById('sm-date').value = el.getAttribute('data-d'); document.getElementById('sm-time').value = el.getAttribute('data-t');
           break;
         case 'log-meeting':
           var mn = prompt('Meeting notes:'); if (!mn) break;
