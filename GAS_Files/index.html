@@ -1139,7 +1139,7 @@
       var MUTE_KEY = 'kms_pg_music_muted';
       var VOL_KEY = 'kms_pg_music_volume';
       var HOST = 'https://physics-pg.pages.dev/';
-      var TRACKS = [HOST + 'audio/music1.mp3'];   // single track, served from the deployed dist/audio copy
+      var TRACKS = [HOST + 'audio/music1.mp3?v=' + Date.now()];   // single track, served from the deployed dist/audio copy
       var DEFAULT_VOL = 0.3;
       var idx = 0, started = false, consecutiveErrors = 0;
       if (!audio || !btn) return { sync: function () {} };
