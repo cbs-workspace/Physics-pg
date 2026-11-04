@@ -352,6 +352,7 @@ copyAsset("images/PG_Journey_Animated.svg");
 // the previous 15-step poster is no longer shown, but keep its URL resolving
 copyAsset("images/PG_Journey_Infographic.png");
 copyAsset("audio/music1.mp3");
+copyAsset("audio/music2.mp3");
 
 /** Retired pages → Home (permanent). Cloudflare Pages serves any real file
  *  first, so these only apply while /about/ and /programmes/ do not exist. */
