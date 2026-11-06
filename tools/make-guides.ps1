@@ -25,7 +25,8 @@ function Save-Doc($path) {
     $script:doc.Close()
 }
 
-$out = "C:\Users\Abel U. Osagie\Desktop\Website Projects\Physics-pg\docs"
+$out = Join-Path $PSScriptRoot "..\docs\guides"
+if (-not (Test-Path $out)) { New-Item -ItemType Directory -Path $out -Force | Out-Null }
 
 # ================= STUDENT =================
 New-Doc

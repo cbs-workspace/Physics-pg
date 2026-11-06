@@ -369,7 +369,7 @@ changes:
 
 1. Paste the changed file(s) into the Apps Script editor (`Code.gs` = server
    logic; `index` = all portal + public-site UI — there are only these two files).
-   First-time setup is in the README (Steps 3–4).
+   First-time setup is in [`../README.md`](../README.md) (Steps 3–4).
 2. **Deploy → Manage deployments → ✎ Edit → Version: *New version* → Deploy.**
    This keeps the same `/exec` URL the site links to — **never** create a new
    deployment (a new URL would break every link, including the static site's

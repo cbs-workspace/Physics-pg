@@ -3,7 +3,11 @@
 <head>
   <base target="_top">
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#047857">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%23047857'/%3E%3Ctext x='90' y='118' font-size='88' font-family='Georgia,serif' font-weight='700' text-anchor='middle' fill='white'%3EPG%3C/text%3E%3C/svg%3E">
   <title>Department of Physics Postgraduate Journey — University of Abuja</title>
   <style>
     /* KMSS palette — emerald accents on slate neutrals, bright over imagery */
@@ -89,7 +93,7 @@
     .sidebar-brand img { width: 44px; height: 44px; border-radius: 999px; background: #fff; object-fit: contain; padding: 2px; }
     .logo-fallback { width: 44px; height: 44px; border-radius: 999px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
     .sidebar-brand .name { color: var(--sidebar-brand); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; font-size: 12px; line-height: 1.3; }
-    .sidebar-brand .sub { color: var(--sidebar-text-muted); font-size: 11px; }
+    .sidebar-brand .sub { color: var(--sidebar-text-muted); font-size: 12px; }
     .nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
     .nav button { text-align: left; background: transparent; border: 0; color: var(--sidebar-text); padding: 9px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; }
     .nav button:hover { background: var(--sidebar-hover); }
@@ -130,6 +134,37 @@
     .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 8px; padding: 9px 14px; font-weight: 600; font-size: 14px; }
     .btn-primary { background: var(--primary); color: var(--primary-contrast); } .btn-primary:hover { background: var(--primary-hover); }
     .btn-outline { background: var(--surface); border-color: var(--border); color: var(--text); } .btn-outline:hover { background: var(--surface-2); }
+
+
+
+    /* ---- Stage 5: mobile & accessibility ---- */
+    .tbl-scroll { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
+    .skip-link { position: absolute; left: 8px; top: -60px; z-index: 900; background: var(--surface); color: var(--text-strong); border: 2px solid var(--primary); border-radius: 8px; padding: 8px 14px; }
+    .skip-link:focus { top: 8px; }
+    :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    #ci:focus { outline: none; }
+    .nav button[aria-current="page"] { background: var(--sidebar-active-bg); color: #fff; }
+    /* ---- Stage 2: non-destructive busy state ---- */
+    #busybar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 800; overflow: hidden; display: none; background: transparent; }
+    body.is-busy #busybar { display: block; }
+    #busybar::after { content: ""; position: absolute; inset: 0; width: 35%; background: var(--primary); animation: busyslide 1.1s ease-in-out infinite; }
+    @keyframes busyslide { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+    body.is-busy #ci { transition: opacity .15s; opacity: .72; }
+    body.is-busy #ci .btn, body.is-busy #ci button[data-action], body.is-busy #ci button[type=submit] { pointer-events: none; }
+    @media (prefers-reduced-motion: reduce) { #busybar::after { animation: none; width: 100%; opacity: .5; } }
+    /* ---- Stage 1: dialogs & toasts ---- */
+    .dlg-msg { margin: 0 0 14px; white-space: pre-line; line-height: 1.5; user-select: text; }
+    .dlg-title { margin: 0 0 10px; font-size: 17px; }
+    .dlg-field textarea, .dlg-field input { width: 100%; }
+    .dlg-field textarea { min-height: 96px; resize: vertical; }
+    .dlg-err { color: var(--danger); font-size: 13px; min-height: 18px; margin: 4px 0 8px; }
+    .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    .btn-danger-solid { background: var(--danger); border-color: var(--danger); color: #fff; } .btn-danger-solid:hover { filter: brightness(.92); }
+    #toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 700; display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(420px, calc(100vw - 24px)); pointer-events: none; }
+    .toast { pointer-events: auto; width: 100%; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-left: 4px solid var(--info); border-radius: 10px; box-shadow: var(--shadow); padding: 10px 14px; font-size: 14px; line-height: 1.4; cursor: pointer; animation: toast-in .18s ease-out; }
+    .toast.success { border-left-color: var(--ok); } .toast.error { border-left-color: var(--danger); } .toast.warn { border-left-color: var(--warn); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
     .btn-danger { background: var(--surface); border-color: var(--danger-border); color: var(--danger); } .btn-danger:hover { background: var(--danger-soft); }
     .btn-sm { padding: 5px 10px; font-size: 13px; } .btn-block { width: 100%; justify-content: center; }
     .btn:disabled { opacity: .6; cursor: not-allowed; }
@@ -165,7 +200,7 @@
     .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
     .toolbar .field { margin-bottom: 0; } .spacer { flex: 1; }
     .muted { color: var(--text-muted); } .small { font-size: 12px; } .row { display: flex; align-items: center; gap: 10px; }
-    .nav button .nav-badge { margin-left: 8px; background: var(--danger); color: #fff; border-radius: 999px; font-size: 11px; font-weight: 600; padding: 1px 7px; vertical-align: middle; }
+    .nav button .nav-badge { margin-left: 8px; background: var(--danger); color: #fff; border-radius: 999px; font-size: 12px; font-weight: 600; padding: 1px 7px; vertical-align: middle; }
     .sel-box { display: inline-flex; align-items: center; margin-right: 8px; }
     .bulk-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; padding: 8px 10px; border: 1px solid var(--border-soft); border-radius: 8px; background: var(--surface-2); }
     .tpl-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
@@ -174,7 +209,7 @@
     .badge.ok { background: var(--ok-soft); color: var(--ok); border-color: var(--ok-border); } .badge.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn-border); }
     .badge.bad { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); } .badge.info { background: var(--info-soft); color: var(--info); border-color: var(--info-border); }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    thead th { text-align: left; background: var(--thead-bg); color: var(--text-muted); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    thead th { text-align: left; background: var(--thead-bg); color: var(--text-muted); text-transform: uppercase; font-size: 12px; letter-spacing: .04em; padding: 9px 12px; border-bottom: 1px solid var(--border); }
     tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); color: var(--text); } tbody tr:hover { background: var(--surface-2); }
     tbody tr:last-child td { border-bottom: 0; }
     .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
@@ -217,9 +252,9 @@
     .jt-n.optional .jt-dot { border-style: dashed; }
     .jt-g { position: absolute; top: -7px; right: calc(50% - 28px); width: 15px; height: 15px; background: #fbbf24; color: #78350f; font-size: 9px; font-weight: 800; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; border-radius: 2px; }
     .jt-g b { transform: rotate(-45deg); }
-    .jt-l { font-size: 11px; line-height: 1.25; margin-top: 6px; color: var(--text-muted); word-break: break-word; }
+    .jt-l { font-size: 12px; line-height: 1.25; margin-top: 6px; color: var(--text-muted); word-break: break-word; }
     .jt-n.cur .jt-l { color: var(--text); font-weight: 700; }
-    .jt-leg { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 11.5px; color: var(--text-muted); }
+    .jt-leg { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size:12px; color: var(--text-muted); }
     .jt-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
     @keyframes jtpulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 100% { box-shadow: 0 0 0 14px rgba(16,185,129,0); } }
     @media (max-width: 640px) { .jt { grid-template-columns: repeat(4, 1fr); } }
@@ -264,7 +299,7 @@
     .p-brand:hover { text-decoration: none; }
     .p-brand img { width: 40px; height: 40px; border-radius: 999px; background: #fff; object-fit: contain; padding: 2px; border: 1px solid var(--border); }
     .p-brand .name { color: var(--primary-strong); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; line-height: 1.25; }
-    .p-brand .sub { color: var(--text-muted); font-size: 11px; }
+    .p-brand .sub { color: var(--text-muted); font-size: 12px; }
     .p-tabs { display: flex; gap: 2px; flex: 1; justify-content: center; flex-wrap: wrap; }
     .p-tabs a { color: var(--text-muted); font-weight: 600; font-size: 14px; padding: 8px 12px; border-radius: 8px; text-decoration: none; white-space: nowrap; }
     .p-tabs a:hover { background: var(--surface-2); color: var(--text-strong); text-decoration: none; }
@@ -315,17 +350,17 @@
     .ann-item:last-child { border-bottom: 0; padding-bottom: 0; }
     .ann-item .ann-title { font-weight: 700; color: var(--text-strong); }
     .ann-item .ann-body { color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-top: 3px; white-space: pre-wrap; }
-    .ann-item .when { color: var(--text-muted); font-size: 11.5px; margin-top: 4px; }
+    .ann-item .when { color: var(--text-muted); font-size:12px; margin-top: 4px; }
     /* ---- Announcements marquee: a continuously moving ticker ---- */
     .ann-marquee { overflow: hidden; border-radius: 12px; background: var(--primary-soft); -webkit-mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent); mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent); }
     .ann-marquee-track { display: flex; align-items: center; width: max-content; animation: ann-marquee var(--ann-marquee-duration, 48s) linear infinite; will-change: transform; }
     .ann-marquee:hover .ann-marquee-track { animation-play-state: paused; }
     .ann-marquee-group { display: flex; align-items: center; gap: 26px; padding: 0 13px; }
     .ann-marquee-item { display: flex; align-items: center; gap: 9px; white-space: nowrap; flex: 0 0 auto; padding: 11px 2px; border-radius: 8px; }
-    .ann-marquee-item .tag { background: var(--primary); color: var(--primary-contrast); border-radius: 999px; padding: 3px 11px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; line-height: 1.6; }
+    .ann-marquee-item .tag { background: var(--primary); color: var(--primary-contrast); border-radius: 999px; padding: 3px 11px; font-size:12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; line-height: 1.6; }
     .ann-marquee-item .t { font-weight: 700; font-size: 14px; color: var(--text-strong); }
     .ann-marquee-item .b { font-size: 13px; color: var(--text-muted); }
-    .ann-marquee-item .w { font-size: 11.5px; color: var(--text-muted); }
+    .ann-marquee-item .w { font-size:12px; color: var(--text-muted); }
     @keyframes ann-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
     @media (prefers-reduced-motion: reduce) {
       .ann-marquee-track { animation: none; width: 100%; flex-wrap: wrap; }
@@ -353,7 +388,7 @@
     .phase-card h4 { margin: 4px 0 6px; font-size: 15px; }
     .phase-card p { margin: 0 0 8px; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
     .phase-card .steps { color: var(--text-muted); font-size: 12px; }
-    .gate-badge { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-border); }
+    .gate-badge { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; font-size:12px; font-weight: 700; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-border); }
 
     /* ---- caveat + referral notice ---- */
     .caveat-card { border-left: 4px solid var(--primary); }
@@ -430,6 +465,10 @@
     #reg-review td { overflow-wrap: anywhere; }
 
     /* touch screens: 16px text (stops iOS zoom-on-focus) and 44px tap targets */
+    @media (max-width: 640px) {   /* M2: 44 px minimum touch targets on phones */
+      .btn, .btn-sm, button, .modal-actions button { min-height: 44px; }
+      table a, .card a.link, .linklike { display: inline-flex; align-items: center; min-height: 44px; }
+    }
     @media (pointer: coarse) {
       input[type=text], input[type=email], input[type=password], input[type=date], input[type=number], input[type=tel], input[type=url], input[type=search], select, textarea { font-size: 16px; min-height: 46px; }
       textarea { min-height: 96px; }
@@ -482,7 +521,7 @@
       .table-wrap tbody tr:hover { background: var(--surface); }
       .table-wrap td { padding: 8px 0; border-bottom: 1px solid var(--border-soft); overflow-wrap: anywhere; }
       .table-wrap td:last-child { border-bottom: 0; }
-      .table-wrap td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+      .table-wrap td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
     }
     @media (max-width: 480px) {
       .topbar { flex-wrap: wrap; }
@@ -493,17 +532,17 @@
       .modal-card { padding: 18px; border-radius: 16px; }
     }
     /* programme calendar */
-    .cal-kicker { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .cal-kicker { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
     .cal-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .cal-grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
     .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 6px; min-width: 680px; }
-    .cal-dow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); text-align: center; padding: 4px 0; }
+    .cal-dow { font-size:12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); text-align: center; padding: 4px 0; }
     .cal-day { min-height: 96px; border: 1px solid var(--border); border-radius: 10px; padding: 5px; background: var(--surface); overflow: hidden; }
     .cal-day.out { background: transparent; border-color: transparent; }
     .cal-day.today { border-color: #0d9488; box-shadow: 0 0 0 2px rgba(13,148,136,.18); }
     .cal-day .d { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px; }
     .cal-day.today .d { color: #0d9488; }
-    .cal-ev { display: block; width: 100%; text-align: left; border: 0; border-left: 3px solid; border-radius: 5px; padding: 3px 5px; margin: 2px 0; font-size: 11px; line-height: 1.3; cursor: pointer; background: rgba(148,163,184,.13); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cal-ev { display: block; width: 100%; text-align: left; border: 0; border-left: 3px solid; border-radius: 5px; padding: 3px 5px; margin: 2px 0; font-size:12px; line-height: 1.3; cursor: pointer; background: rgba(148,163,184,.13); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cal-ev:hover { filter: brightness(.96); }
     .cal-ev.practical { border-color: #2563eb; background: rgba(37,99,235,.12); }
     .cal-ev.workshop { border-color: #16a34a; background: rgba(22,163,74,.12); }
@@ -513,7 +552,7 @@
     .cal-ev.seminar { border-color: #0d9488; background: rgba(13,148,136,.12); }
     .cal-ev.meeting { border-color: #475569; background: rgba(71,85,105,.12); }
     .cal-ev.cancelled { opacity: .5; text-decoration: line-through; }
-    .cal-tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .02em; padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+    .cal-tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .02em; padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
     .cal-tag.practical { color: #2563eb; } .cal-tag.workshop { color: #16a34a; } .cal-tag.pseminar { color: #059669; } .cal-tag.output { color: #dc2626; } .cal-tag.deadline { color: #d97706; } .cal-tag.seminar { color: #0d9488; } .cal-tag.meeting { color: #475569; }
     .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; color: var(--text-muted); font-size: 12px; }
     .cal-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
@@ -522,12 +561,64 @@
     .cal-row:last-child { border-bottom: 0; }
     .cal-row-when { flex: 0 0 44px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 4px 0; line-height: 1.15; }
     .cal-row-when strong { display: block; font-size: 17px; }
-    .cal-row-when span { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+    .cal-row-when span { font-size:12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
     .cal-row-body { flex: 1; min-width: 0; }
     .cal-row-act { flex: 0 0 auto; }
     @media (max-width: 640px) { .cal-row-act { display: none; } }
     [data-theme="dark"] .cal-ev { background: rgba(148,163,184,.2); }
-.pre{white-space:pre-line}</style>
+.pre{white-space:pre-line}
+
+/* ===== Phase 2: bottom navigation, skeleton screens, action centre, sticky action bars ===== */
+:root { --bnav-h: 0px; }
+.bnav { display: none; }
+.sk-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sk { display: block; border-radius: 8px; background: linear-gradient(90deg, var(--border) 30%, var(--surface-2) 50%, var(--border) 70%); background-size: 300% 100%; animation: sk-shimmer 1.5s ease-in-out infinite; }
+@keyframes sk-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.sk-title { height: 26px; width: min(260px, 60%); margin-bottom: 20px; }
+.sk-line { height: 12px; margin: 10px 0; } .sk-line.w40 { width: 40%; } .sk-line.w60 { width: 60%; } .sk-line.w80 { width: 80%; }
+.sk-avatar { width: 100px; height: 100px; border-radius: 8px; flex: none; }
+.sk-bar { height: 32px; border-radius: 8px; margin-top: 12px; }
+.sk-head { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.sk-head > div:last-child { flex: 1; min-width: 180px; }
+.sk-row { padding: 12px 0; border-bottom: 1px solid var(--border-soft); } .sk-row:last-child { border-bottom: 0; }
+.sk-wrap .card + .card, .sk-wrap .grid + .card, .sk-wrap .card + .grid { margin-top: 20px; }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+
+.attn { margin: 0 0 20px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--warn); border-radius: 12px; box-shadow: var(--shadow); }
+.attn.clear { border-left-color: var(--ok); padding: 10px 16px; color: var(--text-muted); font-size: 14px; }
+.attn-h { margin: 0 0 8px; font-size: 16px; }
+.attn-list { list-style: none; margin: 0; padding: 0; }
+.attn-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border-soft); }
+.attn-item:first-child { border-top: 0; }
+.attn-n { flex: none; min-width: 34px; height: 34px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--warn-soft); color: var(--warn); font-weight: 700; font-variant-numeric: tabular-nums; }
+.attn-t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.attn-item .btn { flex: none; }
+@media (max-width: 480px) { .attn-item { flex-wrap: wrap; } .attn-t { flex-basis: calc(100% - 50px); } .attn-item .btn { margin-left: 46px; } }
+
+@media (max-width: 860px) {
+  body.has-bnav { --bnav-h: 62px; }
+  body.has-bnav.kb-open { --bnav-h: 0px; }
+  .bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 350; display: flex; height: calc(62px + env(safe-area-inset-bottom, 0px)); padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -4px 14px -8px rgba(15, 23, 42, .35); }
+  body.kb-open .bnav { display: none; }
+  .bnav button { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 2px 4px; min-height: 62px; background: transparent; border: 0; border-radius: 0; color: var(--text-muted); font-size: 11px; font-weight: 600; line-height: 1.1; cursor: pointer; }
+  .bnav button[aria-current="page"] { color: var(--primary-strong); }
+  .bnav .bn-ico { position: relative; width: 46px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; transition: background .15s; }
+  .bnav button[aria-current="page"] .bn-ico { background: var(--primary-soft); color: var(--primary-soft-text); }
+  .bnav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .bnav .bn-lbl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bnav .nav-badge { position: absolute; top: -4px; right: 0; min-width: 18px; padding: 0 5px; background: var(--danger); color: #fff; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+  body.has-bnav .content { padding-bottom: calc(18px + var(--bnav-h) + env(safe-area-inset-bottom, 0px)); }
+  body.has-bnav #toasts { bottom: calc(var(--bnav-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+  body.has-bnav .music-controls { bottom: calc(var(--bnav-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+  body.has-bnav .fab-rail, body.has-bnav .fab-rail.ready { bottom: calc(var(--bnav-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+  /* long forms: the action buttons stay in reach while the form scrolls, and rest at the form's end */
+  .sticky-actions { position: sticky; bottom: calc(var(--bnav-h) + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; padding: 10px 0; background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -8px 10px -8px rgba(15, 23, 42, .25); }
+  .sticky-actions .btn { flex: 1 1 140px; justify-content: center; }
+}
+@media (max-width: 640px) {
+  body.has-bnav .music-controls { bottom: calc(var(--bnav-h) + 12px + env(safe-area-inset-bottom, 0px)); }
+}
+</style>
 <script>
   (function () {
     var t = null;
@@ -549,6 +640,7 @@
 </head>
 <body>
 <? if (page === 'login') { ?>
+  <div id="busybar" aria-hidden="true"></div>
   <div id="app"></div>
   <div id="print-area"></div>
 <? } else { ?>
@@ -590,29 +682,7 @@
         </div>
       </section>
 
-      <section class="pub-section" id="notice">
-        <div class="card caveat-card">
-          <h4>Please note — what this site is for</h4>
-          <p>This site is developed strictly to assist students in navigating their postgraduate journey, and
-            to facilitate departmental PG coordination, progress monitoring and documentation.</p>
-          <p>It does not replace official University processes. For any other matter — including anything
-            requiring referral to the School of Postgraduate Studies (SPGS) — please contact the
-            <strong>Head, Department of Physics</strong> or the <strong>PG Coordinator</strong>.</p>
-        </div>
-      </section>
-
-      <!-- About is condensed into one section on Home (its own page was retired). -->
-      <section class="pub-section" id="about">
-        <h2>About the Department</h2>
-        <p class="lead">The Department of Physics, Faculty of Physical Sciences, University of Abuja trains postgraduate
-          physicists across MPhil, MSc and PhD programmes, with research strengths spanning experimental and
-          theoretical solid-state, nuclear and solar physics and applied geophysics.</p>
-        <div class="card">
-          <p>This is the department's own postgraduate journey platform built for coordination</p>
-        </div>
-      </section>
-
-      <section class="pub-section" id="journey">
+      <section class="pub-section" id="journey" style="margin-top:0">
         <h2>Your Postgraduate Journey</h2>
         <div class="card" style="padding:14px">
           <img class="journey-img" src="images/PG_Journey_Infographic.svg" loading="lazy"
@@ -661,6 +731,17 @@
           and outcome.</p>
       </section>
 
+      <!-- About is condensed into one section on Home (its own page was retired). -->
+      <section class="pub-section" id="about">
+        <h2>About the Department</h2>
+        <p class="lead">The Department of Physics, Faculty of Physical Sciences, University of Abuja trains postgraduate
+          physicists across MPhil, MSc and PhD programmes, with research strengths spanning experimental and
+          theoretical solid-state, nuclear and solar physics and applied geophysics.</p>
+        <div class="card">
+          <p>This is the department's own postgraduate journey platform built for coordination</p>
+        </div>
+      </section>
+
       <section class="pub-section">
         <div class="card-grid">
           <div class="card info-card">
@@ -681,6 +762,17 @@
         </div>
       </section>
 
+      <section class="pub-section" id="notice">
+        <div class="card caveat-card">
+          <h4>Please note — what this site is for</h4>
+          <p>This site is developed strictly to assist students in navigating their postgraduate journey, and
+            to facilitate departmental PG coordination, progress monitoring and documentation.</p>
+          <p>It does not replace official University processes. For any other matter — including anything
+            requiring referral to the School of Postgraduate Studies (SPGS) — please contact the
+            <strong>Head, Department of Physics</strong> or the <strong>PG Coordinator</strong>.</p>
+        </div>
+      </section>
+
     </div>
 
     <!-- ==================== REGISTER ==================== -->
@@ -695,9 +787,9 @@
             <div class="card" id="reg-form-card">
               <div id="reg-msg"></div>
               <form id="register-form">
-                <div class="field"><label>Registration Number *</label><input type="text" name="regNumber" required placeholder="e.g. UA/pg2026/003531" autocapitalize="off" autocomplete="off" spellcheck="false"><div class="small muted" style="margin-top:4px">Or the 26/408PHYX/040 format.</div></div>
+                <div class="field"><label>Registration Number *</label><input type="text" name="regNumber" required placeholder="e.g. UA/pg2026/003531" autocapitalize="off" autocomplete="off" spellcheck="false"><div class="small muted" style="margin-top:4px">Older numbers such as Phd/sci/16586006 or 1750806006, and the 26/408PHYX/040 format, are also accepted.</div></div>
                 <div class="row-cols" style="--cols:3">
-                  <div class="field"><label>Surname *</label><input type="text" name="surname" required></div>
+                  <div class="field"><label>Surname *</label><input type="text" name="surname" required autocomplete="family-name" autocapitalize="characters"></div>
                   <div class="field"><label>First Name *</label><input type="text" name="firstName" required autocomplete="given-name" autocapitalize="words"></div>
                   <div class="field"><label>Other Names</label><input type="text" name="otherNames" autocomplete="additional-name" autocapitalize="words"></div>
                 </div>
@@ -732,7 +824,7 @@
                 </div>
                 <div class="field"><label>Passport Photo * <span class="muted" style="font-weight:400">(JPG/PNG &mdash; large photos are resized for you)</span></label><input type="file" name="passportPhoto" accept="image/jpeg,image/png" required></div>
                 <div class="field"><label>Admission letter <span class="muted" style="font-weight:400">(optional &mdash; PDF, JPG or PNG, max 3 MB; only the PG Coordinator and HoD can open it)</span></label><input type="file" name="admissionLetter" accept=".pdf,image/jpeg,image/png"></div>
-                <button class="btn btn-primary btn-block" type="submit" id="reg-submit">Review Details</button>
+                <div class="sticky-actions"><button class="btn btn-primary btn-block" type="submit" id="reg-submit">Review Details</button></div>
               </form>
               <p class="small muted" style="text-align:center;margin-top:16px">Already registered? <a href="?page=login">Login here</a></p>
             </div>
@@ -965,7 +1057,7 @@
 
     /* ================= INPUT ENFORCEMENT (names, Nigerian phone, email) ================= */
     var EMAIL_PATTERN = /^[a-z0-9]+(?:[._%+\-][a-z0-9]+)*@[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$/;
-    var ENFORCED_FIELDS = { firstName: 'title', otherNames: 'title', phoneNumber: 'phone', email: 'email' };
+    var ENFORCED_FIELDS = { surname: 'upper', firstName: 'title', otherNames: 'title', phoneNumber: 'phone', email: 'email' };
     var PHONE_HINT = 'Enter a valid Nigerian mobile number, e.g. 08012345678 (+234 8012345678 is also accepted).';
     var EMAIL_HINT = 'Enter a valid email address, e.g. name@example.com.';
 
@@ -973,6 +1065,31 @@
     function toTitleCase(v, live) {
       var s = String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018`]/g, "'").replace(/[^A-Za-z\s'\-]/g, '');
       s = s.toLowerCase().replace(/(^|[\s'\-])([a-z])/g, function (m, p, c) { return p + c.toUpperCase(); });
+      if (!live) s = s.replace(/\s+/g, ' ').replace(/^[\s'\-]+|[\s'\-]+$/g, '');
+      return s;
+    }
+    /** Thesis-title case: every word capitalised; words with 2+ capitals (ZnO, PhD, XRD) are left alone; small connecting
+     *  words stay lowercase unless first or after a colon. live=true keeps spacing so typing is not disturbed. */
+    var TITLE_SMALL_WORDS = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'into', 'nor', 'of', 'on', 'or', 'per', 'the', 'to', 'via', 'vs', 'with'];
+    function toTitleText(v, live) {
+      var s = String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018]/g, "'");
+      if (!live) s = s.replace(/\s+/g, ' ').trim();
+      var first = true, afterBreak = false;
+      return s.replace(/\S+/g, function (w) {
+        var letters = w.replace(/[^A-Za-z]/g, ''), caps = (letters.match(/[A-Z]/g) || []).length, out;
+        if (caps >= 2 || (letters.length === 1 && caps === 1)) out = w;
+        else {
+          var lw = w.toLowerCase(), core = lw.replace(/^[^a-z]+|[^a-z]+$/g, '');
+          if (!first && !afterBreak && TITLE_SMALL_WORDS.indexOf(core) > -1) out = lw;
+          else out = lw.replace(/(^[("'\[\u201C]*|[-\/])([a-z])/g, function (m, p, ch) { return p + ch.toUpperCase(); });
+        }
+        first = false; afterBreak = /[:?]$/.test(w);
+        return out;
+      });
+    }
+    /** "o'brien  adeyemi" -> "O'BRIEN ADEYEMI". live=true keeps spaces so typing is not disturbed. */
+    function toUpperName(v, live) {
+      var s = String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018`]/g, "'").replace(/[^A-Za-z\s'\-]/g, '').toUpperCase();
       if (!live) s = s.replace(/\s+/g, ' ').replace(/^[\s'\-]+|[\s'\-]+$/g, '');
       return s;
     }
@@ -987,10 +1104,13 @@
     function isValidEmail(v) { var e = cleanEmail(v); return e.length <= 254 && EMAIL_PATTERN.test(e); }
 
     function enforcedKind(el) {
+      if (el && el.tagName === 'TEXTAREA' && el.getAttribute('data-enforce') === 'thesistitle') return 'thesistitle';
       return el && el.tagName === 'INPUT' && el.name && Object.prototype.hasOwnProperty.call(ENFORCED_FIELDS, el.name) ? ENFORCED_FIELDS[el.name] : '';
     }
     function liveTransform(kind, v) {
       if (kind === 'title') return toTitleCase(v, true);
+      if (kind === 'upper') return toUpperName(v, true);
+      if (kind === 'thesistitle') return toTitleText(v, true);
       if (kind === 'email') return cleanEmail(v);
       if (kind === 'phone') return String(v).replace(/[^0-9+\s\-().]/g, '');
       return v;
@@ -1001,11 +1121,14 @@
       if (kind === 'phone') return normalizeNgPhone(v) ? '' : PHONE_HINT;
       if (kind === 'email') return isValidEmail(v) ? '' : EMAIL_HINT;
       if (kind === 'title') return toTitleCase(v).length >= 2 ? '' : 'Use letters only (at least 2), e.g. Mary-Jane.';
+      if (kind === 'upper') return toUpperName(v).length >= 2 ? '' : 'Use letters only (at least 2), e.g. ADEYEMI.';
       return '';
     }
     /** Commit the final normalised value into the field and update its validity state. */
     function finalizeField(el, kind) {
       if (kind === 'title') el.value = toTitleCase(el.value);
+      else if (kind === 'upper') el.value = toUpperName(el.value);
+      else if (kind === 'thesistitle') el.value = toTitleText(el.value);
       else if (kind === 'email') el.value = cleanEmail(el.value);
       else if (kind === 'phone') { var n = normalizeNgPhone(el.value); if (n) el.value = n; else el.value = String(el.value).trim(); }
       var msg = fieldProblem(el, kind);
@@ -1035,7 +1158,7 @@
     /** Normalise + validate every enforced field of a form; shows the browser's own bubble on the first bad one. */
     function enforceForm(form) {
       var ok = true;
-      form.querySelectorAll('input[name]').forEach(function (el) {
+      form.querySelectorAll('input[name], textarea[data-enforce]').forEach(function (el) {
         var kind = enforcedKind(el);
         if (!kind) return;
         if (finalizeField(el, kind) && ok) { ok = false; el.reportValidity(); }
@@ -1361,7 +1484,9 @@
     var SPECIALISATIONS = ['Experimental Solid-State Physics', 'Theoretical Solid-State Physics', 'Nuclear Physics', 'Solar Physics', 'Applied Geophysics'];
     var SUBMISSION_TYPES = ['Research Plan Form', 'Seminar Presentation', 'Research Proposal', 'Progress Report', 'Final Thesis/Dissertation',
       'Internal Examiner and Other Observations', 'Final Correction', 'Comment-by-Comment Response (External Examiner)', 'Comment-by-Comment Response (Internal Examiner)',
-      'Signed Proposal Defence Form', 'Progress Presentation (PPTX)', 'External Examiner Comments'];
+      'Signed Proposal Defence Form', 'Progress Presentation (PPTX)', 'External Examiner Comments',
+      'Receipt of Fees', 'Evidence of Payment for Examination', 'Plagiarism Certificate'];
+    var PAYMENT_TYPES = ['Receipt of Fees', 'Evidence of Payment for Examination'];
     var PRESENTATION_KINDS = ['Proposal Defence Readiness', 'Progress Report Presentation', 'Final Examination'];
     var TITLE_KIND = 'Title Approval';
     var PRESENTATION_INTENTS = {
@@ -1381,13 +1506,13 @@
 
     /* ================= HELPERS ================= */
 
-    function setError(err) { state.error = err && err.message ? err.message : String(err); state.busy = false; render(); }
-    function setNotice(msg) { state.notice = msg; state.busy = false; }
+    function setError(err) { state.error = err && err.message ? err.message : String(err); state.busy = false; render(); if (state.user) toast(state.error, 'error'); }
+    function setNotice(msg) { state.busy = false; state.notice = ''; toast(msg, 'success'); }
     function clearMsgs() { state.error = ''; state.notice = ''; }
     function act(promise, notice, reload) {
       state.busy = true; clearMsgs(); render();
       promise.then(function () {
-        state.busy = false; setNotice(notice || 'Done.');
+        state.busy = false; state.uiReset = true; setNotice(notice || 'Done.');
         if (reload) reload(); else render();
       }).catch(setError);
     }
@@ -1415,6 +1540,13 @@
       return '<span class="' + cls + '">' + esc(s) + '</span>';
     }
 
+    /* While a text field has focus the on-screen keyboard covers the bottom bar: hide it so forms get the full height. */
+    (function () {
+      var isField = function (el) { return !!el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !/^(checkbox|radio|button|submit|file|range|hidden)$/.test(el.type || ''); };
+      document.addEventListener('focusin', function (e) { if (isField(e.target)) document.body.classList.add('kb-open'); });
+      document.addEventListener('focusout', function () { setTimeout(function () { if (!isField(document.activeElement)) document.body.classList.remove('kb-open'); }, 80); });
+    })();
+
     /* ================= NAV ================= */
     var NAV = [
       { key: 'dashboard', label: 'Dashboard', roles: ['Student'] },
@@ -1439,13 +1571,86 @@
       if (key === 'staffdash' && state.user.role !== 'Staff' && !state.user.supervises) return false;
       return true;
     }
+    /* ---- Stage 3: hash routing — Back/Forward, refresh and bookmarks keep the user on their view ---- */
+    function hashView_() {
+      var h = ''; try { h = String(location.hash || '').replace(/^#/, ''); } catch (e) {}
+      return /^[a-z0-9-]+$/i.test(h) && NAV.some(function (n) { return n.key === h; }) ? h : '';
+    }
+    function setHash_(v, replace) {
+      try {
+        if (hashView_() === v) return;
+        if (replace || !v) history.replaceState(null, '', v ? '#' + v : location.pathname + location.search);
+        else location.hash = v;
+      } catch (e) {}
+    }
+    function startView_() {
+      var h = hashView_();
+      if (h && roleAllowed(h)) return h;
+      return INITIAL_VIEW && roleAllowed(INITIAL_VIEW) ? INITIAL_VIEW : defaultView_();
+    }
+    window.addEventListener('hashchange', function () {
+      if (!state.user || state.view === 'pwchange') return;
+      var v = hashView_();
+      if (!v || v === state.view || !roleAllowed(v)) return;
+      clearMsgs(); closeModal(); closeDlg_(); document.body.classList.remove('nav-open');
+      state.view = v; loadView(v); if (!bootEligible_(v)) refreshBell();
+    });
     function navigate(view) {
       clearMsgs();
       state.view = view;
+      setHash_(view);
       loadView(view);
-      refreshBell();
+      if (!bootEligible_(view)) refreshBell();
+    }
+
+    /* ---- S3: one server call per view (api_bootstrap) instead of 3-7 ---- */
+    var BOOT_ROLES = {
+      dashboard: ['Student'], submissions: ['Student'], coordinator: ['PG_Coordinator'], hod: ['HoD', 'PG_Coordinator'], examiner: ['Examiner'],
+      inbox: ['Student', 'PG_Coordinator', 'HoD'], superadmin: ['SuperAdmin'], audit: ['HoD', 'PG_Coordinator', 'SuperAdmin'],
+      staffdash: ['Staff', 'PG_Coordinator', 'HoD'], inspector: ['Submission_Inspector', 'PG_Coordinator'], calendar: '*'
+    };
+    var CAL_FRESH_MS = 120000, bootBroken_ = false;
+    function bootEligible_(view) {
+      var r = BOOT_ROLES[view];
+      if (bootBroken_ || !r || !state.user) return false;
+      if (r !== '*' && r.indexOf(state.user.role) === -1) return false;
+      if (view === 'staffdash' && state.user.role !== 'Staff' && !state.user.supervises) return false;
+      return true;
+    }
+    function applyBoot_(r) {
+      var d = (r && r.data) || {}, side = (r && r.side) || {};
+      Object.keys(d).forEach(function (k) {
+        if (k === 'recipients') state.msgRecipients = d[k] || [];
+        else if (k === 'facdep') { if (d[k]) FACDEP = d[k]; }
+        else state[k] = d[k];            // the server names each part after the state field it fills
+      });
+      if (d.calendar) { state.calAt = Date.now(); if (!state.calMonth) state.calMonth = calDefaultMonth_(); }
+      if (side.templates) { state.templates = side.templates; refreshPickers(); }
+      if (side.notes) { state.unread = side.notes.unread; state.notes = side.notes.items; var bn = document.getElementById('bell-n'); if (bn) bn.textContent = side.notes.unread || ''; }
+      if (side.navCounts) state.navCounts = side.navCounts;
     }
     function loadView(view) {
+      if (!bootEligible_(view)) { loadViewLegacy_(view); return; }
+      state.busy = true; render();
+      authed('api_bootstrap', view, { facdep: !!FACDEP, templates: !!state.templates }).then(function (r) {
+        applyBoot_(r);
+        if (state.view === view) { state.busy = false; render(); }
+        refreshCalendar_(view);
+      }).catch(function (e) {
+        var m = e && e.message ? e.message : '';
+        if (/Script function not found|is not a function|reading 'apply'|Unknown view/i.test(m)) { bootBroken_ = true; loadViewLegacy_(view); return; }   // the server has not been updated yet: use the older calls
+        setError(e);
+      });
+    }
+    /* The programme calendar feeds other views too; refresh it in the background, at most every two minutes. */
+    function refreshCalendar_(view) {
+      if (view === 'calendar' || (state.calendar && state.calAt && Date.now() - state.calAt <= CAL_FRESH_MS)) return;
+      authed('api_getProgrammeCalendar').then(function (d) {
+        state.calendar = d; state.calAt = Date.now();
+        if (state.view === view && !state.busy) render();
+      }).catch(function () {});
+    }
+    function loadViewLegacy_(view) {
       loadNavCounts(); loadTemplates();
       if (view !== 'calendar' && state.user) {
         authed('api_getProgrammeCalendar').then(function (d) {
@@ -1464,7 +1669,7 @@
         Promise.all([authed('api_getCoordinatorDashboard'), loadFacDep().catch(function () { return null; }), loadRecipients()]).then(function (r) { state.coordinator = r[0]; state.busy = false; render(); }).catch(setError);
       } else if (view === 'hod' && state.user && ['HoD', 'PG_Coordinator'].indexOf(state.user.role) !== -1) {
         state.busy = true; render();
-        Promise.all([authed('api_getHoDStats'), loadRecipients(), authed('api_getPipeline').catch(function () { return []; }), authed('api_listExaminerQueue').catch(function () { return { internal: [], external: [] }; })]).then(function (r) { state.hod = r[0]; state.pipeline = r[2]; state.examQueue = r[3]; state.busy = false; render(); }).catch(setError);
+        Promise.all([authed('api_getHoDStats'), loadRecipients(), authed('api_getPipeline').catch(function () { return []; }), authed('api_listExaminerQueue').catch(function () { return { internal: [], external: [] }; }), authed('api_listExamNoticeCandidates').catch(function () { return { groups: [] }; })]).then(function (r) { state.hod = r[0]; state.pipeline = r[2]; state.examQueue = r[3]; state.examNotice = r[4]; state.busy = false; render(); }).catch(setError);
       } else if (view === 'examiner' && state.user && state.user.role === 'Examiner') {
         state.busy = true; render();
         authed('api_getExaminerDashboard').then(function (d) { state.examiner = d; state.busy = false; render(); }).catch(setError);
@@ -1504,7 +1709,7 @@
         sessionStorage.setItem('pgs_token', r.token);
         state.busy = false;
         if (r.user.firstLogin) { state.view = 'pwchange'; render(); return; }
-        var target = INITIAL_VIEW && roleAllowed(INITIAL_VIEW) ? INITIAL_VIEW : defaultView_();
+        var target = startView_();
         navigate(target);
       }).catch(setError);
     }
@@ -1522,7 +1727,7 @@
       if (state.impersonator) { var at = state.adminToken || sessionStorage.getItem('pgs_admin_token'); endImpersonation(true); if (at) call('api_logout', at).catch(function () {}); return; }
       authed('api_logout').catch(function () {});
       state.token = ''; state.user = null; state.view = 'login'; state.calendar = null; state.calMonth = '';
-      sessionStorage.removeItem('pgs_token');
+      sessionStorage.removeItem('pgs_token'); setHash_('');
       render();
     }
 
@@ -1556,32 +1761,104 @@
     function render() {
       document.body.classList.toggle('embed', !!EMBED);
       if (typeof MUSIC !== 'undefined' && MUSIC.sync) MUSIC.sync(!!state.user);
-      var app = document.getElementById('app');
-      if (!state.user) { app.innerHTML = state.view === 'pwchange' ? pwChangeHtml() : state.view === 'forgot' ? forgotHtml() : loginHtml(); return; }
-      if (state.view === 'pwchange') { app.innerHTML = pwChangeHtml(); return; }
+      document.body.classList.toggle('is-busy', !!state.busy);
+      document.body.classList.remove('has-bnav');
+      var app = document.getElementById('app'), snap = snapUi_(app), reset = state.uiReset; state.uiReset = false;
+      if (!state.user) { app.innerHTML = state.view === 'pwchange' ? pwChangeHtml() : state.view === 'forgot' ? forgotHtml() : loginHtml(); a11yFix_(app); restoreUi_(app, snap, true); return; }
+      if (state.view === 'pwchange') { app.innerHTML = pwChangeHtml(); a11yFix_(app); restoreUi_(app, snap, true); return; }
       app.innerHTML = shellHtml();
-      document.getElementById('ci').innerHTML = contentHtml();
+      var ciEl = document.getElementById('ci'); ciEl.innerHTML = contentHtml(); ciEl.setAttribute('tabindex', '-1'); ciEl.setAttribute('role', 'main');
+      placeAttention_(ciEl);
+      if (document.querySelector('.bnav')) document.body.classList.add('has-bnav');
+      a11yFix_(app);
+      restoreUi_(app, snap, reset);
       maybeTour();
+    }
+
+    /* ---- Stage 5: post-render accessibility / mobile fixes (applied to the page and to modals) ---- */
+    var A11Y_N = 0;
+    function a11yFix_(root) {
+      if (!root || !root.querySelectorAll) return;
+      // 1. wide tables scroll inside their own box instead of widening the page
+      [].forEach.call(root.querySelectorAll('table'), function (t) {
+        if (t.closest('.table-wrap,.tbl-scroll,.cal-grid-wrap')) return;
+        var w = document.createElement('div'); w.className = 'tbl-scroll'; t.parentNode.insertBefore(w, t); w.appendChild(t);
+      });
+      // 2. every password field gets a show/hide button and the right autocomplete hint
+      [].forEach.call(root.querySelectorAll('input[type=password]'), function (inp) {
+        var nm = inp.getAttribute('name') || '';
+        if (!inp.getAttribute('autocomplete')) inp.setAttribute('autocomplete', /^(newPassword|confirmPassword)$/.test(nm) ? 'new-password' : 'current-password');
+        if (inp.closest('.pw-wrap')) return;
+        var w = document.createElement('div'); w.className = 'pw-wrap';
+        inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'pw-toggle'; b.setAttribute('data-action', 'toggle-pw');
+        b.setAttribute('aria-label', 'Show password'); b.setAttribute('aria-pressed', 'false'); b.innerHTML = icons.eye; w.appendChild(b);
+      });
+      [].forEach.call(root.querySelectorAll('input[name=code]'), function (i) { if (!i.getAttribute('autocomplete')) i.setAttribute('autocomplete', 'one-time-code'); });
+      // 3. connect each <label> to its control so screen readers and tap-on-label work
+      [].forEach.call(root.querySelectorAll('label:not([for])'), function (lb) {
+        if (lb.querySelector('input,select,textarea')) return;
+        var p = lb.parentElement; if (!p) return;
+        var ctl = p.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea');
+        if (ctl.length !== 1) return;
+        var c = ctl[0]; if (c.getAttribute('aria-labelledby') || c.getAttribute('aria-label')) return;
+        if (!c.id) c.id = 'f_' + (++A11Y_N);
+        lb.setAttribute('for', c.id);
+      });
+    }
+    /* Keeps typed text, selections, focus and scroll position across re-renders of the same view. */
+    var UI_LAST = '';
+    function fieldKey_(el, i) { return el.id ? '#' + el.id : (el.name ? el.name + '|' + el.type + (/^(radio|checkbox)$/.test(el.type) ? '|' + el.value : '') : '@' + i); }
+    function snapUi_(app) {
+      var snap = { sig: state.view + '|' + (state.user ? state.user.regNumber : ''), y: window.scrollY, fields: [], count: 0, focus: null };
+      if (!app) return snap;
+      var els = app.querySelectorAll('input,textarea,select'); snap.count = els.length;
+      [].forEach.call(els, function (el, i) {
+        if (el.type === 'file' || el.type === 'button' || el.type === 'submit' || el.type === 'hidden') return;
+        var f = { key: fieldKey_(el, i), pos: !el.id && !el.name, i: i, type: el.type };
+        if (el.type === 'checkbox' || el.type === 'radio') f.checked = el.checked; else f.value = el.value;
+        snap.fields.push(f);
+      });
+      var a = document.activeElement;
+      if (a && app.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) snap.focus = { key: fieldKey_(a, [].indexOf.call(els, a)), s: a.selectionStart, e: a.selectionEnd };
+      return snap;
+    }
+    function restoreUi_(app, snap, reset) {
+      var same = snap.sig === UI_LAST; UI_LAST = snap.sig;
+      if (!same) { window.scrollTo(0, 0); var ciF = document.getElementById('ci'); if (ciF && state.user) { try { ciF.focus({ preventScroll: true }); } catch (e) {} } return; }
+      var els = app.querySelectorAll('input,textarea,select');
+      if (!reset) {
+        var byKey = {}; [].forEach.call(els, function (el, i) { byKey[fieldKey_(el, i)] = el; });
+        var sameShape = els.length === snap.count;
+        snap.fields.forEach(function (f) {
+          if (f.pos && !sameShape) return;
+          var el = byKey[f.key]; if (!el || el.type !== f.type) return;
+          if (f.checked !== undefined) el.checked = f.checked;
+          else if (el.value !== f.value && (el.tagName !== 'SELECT' || [].some.call(el.options, function (o) { return o.value === f.value; }))) el.value = f.value;
+        });
+        if (snap.focus && byKey[snap.focus.key]) { try { var fe = byKey[snap.focus.key]; fe.focus({ preventScroll: true }); if (snap.focus.s != null && fe.setSelectionRange) fe.setSelectionRange(snap.focus.s, snap.focus.e); } catch (e) {} }
+      }
+      if (Math.abs(window.scrollY - snap.y) > 2) window.scrollTo(0, snap.y);
     }
 
     function shellHtml() {
       var navHtml = NAV.filter(function (n) { return roleAllowed(n.key); }).map(function (n) {
-        return '<button data-nav="' + n.key + '" class="' + (state.view === n.key ? 'active' : '') + '">' + esc(n.label) + navBadge(n.key) + '</button>';
+        return '<button data-nav="' + n.key + '" class="' + (state.view === n.key ? 'active' : '') + '"' + (state.view === n.key ? ' aria-current="page"' : '') + '>' + esc(n.label) + navBadge(n.key) + '</button>';
       }).join('');
-      return '<div class="layout">' +
+      return '<button type="button" class="skip-link" data-action="skip-main">Skip to main content</button><div class="layout">' +
         '<aside class="sidebar">' +
           '<div class="sidebar-brand">' +
             '<img src="' + esc(BRAND.logoUrl) + '" onerror="this.outerHTML=\'<div class=&quot;logo-fallback&quot;>PG</div>\'" alt="">' +
             '<div><div class="name">' + esc(BRAND.schoolName || 'Postgraduate Journey') + '</div><div class="sub">' + esc(BRAND.subtitle || 'University of Abuja') + '</div></div>' +
           '</div>' +
-          '<nav class="nav">' + navHtml + '</nav>' +
+          '<nav class="nav" aria-label="Main">' + navHtml + '</nav>' +
           '<div class="sidebar-foot">v1.0 &middot; Apps Script</div>' +
         '</aside>' +
         '<div class="sidebar-backdrop" data-action="close-nav"></div>' +
         '<div class="main">' +
           '<div class="topbar">' +
             '<div class="row">' +
-              '<button class="nav-toggle" data-action="toggle-nav">&#9776;</button>' +
+              '<button class="nav-toggle" data-action="toggle-nav" aria-label="Open menu" aria-expanded="false">&#9776;</button>' +
               '<div><div class="who">' + esc(state.user.fullName) + '</div><div class="mail">' + esc(ROLE_LABELS[state.user.role] || state.user.role) + ' &middot; ' + esc(state.user.regNumber) + '</div></div>' +
             '</div>' +
             '<div class="tb-actions">' +
@@ -1593,14 +1870,124 @@
           '</div>' +
           '<div class="content"><div class="content-inner" id="ci"></div></div>' +
         '</div>' +
-      '</div>';
+      '</div>' + bottomNavHtml();
+    }
+
+    /* ---- M1: phone bottom navigation (shown under 861 px; the sidebar drawer stays reachable through "More") ---- */
+    var BN_ICONS = {
+      home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+      file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+      chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+      cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+      users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.8c2 .7 3.2 2.4 3.5 5.2"/>',
+      grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+      chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+      check: '<circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/>',
+      clip: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/>',
+      shield: '<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/>',
+      list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+      help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2-2.5 3.6M12 17h.01"/>',
+      more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>'
+    };
+    var BN_META = {
+      dashboard: ['Home', 'home'], submissions: ['Submissions', 'file'], inbox: ['Messages', 'chat'], calendar: ['Calendar', 'cal'],
+      staffdash: ['Students', 'users'], coordinator: ['Coordinator', 'grid'], hod: ['Overview', 'chart'], inspector: ['Review', 'check'],
+      examiner: ['Assignments', 'clip'], superadmin: ['Admin', 'shield'], audit: ['Audit', 'list'], help: ['Help', 'help']
+    };
+    var BN_ORDER = {
+      Student: ['dashboard', 'submissions', 'inbox', 'calendar'],
+      Staff: ['staffdash', 'calendar', 'help'],
+      PG_Coordinator: ['coordinator', 'hod', 'inspector', 'inbox'],
+      HoD: ['hod', 'staffdash', 'inbox', 'calendar'],
+      Submission_Inspector: ['inspector', 'calendar', 'help'],
+      Examiner: ['examiner'],
+      SuperAdmin: ['superadmin', 'audit', 'calendar']
+    };
+    function bnIcon_(name) { return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + BN_ICONS[name] + '</svg>'; }
+    function bottomNavHtml() {
+      if (!state.user) return '';
+      var allowed = NAV.filter(function (n) { return roleAllowed(n.key); }).map(function (n) { return n.key; });
+      var items = (BN_ORDER[state.user.role] || []).filter(function (k) { return allowed.indexOf(k) !== -1; }).slice(0, 4);
+      var more = allowed.length > items.length;
+      if (items.length + (more ? 1 : 0) < 2) return '';
+      var html = items.map(function (k) {
+        var m = BN_META[k], cur = state.view === k;
+        return '<button type="button" data-nav="' + k + '"' + (cur ? ' aria-current="page"' : '') + '><span class="bn-ico">' + bnIcon_(m[1]) + navBadge(k) + '</span><span class="bn-lbl">' + esc(m[0]) + '</span></button>';
+      }).join('');
+      if (more) html += '<button type="button" data-action="toggle-nav" aria-expanded="false"><span class="bn-ico">' + bnIcon_('more') + '</span><span class="bn-lbl">More</span></button>';
+      return '<nav class="bnav" aria-label="Quick navigation">' + html + '</nav>';
+    }
+
+    /* ---- Action centre: what needs this person's attention, built from counts the portal already loads ---- */
+    var HOME_VIEWS = ['dashboard', 'staffdash', 'coordinator', 'hod', 'inspector', 'examiner'];
+    var ATTN = {
+      Student: { submissions: ['submission needs your changes', 'submissions need your changes', 'Fix and resubmit'], inbox: ['reply to your inquiry', 'replies to your inquiries', 'Read replies'] },
+      Staff: { staffdash: ['student or submission waiting on you', 'students or submissions waiting on you', 'Open My Students'] },
+      PG_Coordinator: {
+        coordinator: ['registration, title or stage request to approve', 'registrations, title and stage requests to approve', 'Review'],
+        hod: ['request or examiner proposal to review', 'requests and examiner proposals to review', 'Review'],
+        inspector: ['submission awaiting review', 'submissions awaiting review', 'Open queue'],
+        inbox: ['open inquiry', 'open inquiries', 'Reply'],
+        staffdash: ['student or submission waiting on you', 'students or submissions waiting on you', 'Open My Students']
+      },
+      HoD: {
+        hod: ['request or examiner proposal to review', 'requests and examiner proposals to review', 'Review'],
+        inbox: ['open inquiry', 'open inquiries', 'Reply'],
+        staffdash: ['student or submission waiting on you', 'students or submissions waiting on you', 'Open My Students']
+      },
+      Submission_Inspector: { inspector: ['submission awaiting your review', 'submissions awaiting your review', 'Open queue'] },
+      Examiner: { examiner: ['assignment waiting for your assessment', 'assignments waiting for your assessment', 'Open'] }
+    };
+    function attentionItems_() {
+      var u = state.user, c = state.navCounts, map = u && ATTN[u.role], items = [];
+      if (!map) return items;
+      Object.keys(map).forEach(function (k) {
+        var n = c && c[k];
+        if (!n || k === state.view || !roleAllowed(k)) return;
+        items.push({ n: n, text: n === 1 ? map[k][0] : map[k][1], btn: map[k][2], attrs: 'data-nav="' + k + '"' });
+      });
+      if (state.unread > 0) items.push({ n: state.unread, text: state.unread === 1 ? 'unread notification' : 'unread notifications', btn: 'Read', attrs: 'data-action="bell"' });
+      return items;
+    }
+    function attentionHtml() {
+      if (!state.navCounts) return '';   // counts not loaded yet: show nothing rather than a false "all caught up"
+      var items = attentionItems_();
+      if (!items.length) return '<p class="attn clear" id="attn">Nothing needs your attention right now.</p>';
+      return '<section class="attn" id="attn" aria-labelledby="attn-h"><h3 class="attn-h" id="attn-h">Needs your attention</h3><ul class="attn-list">' + items.map(function (i) {
+        return '<li class="attn-item"><span class="attn-n">' + i.n + '</span><span class="attn-t">' + esc(i.text) + '</span><button type="button" class="btn btn-outline btn-sm" ' + i.attrs + '>' + esc(i.btn) + '</button></li>';
+      }).join('') + '</ul></section>';
+    }
+    function placeAttention_(root) {
+      var old = document.getElementById('attn'); if (old) old.remove();
+      if (!root || HOME_VIEWS.indexOf(state.view) === -1 || (state.busy && !viewHasData_(state.view))) return;
+      var html = attentionHtml(); if (!html) return;
+      var kids = root.children, h = null;
+      for (var i = 0; i < kids.length; i++) if (kids[i].tagName === 'H2') { h = kids[i]; break; }
+      if (h) h.insertAdjacentHTML('afterend', html); else root.insertAdjacentHTML('afterbegin', html);
+    }
+
+    /* ---- M6: skeleton screens that match the final layout ---- */
+    var SK_LIST_VIEWS = ['submissions', 'inbox', 'audit', 'inspector', 'superadmin', 'calendar'];
+    function skeletonHtml(view) {
+      var v = view || state.view, out = '<div class="sk-wrap" role="status" aria-live="polite" aria-busy="true"><span class="sk-sr">Loading…</span><span class="sk sk-title"></span>';
+      if (SK_LIST_VIEWS.indexOf(v) !== -1) {
+        out += '<div class="card">';
+        for (var i = 0; i < 5; i++) out += '<div class="sk-row"><span class="sk sk-line w80"></span><span class="sk sk-line w40"></span></div>';
+        return out + '</div></div>';
+      }
+      out += '<div class="card"><div class="sk-head"><span class="sk sk-avatar"></span><div><span class="sk sk-line w60"></span><span class="sk sk-line w80"></span><span class="sk sk-line w40"></span></div></div></div>' +
+        '<div class="grid cols-2" style="margin-top:20px">' +
+        '<div class="card"><span class="sk sk-line w40"></span><span class="sk sk-line w80"></span><span class="sk sk-line w60"></span></div>' +
+        '<div class="card"><span class="sk sk-line w40"></span><span class="sk sk-line w80"></span><span class="sk sk-line w60"></span></div></div>' +
+        '<div class="card"><span class="sk sk-line w40"></span><span class="sk sk-bar"></span></div>';
+      return out + '</div>';
     }
 
     function headerHtml() {
       var out = '';
       if (state.impersonator && state.user && state.user.previewReadOnly) out += '<div class="alert" style="background:#dbeafe;color:#1e3a8a;border:1px solid #3b82f6;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span><strong>Read-only preview of ' + esc(state.user.fullName) + '</strong> (' + esc(ROLE_LABELS[state.user.role] || state.user.role) + ', ' + esc(state.user.regNumber) + '). Nothing you see here can be changed or saved. Logged under your Super Admin account as a preview. This session ends after 20 minutes.</span><button class="btn btn-primary btn-sm" data-action="stop-imp">Return to Super Admin</button></div>';
       else if (state.impersonator && state.user) out += '<div class="alert" style="background:#fef3c7;color:#78350f;border:1px solid #f59e0b;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span><strong>Signed in as ' + esc(state.user.fullName) + '</strong> (' + esc(ROLE_LABELS[state.user.role] || state.user.role) + ', ' + esc(state.user.regNumber) + '). Everything you do is recorded under your Super Admin account. This session ends after 60 minutes.</span><button class="btn btn-primary btn-sm" data-action="stop-imp">Return to Super Admin</button></div>';
-      if (state.error) out += '<div class="alert error">' + esc(state.error) + '</div>';
+      if (state.error) out += '<div class="alert error" role="alert">' + esc(state.error) + '</div>';
       if (state.notice) out += '<div class="alert success">' + esc(state.notice) + '</div>';
       return out;
     }
@@ -1612,9 +1999,14 @@
       '</footer>';
     }
 
+    /* While a view reloads, keep showing what is already there (dimmed, with a progress bar) instead of blanking the page. */
+    function viewHasData_(v) {
+      var m = { dashboard: state.dashboard, submissions: state.submissions, coordinator: state.coordinator, hod: state.hod, examiner: state.examiner, inbox: state.inq, superadmin: state.impUsers, audit: state.audit, staffdash: state.staff, inspector: state.inspector, calendar: state.calendar };
+      return Object.prototype.hasOwnProperty.call(m, v) ? !!m[v] : true;
+    }
     function contentHtml() {
       var out = headerHtml();
-      if (state.busy) { out += '<div class="page-loading"><span class="spinner"></span> Loading…</div>'; }
+      if (state.busy && !viewHasData_(state.view)) { out += skeletonHtml(); }
       else if (state.view === 'dashboard') out += viewStudentDashboard();
       else if (state.view === 'calendar') out += viewCalendar();
       else if (state.view === 'submissions') out += viewSubmissions();
@@ -1820,7 +2212,7 @@
         if (other && !act) out += '<p class="small muted" style="margin:0">Finish or withdraw your other approval request first.</p>';
         else {
           out += '<form id="title-intent-form" data-id="' + esc(act ? act.id : '') + '"><div class="field"><label>' + (act ? 'Edit your proposed title' : 'Proposed title of your thesis / dissertation') + '</label>' +
-            '<textarea name="title" required minlength="10" maxlength="400" rows="3" placeholder="Type the full title you want approved">' + esc(act ? act.title : (s.thesisTitle || '')) + '</textarea></div>' +
+            '<textarea name="title" data-enforce="thesistitle" required minlength="10" maxlength="400" rows="3" placeholder="Type the full title you want approved">' + esc(act ? act.title : (s.thesisTitle || '')) + '</textarea></div>' +
             '<button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>' + (act ? (act.status === 'Returned' ? 'Resubmit for approval' : 'Update title') : 'Send to my supervisors') + '</button>' +
             (act ? ' <button class="btn btn-outline btn-sm" type="button" data-action="intent-withdraw" data-id="' + esc(act.id) + '">Withdraw</button>' : '') +
             '<p class="small muted" style="margin:8px 0 0">' + (s.coSupervisor ? 'Your Main and Co-Supervisors must both approve.' : 'Your Main Supervisor must approve.') + ' The PG Coordinator and HoD can follow the progress. Once approved, the title is locked.</p></form>';
@@ -1837,6 +2229,13 @@
         '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px"><strong>Route B &mdash; approval in the system</strong>' +
         '<p class="small" style="margin:8px 0">Choose <em>Ready for proposal defence</em> in <em>Approval Requests</em> below. Your supervisors approve online (their approval counts as their signature), then the PG Coordinator confirms.</p></div></div></div>';
     }
+    function paymentCard(s) {
+      var i = JOURNEY_STAGES.indexOf(s.currentStage);
+      if (i < JOURNEY_STAGES.indexOf('11 - Final Examination Intent') || i >= JOURNEY_STAGES.indexOf('14 - Examiners Comments')) return '';
+      return '<div class="card"><h4 style="margin:0 0 8px">Examination Fees</h4><p class="small muted" style="margin:0 0 10px">Before the external examination, upload your receipt of fees, your evidence of payment for the examination and your plagiarism certificate (PDF, JPG or PNG). Only the PG Coordinator and the HoD can open the fee documents; the plagiarism certificate is also visible to your supervisors and the Inspector. Your thesis/dissertation is uploaded under <em>Final Thesis/Dissertation</em> at stage 12.</p>' +
+        '<div class="row" style="flex-wrap:wrap;gap:8px">' + uploadBtn_('Receipt of Fees', 'Upload receipt of fees') + ' ' + uploadBtn_('Evidence of Payment for Examination', 'Upload evidence of payment') + ' ' + uploadBtn_('Plagiarism Certificate', 'Upload plagiarism certificate') + '</div>' +
+        subStatusLine_('Receipt of Fees') + subStatusLine_('Evidence of Payment for Examination') + subStatusLine_('Plagiarism Certificate') + '</div>';
+    }
     function pptxCard(s) {
       var i = JOURNEY_STAGES.indexOf(s.currentStage);
       if (i < JOURNEY_STAGES.indexOf('10 - Progress Presentation') || i > JOURNEY_STAGES.indexOf('11 - Final Examination Intent')) return '';
@@ -1847,7 +2246,7 @@
       if (!stageAtLeast_(s, '14 - Examiners Comments')) return '';
       var d = state.dashboard, fp = d.finalPackage || { required: [], done: {} }, r = d.examinerReport;
       var out = '<div class="card"><h4 style="margin:0 0 8px">Examiners\u2019 Comments and Corrections</h4>';
-      if (r) out += '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-bottom:12px"><strong>External Examiner (' + esc(r.examiner) + '): ' + esc(r.recommendation) + '</strong><p class="small pre" style="margin:8px 0 0">' + esc(r.comments) + '</p>' + (r.reportUrl ? '<p class="small" style="margin:6px 0 0"><a href="' + esc(r.reportUrl) + '" target="_blank" rel="noopener">Examiner\u2019s report file</a></p>' : '') + '</div>';
+      if (r) out += '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-bottom:12px"><strong>External Examiner: ' + esc(r.recommendation) + '</strong><p class="small pre" style="margin:8px 0 0">' + esc(r.comments) + '</p>' + (r.reportUrl ? '<p class="small" style="margin:6px 0 0"><a href="' + esc(r.reportUrl) + '" target="_blank" rel="noopener">Examiner\u2019s report file</a></p>' : '') + '</div>';
       out += '<p class="small muted" style="margin:0 0 8px">Upload all three to move to the final compliance check:</p>';
       (fp.required || []).forEach(function (t) {
         var done = fp.done && fp.done[t];
@@ -1857,7 +2256,7 @@
     }
     function examinersInfoCard() {
       var l = (state.dashboard.examiners || []); if (!l.length) return '';
-      return '<div class="card"><h4 style="margin:0 0 8px">My Examiners</h4>' + l.map(function (x) { return '<p style="margin:4px 0"><strong>' + esc(x.type) + ' Examiner:</strong> ' + esc(x.name) + (x.institution ? ' <span class="small muted">(' + esc(x.institution) + ')</span>' : '') + ' ' + '<span class="badge ' + (x.status === 'Assessment received' ? 'ok' : 'warn') + '">' + esc(x.status) + '</span></p>'; }).join('') + '</div>';
+      return '<div class="card"><h4 style="margin:0 0 8px">My Examiners</h4>' + l.map(function (x) { return '<p style="margin:4px 0"><strong>' + esc(x.type) + ' Examiner:</strong> <span class="small muted">identity confidential</span> ' + '<span class="badge ' + (x.status === 'Assessment received' ? 'ok' : 'warn') + '">' + esc(x.status) + '</span></p>'; }).join('') + '</div>';
     }
 
     /* ---- Coordinator / HoD: pipeline board and examiner assignment ---- */
@@ -1888,19 +2287,68 @@
         return '<h4 style="margin:12px 0 4px">' + title + ' (' + rows.length + ')</h4><p class="small muted" style="margin:0 0 8px">' + note + '</p>' + (rows.length ? '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Stage</th><th>Examiner</th><th></th></tr></thead><tbody>' + rows.map(examinerRowHtml_).join('') + '</tbody></table></div>' : '<p class="muted small">None waiting.</p>');
       };
       return '<div class="card"><h4 style="margin:0 0 4px">Examiner assignment</h4><p class="small muted" style="margin:0">The PG Coordinator or HoD assigns examiners. The system creates their login and emails the details.</p>' +
-        tbl('Internal Examiners', 'From a department other than the student\u2019s (not Physics). They assess the progress presentation at the seminar and do <strong>not</strong> receive the slides.', q.internal) +
+        tbl('Internal Examiners', 'From a department other than the student\u2019s (not Physics). They read the student\u2019s progress report in the portal and assess the progress presentation at the seminar; they do <strong>not</strong> receive the slides or any other upload.', q.internal) +
         tbl('External Examiners', 'Academic staff of another university. They read and assess the approved thesis/dissertation.', q.external) + '</div>';
     }
+    /* ---- Notification for External Examination (internal memo to the Dean, School of Postgraduate Studies) ---- */
+    function noticeCard() {
+      var n = state.examNotice || { groups: [] };
+      var out = '<div class="card"><h4 style="margin:0 0 4px">Notification for External Examination</h4><p class="small muted" style="margin:0 0 8px">Generates the internal memo to the Dean, School of Postgraduate Studies (letter plus examiners annex) as a Word file. A student is listed once the thesis is Approved and an External Examiner is assigned. The memo is dated today; the reference is numbered automatically' + (n.nextRef ? ' (next: <strong>' + esc(n.nextRef) + '</strong>)' : '') + '.</p>';
+      if (!n.groups || !n.groups.length) return out + '<p class="muted small" style="margin:0">No student is ready yet.</p></div>';
+      n.groups.forEach(function (g) {
+        out += '<div class="notice-group" data-key="' + esc(g.key) + '" style="border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin:10px 0"><p style="margin:0 0 8px"><strong>External Examiner:</strong> ' + esc(g.examiner.line) + '</p>';
+        g.students.forEach(function (s) {
+          var bad = s.issues.length > 0;
+          out += '<label style="display:flex;gap:8px;align-items:flex-start;margin:6px 0"><input type="checkbox" class="notice-pick" value="' + esc(s.regNumber) + '"' + (bad ? ' disabled' : ' checked') + ' style="margin-top:4px"><span><strong>' + esc(s.name) + '</strong> <span class="small muted">(' + esc(s.regNumber) + ') &middot; ' + esc(s.degree) + ' &middot; ' + esc(s.specialisation) + '</span>' +
+            (bad ? '<br><span class="badge bad">Cannot include: ' + esc(s.issues.join('; ')) + '</span>' : '') +
+            (s.warnings.length ? '<br><span class="badge warn">Check: ' + esc(s.warnings.join('; ')) + '</span>' : '') +
+            (s.notified ? '<br><span class="small muted">Memo already generated (' + esc(String(s.notified.at).slice(0, 10)) + ', ' + esc(s.notified.detail) + ')</span>' : '') + '</span></label>';
+        });
+        out += '<div class="row-cols" style="--cols:4;margin-top:8px"><div class="field"><label>Examination date</label><input type="date" class="notice-date" min="' + esc(n.today || '') + '"></div>' +
+          '<div class="field"><label>Time</label><input type="text" class="notice-time" maxlength="20" value="' + esc((n.defaults || {}).time || '10.00 am') + '"></div>' +
+          '<div class="field"><label>Venue</label><input type="text" class="notice-venue" maxlength="80" value="' + esc((n.defaults || {}).venue || '') + '"></div>' +
+          '<div class="field"><label>Reference (optional)</label><input type="text" class="notice-ref" maxlength="60" placeholder="' + esc(n.nextRef || 'automatic') + '"></div></div>' +
+          '<button class="btn btn-primary btn-sm" type="button" data-action="notice-generate"' + (state.busy ? ' disabled' : '') + '>Generate memo (.docx)</button></div>';
+      });
+      return out + '</div>';
+    }
+    function downloadB64_(name, b64, mime) {
+      var bin = atob(b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u], { type: mime })); a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+    function generateNotice_(el) {
+      var box = el.closest('.notice-group'); if (!box) return;
+      var regs = [].slice.call(box.querySelectorAll('.notice-pick:checked')).map(function (c) { return c.value; });
+      var date = box.querySelector('.notice-date').value;
+      if (!regs.length) { setError(new Error('Tick at least one student.')); return; }
+      if (!date) { setError(new Error('Choose the examination date.')); return; }
+      var p = { groupKey: box.getAttribute('data-key'), regNumbers: regs, examDate: date, time: box.querySelector('.notice-time').value, venue: box.querySelector('.notice-venue').value, ref: box.querySelector('.notice-ref').value };
+      act(authed('api_generateExamNotice', p).then(function (r) {
+        downloadB64_(r.name, r.b64, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        state.noticeNote = r; return r;
+      }), 'Memo generated and downloaded.', function () { loadView('hod'); });
+    }
+    var EXAMINER_RANKS = ['Professor', 'Associate Professor', 'Senior Lecturer'];
     function openExaminerModal(kind, reg, sub) {
+      var ext = kind === 'External';
+      if (!ext && !FACDEP) {   // the faculty/department list is needed for Internal Examiners
+        loadFacDep().then(function () { openExaminerModal(kind, reg, sub); }).catch(function () { setError(new Error('Could not load the faculty and department list. Please try again.')); });
+        return;
+      }
       var q = (state.examQueue || {})[kind === 'Internal' ? 'internal' : 'external'] || [];
       var row = q.filter(function (x) { return x.regNumber === reg && String(x.submissionId || '') === String(sub || ''); })[0] || { studentName: reg, department: '' };
-      var ext = kind === 'External';
+      var rankSel = '<div class="field"><label>Academic rank</label><select name="rank" required><option value="">Select rank</option>' + EXAMINER_RANKS.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join('') + '</select></div>';
       showModal('<h3 style="margin:0 0 6px">Assign ' + kind + ' Examiner</h3><p class="small muted" style="margin:0 0 12px">' + esc(row.studentName) + ' (' + esc(reg) + ')' + (row.department ? ' &middot; ' + esc(row.department) : '') + '</p>' +
         '<form id="examiner-assign-form" data-kind="' + kind + '" data-reg="' + esc(reg) + '" data-sub="' + esc(sub || '') + '">' +
         '<div class="row-cols" style="--cols:2"><div class="field"><label>Full name (with title)</label><input type="text" name="fullName" required placeholder="Prof. Jane Doe"></div><div class="field"><label>Email</label><input type="email" name="email" required></div></div>' +
-        '<div class="row-cols" style="--cols:2"><div class="field"><label>Academic rank</label><input type="text" name="rank" required placeholder="Professor / Senior Lecturer"></div><div class="field"><label>Department</label><input type="text" name="department" required></div></div>' +
-        (ext ? '<div class="row-cols" style="--cols:2"><div class="field"><label>University</label><input type="text" name="institution" required placeholder="Must not be University of Abuja"></div><div class="field"><label>Institutional profile page (link)</label><input type="url" name="profileUrl" required placeholder="https://..."></div></div>'
-             : '<p class="small muted" style="margin:0 0 8px">Department must differ from ' + esc(row.department || 'the student\u2019s department') + ' (and not be Physics).</p>') +
+        (ext
+          ? '<div class="row-cols" style="--cols:2">' + rankSel + '<div class="field"><label>Department</label><input type="text" name="department" required></div></div>' +
+            '<div class="field"><label>University</label><input type="text" name="institution" required placeholder="Must not be University of Abuja"></div>'
+          : '<div class="row-cols" style="--cols:3">' + rankSel +
+            '<div class="field"><label>Faculty</label><select name="faculty" required>' + facOptionsHtml('') + '</select></div>' +
+            '<div class="field"><label>Department</label><select name="department" required>' + depOptionsHtml('', '') + '</select></div></div>' +
+            '<p class="small muted" style="margin:0 0 8px">Department must differ from ' + esc(row.department || 'the student\u2019s department') + ' (and not be Physics).</p>') +
         '<div class="field" style="max-width:240px"><label>Assessment due date (optional)</label><input type="date" name="dueDate"></div>' +
         '<button class="btn btn-primary" type="submit">Assign and email login</button> <button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></form>');
     }
@@ -1921,7 +2369,7 @@
 
     /* ---- Examiner login: My Assignments ---- */
     function viewExaminer() {
-      var d = state.examiner; if (!d) return '<div class="page-loading"><span class="spinner"></span></div>';
+      var d = state.examiner; if (!d) return skeletonHtml();
       var out = '<h2 style="margin:0 0 6px">My Assignments</h2><p class="small muted" style="margin:0 0 16px">You see only the students assigned to you. Submit one assessment per assignment; it locks once submitted.</p>';
       if (!d.assignments.length) return out + '<div class="empty">No assignments yet.</div>';
       d.assignments.forEach(function (a) {
@@ -1931,7 +2379,8 @@
           out += '<p><strong>' + esc(a.recommendation) + '</strong> &middot; average ' + esc(a.score) + '%</p>' + Object.keys(a.scores || {}).map(function (k) { return '<p class="small" style="margin:2px 0">' + esc(k) + ': ' + esc(a.scores[k]) + '</p>'; }).join('') + '<p class="small pre">' + esc(a.comments) + '</p></div>';
           return;
         }
-        if (a.type === 'External' && a.submissionId) out += '<p><button class="btn btn-primary btn-sm" type="button" data-action="read-files" data-id="' + esc(a.submissionId) + '">Open the thesis / dissertation</button></p>';
+        if (a.submissionId) out += '<p><button class="btn btn-primary btn-sm" type="button" data-action="read-files" data-id="' + esc(a.submissionId) + '">' + (a.type === 'External' ? 'Open the thesis / dissertation' : 'Open the progress report') + '</button></p>';
+        else if (a.type === 'Internal') out += '<p class="small muted">The student\u2019s progress report is not available yet.</p>';
         var crit = d.criteria[a.type] || [], recs = a.type === 'External' ? d.recommendations : d.internalRecommendations;
         out += '<form id="exam-assess-form" data-id="' + esc(a.id) + '" data-type="' + esc(a.type) + '"><div class="row-cols" style="--cols:2">' +
           crit.map(function (c, i) { return '<div class="field"><label>' + esc(c) + ' (0&ndash;100)</label><input type="number" name="score' + i + '" min="0" max="100" step="0.5" required></div>'; }).join('') + '</div>' +
@@ -1946,7 +2395,7 @@
       var t = e.target; if (!t) return;
       if (t.id === 'pipe-filter') { state.pipeFilter = t.value; render(); return; }
       if (t.name === 'type' && t.form && t.form.id === 'sub-form') {   // PPTX only for the progress presentation; documents otherwise
-        var inp = t.form.querySelector('[name=docFile]'); if (inp) inp.setAttribute('accept', t.value === 'Progress Presentation (PPTX)' ? '.pptx' : '.pdf,.doc,.docx');
+        var inp = t.form.querySelector('[name=docFile]'); if (inp) inp.setAttribute('accept', t.value === 'Progress Presentation (PPTX)' ? '.pptx' : (PAYMENT_TYPES.indexOf(t.value) > -1 || t.value === 'Plagiarism Certificate' ? '.pdf,.jpg,.jpeg,.png' : '.pdf,.doc,.docx'));
       }
     });
 
@@ -2135,7 +2584,7 @@
           : '<p class="muted">No examiners assigned yet.</p>') + '</div>';
     }
     function viewStudentDashboard() {
-      if (!state.dashboard) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.dashboard) return skeletonHtml();
       var s = state.dashboard.student;
       var stageIdx = JOURNEY_STAGES.indexOf(s.currentStage);
       var pct = ((stageIdx + 1) / JOURNEY_STAGES.length * 100).toFixed(0);
@@ -2183,7 +2632,7 @@
         journeyTrackerCard(s, stageIdx) +
         '</div>' + gateExplainerCard(stageIdx);
 
-      out += defenceReadinessCard(s) + pptxCard(s) + finalPackageCard(s) + presentationIntentStudentCard(s) + examinersInfoCard();
+      out += defenceReadinessCard(s) + pptxCard(s) + paymentCard(s) + finalPackageCard(s) + presentationIntentStudentCard(s) + examinersInfoCard();
 
       // Announcements
       out += '<div class="card"><h4 style="margin:0 0 12px">Announcements</h4>';
@@ -2227,9 +2676,9 @@
       out += '<div class="card"><h4 style="margin:0 0 12px">New Submission</h4>' +
         '<form id="sub-form">' +
           '<div class="field"><label>Type</label><select name="type" required>' + optionsHtml(SUBMISSION_TYPES, null, '') + '</select>' +
-          '<p class="small muted" style="margin:6px 0 0">Current stage: <strong>' + esc(state.dashboard.student.currentStage || 'not set') + '</strong>. Each document opens at its own stage: Research Proposal at stage 5, Signed Proposal Defence Form at 6, the PPTX at 10, the thesis at 12, and the examiner-correction files at 14. The server checks this rule; request a stage update and wait for PG Coordinator approval if your stage is wrong.</p></div>' +
-          '<div class="field"><label>Upload file (PDF/DOC/DOCX; PPTX only for the progress presentation; max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
-          '<button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button> <button class="btn btn-outline" type="submit" data-draft="1"' + (state.busy ? ' disabled' : '') + '>Save as draft</button>' +
+          '<p class="small muted" style="margin:6px 0 0">Current stage: <strong>' + esc(state.dashboard.student.currentStage || 'not set') + '</strong>. Each document opens at its own stage: Research Proposal at stage 5, Signed Proposal Defence Form at 6, the PPTX at 10, the thesis at 12, the receipt of fees and evidence of payment from 11 (before the external examination), and the examiner-correction files at 14. The server checks this rule; request a stage update and wait for PG Coordinator approval if your stage is wrong.</p></div>' +
+          '<div class="field"><label>Upload file (PDF/DOC/DOCX; PPTX only for the progress presentation; PDF/JPG/PNG for fee receipts and proof of payment; max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
+          '<div class="sticky-actions"><button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button> <button class="btn btn-outline" type="submit" data-draft="1"' + (state.busy ? ' disabled' : '') + '>Save as draft</button></div>' +
           '<p class="small muted" style="margin:8px 0 0">A draft is private to you. It is not sent to reviewers until you press Submit for review in My Submissions.</p>' +
         '</form></div>';
 
@@ -2238,7 +2687,7 @@
 
     /* ---- Student Submissions ---- */
     function viewSubmissions() {
-      if (!state.submissions) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.submissions) return skeletonHtml();
       var out = '<h2 style="margin:0 0 20px">My Submissions</h2>';
       if (!state.submissions.length) return out + '<div class="empty">No submissions yet.</div>';
       out += '<div class="table-wrap"><table><thead><tr><th>Type</th><th>Status</th><th>Date</th><th>Inspector Comments</th><th>Supervisor Notes</th><th></th></tr></thead><tbody>';
@@ -2505,7 +2954,19 @@
       html += '</div><div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">' + (r.pdf && r.pdf.length ? '<button class="btn btn-primary btn-sm" data-action="pdf-check" data-id="' + esc(subId) + '" data-file="' + esc(r.pdf[0].id) + '">' + (r.source === 'pdf' ? 'Re-analyse PDF' : 'Analyse PDF in browser') + '</button>' : '') + '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(subId) + '">Check again</button><button class="btn btn-outline btn-sm" data-action="close-modal">Close</button></div>';
       showModal(html);
     }
-    document.addEventListener('input', function (e) { var t = e.target; if (t && t.matches && t.matches('input[data-sf]')) { state.sf = state.sf || {}; state.sf[t.getAttribute('data-sf')] = t.value; var pos = t.selectionStart; render(); var n = document.querySelector('input[data-sf="q"]'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} } } });
+    var sfTimer_ = null;
+    document.addEventListener('input', function (e) {
+      var t = e.target;
+      if (!(t && t.matches && t.matches('input[data-sf]'))) return;
+      state.sf = state.sf || {}; state.sf[t.getAttribute('data-sf')] = t.value;   // S4: record now, re-render after a short pause
+      clearTimeout(sfTimer_);
+      sfTimer_ = setTimeout(function () {
+        var cur = document.querySelector('input[data-sf="q"]'), pos = cur ? cur.selectionStart : 0;
+        render();
+        var n = document.querySelector('input[data-sf="q"]');
+        if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} }
+      }, 200);
+    });
     document.addEventListener('change', function (e) { var t = e.target; if (t && t.matches && t.matches('select[data-sf]')) { state.sf = state.sf || {}; state.sf[t.getAttribute('data-sf')] = t.value; render(); } });
     document.addEventListener('change', function (e) {   // student resubmits a corrected file: uploads to Drive straight away, then resubmits
       var rsId = e.target && e.target.getAttribute && e.target.getAttribute('data-resubmit'); if (!rsId) return;
@@ -2675,7 +3136,7 @@
       return o + '</tbody></table></div></div>';
     }
     function viewCoordinator() {
-      if (!state.coordinator) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.coordinator) return skeletonHtml();
       var c = state.coordinator;
       var out = '<h2 style="margin:0 0 20px">PG Coordinator Dashboard</h2>';
 
@@ -2830,7 +3291,7 @@
 
     /* ---- HoD / Coordinator overview ---- */
     function viewHoD() {
-      if (!state.hod) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.hod) return skeletonHtml();
       var h = state.hod;
       var out = '<div class="row" style="justify-content:space-between;flex-wrap:wrap;margin-bottom:16px"><div><h2 style="margin:0 0 4px">' + (h.role === 'HoD' ? 'Head of Department' : 'Overview & Reports') + '</h2><p class="muted" style="margin:0">Statistics, student journeys, supervisor assignment, reports and student cards</p></div>' +
         '<button class="btn btn-primary" data-action="sup-list">Supervisor List for HoD</button> <button class="btn btn-outline" data-action="hod-report">Generate Report</button> <button class="btn btn-outline" data-action="hod-csv">Export CSV</button></div>';
@@ -2936,10 +3397,18 @@
       Staff: ['"My Students" lists the students you supervise (main or co-supervisor).', 'Use Log meeting to record supervision sessions; students are notified.', 'Add notes to submissions and reply to student messages.'],
       Submission_Inspector: ['Review Awaiting items, tick every checklist point, then Approve, Reject or Request changes.', 'Comments are required for Reject / Request changes.', 'Reviewed history keeps your past decisions; the Coordinator and HoD are notified of each one.'],
       PG_Coordinator: ['Approve registrations, add or remove students, assign supervisors and update stages.', 'Use Submissions Review for approvals and Overview & Reports for charts, reports and student cards.', 'Announcements can be emailed to all students or one programme.', 'Answer student questions in Inquiries; the HoD can reply too.'],
-      Examiner: ['"My Assignments" lists only the students assigned to you.', 'Score each criterion (0\u2013100), choose a recommendation and write your comments, then submit. It locks after submission.', 'External examiners open the thesis from the assignment; internal examiners assess the live presentation (slides are not shared).'],
+      Examiner: ['"My Assignments" lists only the students assigned to you.', 'Score each criterion (0\u2013100), choose a recommendation and write your comments, then submit. It locks after submission.', 'External examiners open the thesis/dissertation from the assignment; internal examiners open the progress report and assess the live presentation (slides are not shared). You cannot see any other upload.'],
       HoD: ['Overview & Reports shows charts by programme, gender, session and stage.', 'Assign supervisors, post announcements and deadlines, and print reports or student cards.', 'Submissions Review decisions appear in the submissions table and your bell.', 'Answer student questions in Inquiries; the PG Coordinator sees your replies.']
     };
-    function showModal(html) { closeModal(); var m = document.createElement('div'); m.id = 'modal'; m.className = 'modal-overlay'; m.innerHTML = '<div class="modal-card">' + html + '</div>'; document.body.appendChild(m); }
+    function showModal(html) {
+      closeModal();
+      var m = document.createElement('div'); m.id = 'modal'; m.className = 'modal-overlay';
+      m.innerHTML = '<div class="modal-card" role="dialog" aria-modal="true">' + html + '</div>';
+      var card = m.firstChild, h = card.querySelector('h1,h2,h3,h4');
+      if (h) { h.id = 'modal-title'; card.setAttribute('aria-labelledby', 'modal-title'); }
+      DLGFOCUS.push(document.activeElement);
+      document.body.appendChild(m); a11yFix_(card); focusIn_(card);
+    }
     function maybeTour() {
       armSession(); if (state.tourShown || !state.user) return; state.tourShown = true;
       try { if (localStorage.getItem('pgTour_' + state.user.regNumber)) return; } catch (e) {}
@@ -2979,7 +3448,7 @@
           '<div class="field"><label>Subject *</label><input type="text" name="subject" required minlength="5" maxlength="150" placeholder="Short summary"></div></div>' +
           '<div class="field"><label>Message * <span class="muted" style="font-weight:400">(10&ndash;2000 characters)</span></label><textarea name="message" required minlength="10" maxlength="2000" rows="4" placeholder="Describe your inquiry or request"></textarea></div>' +
           '<div class="field"><label>Attachment <span class="muted" style="font-weight:400">(optional &mdash; PDF, Word, PNG or JPG, max 5 MB)</span></label><input type="file" name="inqFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"></div>' +
-          '<button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Send inquiry</button></form></div>';
+          '<div class="sticky-actions"><button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Send inquiry</button></div></form></div>';
       }
       out += '<div class="card"><div class="row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">' + ['All', 'Open', 'Answered', 'Closed'].map(function (f) {
         return '<button class="btn ' + (filter === f ? 'btn-primary' : 'btn-outline') + ' btn-sm" data-action="inq-filter" data-id="' + f + '">' + f + ' (' + cnt[f] + ')</button>';
@@ -3024,6 +3493,12 @@
         var old = b.querySelector('.nav-badge'); if (old) old.remove();
         var h = navBadge(b.getAttribute('data-nav')); if (h) b.insertAdjacentHTML('beforeend', h);
       });
+      document.querySelectorAll('.bnav [data-nav]').forEach(function (b) {
+        var host = b.querySelector('.bn-ico'); if (!host) return;
+        var old = host.querySelector('.nav-badge'); if (old) old.remove();
+        var h = navBadge(b.getAttribute('data-nav')); if (h) host.insertAdjacentHTML('beforeend', h);
+      });
+      placeAttention_(document.getElementById('ci'));
     }
     function loadNavCounts() {
       if (!state.user || state.user.role === 'SuperAdmin') return;
@@ -3099,7 +3574,7 @@
       [{ t: 'Request approval to present your progress report (both supervisors and the PG Coordinator)', auto: 'progressIntent' }],
       [{ t: 'The PG Coordinator or HoD assigns your Internal Examiner', auto: 'internalExaminer' }],
       [{ t: 'Download the template and upload your presentation (PPTX); the PG Coordinator and Inspector approve it', type: 'Progress Presentation (PPTX)' }],
-      [{ t: 'Request approval for your final examination (both supervisors and the PG Coordinator)', auto: 'finalIntent' }],
+      [{ t: 'Request approval for your final examination (both supervisors and the PG Coordinator)', auto: 'finalIntent' }, { t: 'Upload your receipt of fees', type: 'Receipt of Fees' }, { t: 'Upload your evidence of payment for the examination', type: 'Evidence of Payment for Examination' }, { t: 'Upload your plagiarism certificate', type: 'Plagiarism Certificate' }],
       [{ t: 'Upload your Thesis / Dissertation (format check, then Inspector and PG Coordinator approval)', type: 'Final Thesis/Dissertation' }],
       [{ t: 'The PG Coordinator or HoD assigns your External Examiner', auto: 'externalExaminer' }],
       [{ t: 'Upload the External Examiner\u2019s comments file', type: 'External Examiner Comments' }, { t: 'Upload your comment-by-comment response', type: 'Comment-by-Comment Response (External Examiner)' }, { t: 'Upload your final corrected version', type: 'Final Correction' }],
@@ -3122,7 +3597,7 @@
           if (!ix) note = 'not requested yet'; else if (ix.status === 'Approved') { mark = '\u2713'; note = 'approved'; } else { mark = '\u23F3'; note = ix.status.toLowerCase(); }
         } else if (it.auto === 'internalExaminer' || it.auto === 'externalExaminer') {
           var ex = (state.dashboard.examiners || []).filter(function (x) { return x.type === (it.auto === 'internalExaminer' ? 'Internal' : 'External'); })[0];
-          if (ex) { mark = '\u2713'; note = ex.name + ' assigned'; } else note = 'waiting for the Coordinator / HoD';
+          if (ex) { mark = '\u2713'; note = 'assigned'; } else note = 'waiting for the Coordinator / HoD';
         }
         return '<p style="margin:6px 0">' + mark + ' ' + esc(it.t) + (note ? ' <span class="small muted">&mdash; ' + esc(note) + '</span>' : '') + '</p>';
       });
@@ -3140,7 +3615,7 @@
       var rqs = (state.dashboard && state.dashboard.requests) || [], pend = rqs.filter(function (r) { return r.type === 'Title change' && r.status === 'Pending'; })[0];
       if (pend) return '<p class="small muted" style="margin:10px 0 0">Your title change request is awaiting the PG Coordinator.</p>';
       return '<details style="margin-top:10px"><summary style="cursor:pointer">Need to change the confirmed title?</summary><form id="titlechg-form" style="margin-top:8px">' +
-        '<div class="field"><label>New title</label><textarea name="newTitle" required minlength="10" maxlength="400" rows="2"></textarea></div>' +
+        '<div class="field"><label>New title</label><textarea name="newTitle" data-enforce="thesistitle" required minlength="10" maxlength="400" rows="2"></textarea></div>' +
         '<div class="field"><label>Why must it change?</label><textarea name="reason" required minlength="10" maxlength="1200" rows="2"></textarea></div>' +
         '<button class="btn btn-primary btn-sm" type="submit">Send title change request</button><p class="small muted" style="margin:8px 0 0">If the PG Coordinator approves, the new wording replaces your current title and stays confirmed.</p></form></details>';
     }
@@ -3151,7 +3626,7 @@
         (pend ? '<form id="emailcode-form" style="margin-top:10px"><div class="row" style="flex-wrap:wrap;gap:8px;align-items:flex-end"><div class="field" style="margin:0"><label>6-digit code from your new email</label><input type="text" name="code" required inputmode="numeric" maxlength="6" pattern="[0-9]{6}"></div><button class="btn btn-primary btn-sm" type="submit">Confirm new email</button></div></form>' : '') +
         '<p class="small muted" style="margin:8px 0 0">The code is sent to the new address, so the change only happens if you can open it.</p></div>';
     }
-    var HOWTO = {"Common": [{"t": "Sign in for the first time", "s": ["Open the portal and choose Login. Enter your registration number (students) or staff ID (e.g. ACA1234), then your password.", "Use the one-time password sent to you by email (or given by the PG Coordinator). At first sign-in you are asked to choose a new password.", "A new password must be 8–128 characters, contain at least one letter and one number, and must not be your registration number or a common password.", "After 5 wrong attempts the account is locked for 15 minutes. Your session ends automatically after about 6 hours; just sign in again."]}, {"t": "Forgot your password", "s": ["On the sign-in page choose Forgot password?, enter your registration number or staff ID and press Email me a code.", "A 6-digit code is sent to the email address on your account. It expires after 30 minutes.", "Enter the code and your new password. You can request a code up to 3 times per hour. If no email arrives, check your spam folder or contact the PG Coordinator."]}, {"t": "Notifications, email and settings", "s": ["The bell (top right) shows unread updates. Open it to read them; they are marked as read.", "Red numbers on the menu tabs (for example Inquiries, Coordinator or Submissions Review) show how many items are waiting for you.", "On this Help & FAQ page, set Email notifications to Instant, Daily digest or Off (bell only). Account and security emails are always sent.", "Use the moon icon to switch between light and dark theme, Change password to update your password, and Sign out when you finish, especially on a shared computer.", "Emails come from a no-reply address. Do not reply to them; use the portal (Messages or Inquiries) instead."]}, {"t": "Change your email address", "s": ["Open Help & FAQ and find the My account card.", "Type the new email address and press Send confirmation code. The 6-digit code goes to the NEW address, so the change only happens if you can open it.", "Enter the code (valid for 30 minutes) and press Confirm new email. Your sign-in email, notifications and records all use the new address.", "You can request a code up to 3 times per hour. An address that another account already uses is refused."]}], "Student": [{"t": "Register as a new student", "s": ["From the public site choose Register. Fill in your registration number (e.g. UA/pg2026/003531 or 26/408PHYX/040), names, gender, phone, email, faculty, department, programme and specialisation.", "Upload a passport photograph (JPG or PNG; large photos are resized for you). You may also attach your admission letter (PDF, JPG or PNG, up to 3 MB). Only the PG Coordinator and HoD can open it.", "Your registration waits for PG Coordinator approval. Use an email address that no other account uses. You can check the progress any time with Check Status, and you will be emailed the decision with a one-time password to sign in.", "Your academic session is set automatically from your registration number (e.g. a 2026 number shows as 2025/2026)."]}, {"t": "Read your Dashboard", "s": ["The Dashboard shows your session, your Main Supervisor and Co-Supervisor, your thesis title, a progress bar for your stage (1 to 15), a Next step hint, announcements, upcoming deadlines and supervision meetings.", "Use Add deadlines to calendar to download deadlines into your calendar, My timeline to see everything that has happened on your journey, and Download my card for your student card.", "To change your passport photo, choose a JPG or PNG under 1 MB in your profile card and press Update Photo.", "The To move on from stage card lists what you still need to do, with ticks for documents the portal can check (for example an approved Research Proposal). When your programme time limit is switched on by the PG Coordinator, the Programme time limit card shows how many months you have used and how many are left."]}, {"t": "Enter your thesis / dissertation title", "s": ["The title box opens once you reach stage 6 (Proposal Defence). If you are already past that stage, it is open now.", "Type your full title (10–400 characters) and press Save title. It shows Awaiting confirmation.", "You can edit and save again while it is awaiting confirmation. Each save puts it back to awaiting confirmation.", "Once the PG Coordinator confirms it, it is locked until stage 11 (External Defence). If it really must change earlier, use Need to change the confirmed title? under the title: give the new wording and your reason, then press Send title change request. If the PG Coordinator approves, the new wording replaces the old one and stays confirmed."]}, {"t": "Submit a document", "s": ["Under New Submission (Dashboard or My Submissions), choose the Type. Download the official templates first from Download Templates if needed.", "Upload a PDF, DOC or DOCX file (up to 50 MB), or paste a Google Drive link instead. Press Submit.", "Not ready to send? Press Save as draft instead of Submit. A draft is private to you and is not seen by reviewers (see Drafts below).", "Stage rules apply: Internal Examiner and Other Observations must be submitted before stage 11. Final Correction and the two Comment-by-Comment Responses can be submitted only from stage 12 (Examiners Comments).", "For Research Proposal, Progress Report, Final Thesis/Dissertation and Final Correction, Word files get an automatic format check: left margin 4.0 cm, other margins 2.5 cm, and in-text citations matched against the reference list. Submit Word (.docx) where you can; PDFs cannot be checked automatically.", "If you use a Drive link, make sure it is a file link. The portal shares it with your supervisors, the PG Coordinator and the inspectors."]}, {"t": "Drafts", "s": ["Open My Submissions. Drafts have the status Draft and show a link to the saved file.", "Press Submit for review when you are ready. The stage rules are checked at this moment, the format check runs, and your supervisors are given access to the file.", "Press Delete to remove a draft you no longer need. Only drafts can be deleted; submitted documents cannot."]}, {"t": "Track a submission and resubmit", "s": ["My Submissions lists every submission with its status: Submitted, Under Review, Changes Requested, Approved or Rejected, plus the Inspector Comments and Supervisor Notes.", "When a submission is Rejected or Changes Requested, read the numbered comments, fix your document and press Resubmit with the new file or link. It goes back to Submitted.", "Approval of your Research Proposal, Progress Report or Final Thesis moves your stage forward automatically and you are notified."]}, {"t": "Ask for a stage update", "s": ["If your stage is wrong, go to My Journey Stage, choose the stage you are at, add an optional note and press Request stage update.", "Only one stage request can wait at a time. The PG Coordinator approves or declines it and you are notified."]}, {"t": "Message your supervisors", "s": ["Press Message my supervisors on the Dashboard to open your conversation thread.", "Type a message, optionally attach a PDF, Word, PNG or JPG file (under 5 MB) and press Send. Your Main and Co-Supervisor are notified by bell and email.", "Replies appear in the same thread. The PG Coordinator and HoD can also read supervisor threads."]}, {"t": "Supervision meetings: scheduled meetings and notes", "s": ["When your supervisor schedules a meeting you get a bell notification and an email with a calendar file. Open that file to add the meeting to your calendar. Scheduled meetings show on your Dashboard with date, time and venue.", "After the meeting your supervisor records notes and action points. Read them under Supervision Meetings and press Acknowledge notes to confirm you have seen them.", "A cancelled meeting is shown crossed out and you are notified."]}, {"t": "Send an inquiry to the PG Coordinator / HoD", "s": ["Open Inquiries in the menu. Choose a Category, write a short Subject and your Message (10–2000 characters), then press Send inquiry.", "You can attach one file (PDF, Word, PNG or JPG, up to 5 MB), for example an admission letter. You can also attach a file when you send a follow-up.", "Your inquiry appears in the list as Open. When the PG Coordinator or HoD replies it becomes Answered and you are notified by bell and email.", "Open an inquiry to read the whole conversation, send a follow-up (it returns to Open), or press Mark as resolved to close it. A closed inquiry cannot be reopened by you; send a new one instead.", "You can have at most 10 unresolved inquiries at a time, so close the ones that are settled.", "Which one to use: Messages are for your supervisors, Inquiries are for general questions and requests to the PG Coordinator/HoD, and the Requests form is for a formal Supervisor change or Stage extension."]}, {"t": "Make a formal request (supervisor change or stage extension)", "s": ["In Requests on the Dashboard choose the Type, explain your reason (at least 10 characters) and press Send request.", "The PG Coordinator or HoD decides it. The decision and their note appear in your Requests table and you are notified."]}], "Staff": [{"t": "See the students you supervise", "s": ["Open My Students. It lists every student for whom you are Main Supervisor or Co-Supervisor, with photo, programme, stage, your role, the other supervisor and contact details.", "Needs attention lists students with no progress for over 90 days, submissions that were Rejected or sent back with Changes Requested, and submissions that have waited 3 or more days for your endorsement.", "You can see only your own assigned students."]}, {"t": "Log a supervision meeting", "s": ["Press Log meeting beside the student, set the date, write the meeting notes and the action points, and save.", "The student is notified, and the meeting appears under Supervision Meetings on their dashboard."]}, {"t": "Schedule a meeting and record the notes", "s": ["Press Schedule beside the student. Choose the date, time, venue and an optional agenda, then press Schedule.", "The student, you and the supervisors receive an email with a calendar file to add the meeting to a calendar.", "Under Supervision Meetings (bottom of the page) press Record notes after the meeting. Enter the notes and action points; the student is asked to acknowledge them. You can see who has acknowledged.", "Press Cancel if the meeting will not take place; the student is notified. Use Log meeting when the meeting already took place and you only need to record it."]}, {"t": "Message a student", "s": ["Press Messages beside a student to open your thread. Type, optionally attach a file, and press Send. Students are notified by bell and email.", "To write to one student or to all your assigned students at once, use the Send Message form and choose One of my assigned students or All my assigned students.", "Press Journey to see the student’s full timeline."]}, {"t": "Saved texts for messages", "s": ["Above a message box you will see Insert saved text. Pick a ready-made text or one of your own (marked with a star); it is added to the message so you can edit it.", "Write something you use often and press Save this text to keep it. My saved texts lets you delete texts you no longer need."]}, {"t": "Read, comment on and endorse submissions", "s": ["Submissions from My Students lists your students’ documents with status, files and inspector comments.", "Press Read / Edit to open the files inside the portal. You can edit Word files in Google Docs, and you have edit access in Drive.", "Press Add Note to record a supervisory note on a submission; the student can see it.", "Press Endorse once you are satisfied with a document. Several inspector checklists include Supervisor endorsement attached, so endorse before the inspector reviews it. The student is notified.", "If a submission waits for your endorsement, you get a bell notification and a reminder email every 3 days until you endorse it."]}, {"t": "When you are assigned or removed", "s": ["You get a bell notification and an email whenever the PG Coordinator assigns you to, or removes you from, a student, showing the student’s details and the other supervisor.", "Your Drive access to that student’s files is updated automatically."]}], "Submission_Inspector": [{"t": "Find submissions to review", "s": ["Open Submissions Review. Awaiting review lists new and in-progress submissions, oldest first, with the number of days each has waited. Reviewed history keeps your past decisions.", "Items waiting more than 7 days are flagged as overdue. If the PG Coordinator assigned a submission to you, you also get a notification.", "If a submission is assigned to you and you cannot take it, press Decline assignment and give a reason. It goes back to the PG Coordinator and HoD, who assign another inspector."]}, {"t": "Read the files and run the format check", "s": ["Press Read files to open the documents in the in-portal reader (you can also download them). You have comment access in Drive, not edit access.", "For Research Proposal, Progress Report, Final Thesis/Dissertation and Final Correction, the portal checks Word files automatically. Press Re-run format check to run it again.", "The result is Pass or Flagged. It checks margins (left 4.0 cm; top, right and bottom 2.5 cm) and compares in-text citations with the reference list. PDFs and old .doc files cannot be checked automatically, so read them yourself."]}, {"t": "Record the similarity (plagiarism) result", "s": ["On proposals, progress reports, theses and final corrections you will see a Similarity block. Enter the percentage from your similarity report, optionally paste the link to the report, and press Record.", "A result above the allowed limit (20% unless the department changed it) is marked in red. Use it when you request changes.", "If the department switched on the rule, a Final Thesis/Dissertation cannot be approved until a result within the limit is recorded."]}, {"t": "Approve, reject or request changes", "s": ["Tick every checklist item for the submission. All items must be ticked before you can Approve. Use Under Review to show a student you have started.", "To Reject or use Request Changes, comments are required. Write one issue per line; the portal numbers them for the student.", "Above the comment box, Insert saved text adds ready-made comments (for example about margins or missing references). Write a comment you reuse often and press Save this text to keep your own snippet.", "Approving a Research Proposal, Progress Report or Final Thesis automatically advances the student’s stage.", "The student is emailed your decision and comments, and the PG Coordinator and HoD are notified."]}, {"t": "Track your own work", "s": ["My reviews per week shows how many submissions you reviewed recently.", "After a student resubmits, the item returns to Awaiting review with the earlier history kept."]}], "PG_Coordinator": [{"t": "Approve or reject new registrations", "s": ["Open Coordinator. Pending Approvals lists new registrations.", "The Checks column warns about possible duplicates (the same phone number or name as another student) and links to the admission letter when the student attached one.", "Press Approve, or Reject and give a reason. The student is emailed either way.", "Approve all pending registrations approves everything waiting in one step; use it only after checking the list."]}, {"t": "Add or remove a student", "s": ["Use Add Student to register a student directly: fill in the form and save. The session is set from the registration number, and the student is emailed a one-time password. An email address already used by another account is refused.", "Remove deletes the student account and their submissions. It cannot be undone, so use it with care."]}, {"t": "Import many students from a CSV file", "s": ["In Import Students from CSV press Download template, fill it in (Excel can save as CSV), choose the file and press Import.", "Required columns: Reg Number, Surname, First Name, Gender, Phone, Email, Programme, Specialisation. Optional: Other Names, Faculty, Department (blank means Faculty of Physical Sciences / Physics).", "At most 60 students per file. Each valid row creates an approved student and emails a one-time password. A summary lists every row that failed and why, so you can fix and import only those rows."]}, {"t": "Assign supervisors", "s": ["Press Assign supervisors beside a student, choose the Main Supervisor and the Co-Supervisor (they must be different people) and save.", "The list shows each supervisor’s current number of students; you are warned before assigning someone who already has 8 or more.", "The student and both supervisors are notified, and Drive access to the student’s files is updated."]}, {"t": "Bulk actions on selected students", "s": ["Tick the box beside each student (cards or table). Select all shown ticks everyone matching the current filters; Clear unticks all.", "Set stage changes the journey stage for every selected student and notifies each one.", "Assign supervisors sets the Main and/or Co-Supervisor for everyone selected. Leave a role on Keep to change only the other one. Each supervisor receives one summary email instead of one per student.", "A result window lists any student the action could not be applied to."]}, {"t": "Update stages and handle stage requests", "s": ["Change a student’s stage with the Update journey stage drop-down on their card or row. The student is notified.", "Stage Update Requests lists students who asked for a change. Press Approve to move them to the requested stage, or Decline with a reason."]}, {"t": "Confirm thesis / dissertation titles", "s": ["Titles typed by students show as Awaiting confirmation in the Thesis Title column, and you get a notification.", "Press Confirm title once you have checked it. The student can then no longer change it before stage 11 (External Defence).", "Title Change Requests lists students who asked to change a confirmed title, showing the current title, the requested title and the reason. Press Approve to replace the title (it stays confirmed) or Decline with a reason."]}, {"t": "Find and filter students", "s": ["In the student list, filter by registration number, first name, last name, session, programme, specialisation, stage or main supervisor, then press Apply filters. Clear filters resets them.", "Switch between Cards view and Table view as you prefer."]}, {"t": "Manage staff and logins", "s": ["Staff List (Supervisors) shows rank and specialisation. Use Add Staff Member to add a supervisor, or Remove to take one off the list (their students become unassigned).", "Use Staff Logins & Roles to create or change a staff login. The staff ID must look like ACA1234. Choose the role (Staff, HoD, PG Coordinator or Submission Inspector); the person gets an email with an initial password.", "Deactivate or reactivate a login with the toggle beside it."]}, {"t": "Reset a student’s password", "s": ["Press Reset PW beside the student. A new one-time password is emailed to them and they must choose their own password at next sign-in. If the email cannot be sent, the page shows you the one-time password so you can give it to the student."]}, {"t": "Review submissions and assign inspectors", "s": ["Open Submissions Review to see all submissions. You can approve, reject or request changes there just like an inspector.", "Press Assign inspector to give a submission to a specific inspector; they are notified.", "Read / Edit opens a submission’s files, with edit access to Word documents."]}, {"t": "Answer student inquiries", "s": ["Open Inquiries. It starts on Open, the inquiries still waiting for a reply. Use the filter buttons for Answered, Closed or All.", "Press Reply to read the conversation, type your answer and press Send reply. The inquiry becomes Answered and the student is notified. The HoD can see and answer it too.", "Above the reply box, Insert saved text adds a ready-made reply; Save this text keeps your own. You can attach a file (PDF, Word, PNG or JPG, up to 5 MB) to a reply.", "Press Close inquiry when it is settled, or Reopen to continue a closed one. A closed inquiry must be reopened before anyone can reply.", "Forward to supervisor sends the conversation to a supervisor for input (the student only sees that it was forwarded).", "The Response time card at the top shows the average time to first reply, overall and for each category."]}, {"t": "Post announcements and send messages", "s": ["Post Announcement: write a title and body, choose the audience (Students only, Staff only or Every user), optionally tick the email option and pick a programme for the email, then post.", "Send Message: choose Individual, All students, All staff or Every user, add a subject and message, and send. Individual messages also appear in the student’s Messages thread."]}, {"t": "Deadlines, seminars, examiners and requests", "s": ["Open Overview & Reports. Add Deadline publishes a deadline that students see on their dashboard and can add to their calendar.", "Seminars: schedule a seminar with its presenters, then use Attendance to record who attended.", "Examiners & Defence Scores: assign an Internal or External examiner to a student (they receive an appointment email if you give an address), then use Record result to enter the score (0–100) and comments.", "Requests lists Supervisor change and Stage extension requests. Press Approve or Decline (a note is required to decline). Stage update requests are decided on the Coordinator page.", "If your department wants the HoD to approve examiners, set EXAMINER_APPROVAL_REQUIRED to yes in the Config tab. Examiners you assign then show as awaiting HoD approval and nobody is emailed until the HoD approves."]}, {"t": "Reports, exports, backup and audit", "s": ["Overview & Reports has charts by programme, gender, session, stage and submission status. Generate Report prints a statistics report, Print card prints a student card, and Export CSV downloads the student list.", "Supervisor List for HoD: choose a session and programme, press Generate, then print or save as PDF. It shows Reg No, Full Names, Programme, Session, Main Supervisor, Co-Supervisor and Title.", "Export Data (Coordinator page) has a Download CSV button for the students and submissions. Back up all data now copies the spreadsheet into the Backups folder.", "Audit Log lists who did what and when."]}, {"t": "Settings, reminders and privacy (Config tab)", "s": ["Run installAllTriggers once from the Apps Script editor (or the spreadsheet menu). It schedules the daily reminders, digests, weekly time-limit alert, backup and housekeeping, and adds the settings below to the Config tab. It is safe to run again.", "Settings (Config tab): SIMILARITY_LIMIT (default 20), REQUIRE_SIMILARITY (yes/no), EXAMINER_APPROVAL_REQUIRED (yes/no), ENDORSE_REMIND_DAYS (3), NUDGE_DAYS (30) and TIME_ALERT_MONTHS (6).", "Time limits: the LIMIT_MONTHS values for MSc, MPhil and PhD are placeholders. Enter your department’s real limits, then set TIME_LIMITS_ENABLED to yes. Until then no time-limit information is shown to anyone.", "Students with no progress for 90 days get a gentle reminder email at most every NUDGE_DAYS days, and supervisors are reminded about submissions waiting for their endorsement.", "Optional: run rotateLegacyDefaultPasswords (try it with dryRun = true first) to replace the old shared default password on accounts that never changed it.", "Optional: set PASSPORT_PRIVACY to private and run restrictExistingPassports once to stop passport photos being viewable by anyone with the link. Test with a few photos first, and note that printed cards cannot show private photos.", "Old audit log rows (24 months) and read notifications (90 days) are tidied automatically every month."]}], "HoD": [{"t": "Read the Overview & Reports page", "s": ["Open Overview & Reports. The top cards show total, approved and pending students and total submissions. Charts break students down by programme, gender, session and journey stage, and submissions by status.", "All Students lists every student with session, stage, supervisors and thesis title. Buttons beside each row open the student’s Card, Messages thread and Journey timeline.", "As HoD you have read access to student records. Registrations, adding or removing students, stages, thesis-title confirmation and password resets are handled by the PG Coordinator.", "Below the tables you will find Time-limit alerts (students close to or past their programme limit, once the PG Coordinator switches the limits on), Students at risk (no progress for 90 days), Supervisor workload (students per supervisor) and Average days to reach each stage."]}, {"t": "Print the supervisor list and reports", "s": ["Press Supervisor List for HoD, choose a session and programme (or leave them on All), then press Generate. Print it or save it as PDF.", "It lists S/N, Reg No, Full Names, Programme, Session, Main Supervisor, Co-Supervisor and Title. Titles still awaiting confirmation are marked.", "Generate Report prints the statistics report, Print card prints a student card, and Export CSV downloads the student list."]}, {"t": "Assign supervisors", "s": ["Press Assign supervisors beside a student, choose Main Supervisor and Co-Supervisor (different people) and save. You are warned if someone already supervises 8 or more students.", "The student and the supervisors are notified."]}, {"t": "Answer student inquiries", "s": ["Open Inquiries. It starts on Open (awaiting reply). Press Reply, read the conversation, write your answer and press Send reply.", "The student is notified and the inquiry becomes Answered. The PG Coordinator sees your reply and may also answer. Use Close inquiry when settled, or Reopen for a closed one.", "The Response time card shows how quickly inquiries get a first reply, overall and by category. Saved replies and attachments work the same way as for the PG Coordinator."]}, {"t": "Decide requests", "s": ["In Requests (Overview & Reports) you will see students’ Supervisor change and Stage extension requests. Press Approve or Decline; a note is required to decline.", "Stage update requests are decided by the PG Coordinator."]}, {"t": "Deadlines, seminars and examiners", "s": ["Add Deadline publishes a deadline to students. Seminars lets you schedule a seminar with presenters and record attendance afterwards.", "Examiners & Defence Scores lets you appoint Internal or External examiners and record each score and comments.", "If your department uses HoD approval for examiners, examiners proposed by the PG Coordinator appear as awaiting HoD approval. Press Approve (the examiner and student are notified) or Decline (the PG Coordinator is told to propose another)."]}, {"t": "Announcements and messages", "s": ["Post Announcement to Students only, Staff only or Every user, with an optional email.", "Send Message to an individual, all students, all staff or every user."]}, {"t": "Review submissions and the audit trail", "s": ["All Submissions & Review Decisions shows every submission, its status, who reviewed it, their comments and the files (read-only for you).", "You are notified when submissions are approved or rejected. Audit Log shows who did what and when."]}]};
+    var HOWTO = {"Common": [{"t": "Sign in for the first time", "s": ["Open the portal and choose Login. Enter your registration number (students) or staff ID (e.g. ACA1234), then your password.", "Use the one-time password sent to you by email (or given by the PG Coordinator). At first sign-in you are asked to choose a new password.", "A new password must be 8–128 characters, contain at least one letter and one number, and must not be your registration number or a common password.", "After 5 wrong attempts the account is locked for 15 minutes. Your session ends automatically after about 6 hours; just sign in again."]}, {"t": "Forgot your password", "s": ["On the sign-in page choose Forgot password?, enter your registration number or staff ID and press Email me a code.", "A 6-digit code is sent to the email address on your account. It expires after 30 minutes.", "Enter the code and your new password. You can request a code up to 3 times per hour. If no email arrives, check your spam folder or contact the PG Coordinator."]}, {"t": "Notifications, email and settings", "s": ["The bell (top right) shows unread updates. Open it to read them; they are marked as read.", "Red numbers on the menu tabs (for example Inquiries, Coordinator or Submissions Review) show how many items are waiting for you.", "On this Help & FAQ page, set Email notifications to Instant, Daily digest or Off (bell only). Account and security emails are always sent.", "Use the moon icon to switch between light and dark theme, Change password to update your password, and Sign out when you finish, especially on a shared computer.", "Emails come from a no-reply address. Do not reply to them; use the portal (Messages or Inquiries) instead."]}, {"t": "Change your email address", "s": ["Open Help & FAQ and find the My account card.", "Type the new email address and press Send confirmation code. The 6-digit code goes to the NEW address, so the change only happens if you can open it.", "Enter the code (valid for 30 minutes) and press Confirm new email. Your sign-in email, notifications and records all use the new address.", "You can request a code up to 3 times per hour. An address that another account already uses is refused."]}], "Student": [{"t": "Register as a new student", "s": ["From the public site choose Register. Fill in your registration number (e.g. UA/pg2026/003531, 26/408PHYX/040, Phd/sci/16586006 or 1750806006), names, gender, phone, email, faculty, department, programme and specialisation.", "Upload a passport photograph (JPG or PNG; large photos are resized for you). You may also attach your admission letter (PDF, JPG or PNG, up to 3 MB). Only the PG Coordinator and HoD can open it.", "Your registration waits for PG Coordinator approval. Use an email address that no other account uses. You can check the progress any time with Check Status, and you will be emailed the decision with a one-time password to sign in.", "Your academic session is set automatically from your registration number (e.g. a 2026 number shows as 2025/2026)."]}, {"t": "Read your Dashboard", "s": ["The Dashboard shows your session, your Main Supervisor and Co-Supervisor, your thesis title, a progress bar for your stage (1 to 15), a Next step hint, announcements, upcoming deadlines and supervision meetings.", "Use Add deadlines to calendar to download deadlines into your calendar, My timeline to see everything that has happened on your journey, and Download my card for your student card.", "To change your passport photo, choose a JPG or PNG under 1 MB in your profile card and press Update Photo.", "The To move on from stage card lists what you still need to do, with ticks for documents the portal can check (for example an approved Research Proposal). When your programme time limit is switched on by the PG Coordinator, the Programme time limit card shows how many months you have used and how many are left."]}, {"t": "Enter your thesis / dissertation title", "s": ["The title box opens once you reach stage 6 (Proposal Defence). If you are already past that stage, it is open now.", "Type your full title (10–400 characters) and press Save title. It shows Awaiting confirmation.", "You can edit and save again while it is awaiting confirmation. Each save puts it back to awaiting confirmation.", "Once the PG Coordinator confirms it, it is locked until stage 11 (External Defence). If it really must change earlier, use Need to change the confirmed title? under the title: give the new wording and your reason, then press Send title change request. If the PG Coordinator approves, the new wording replaces the old one and stays confirmed."]}, {"t": "Submit a document", "s": ["Under New Submission (Dashboard or My Submissions), choose the Type. Download the official templates first from Download Templates if needed.", "Upload a PDF, DOC or DOCX file (up to 50 MB), or paste a Google Drive link instead. Press Submit.", "Not ready to send? Press Save as draft instead of Submit. A draft is private to you and is not seen by reviewers (see Drafts below).", "Stage rules apply: Internal Examiner and Other Observations must be submitted before stage 11. Final Correction and the two Comment-by-Comment Responses can be submitted only from stage 12 (Examiners Comments).", "For Research Proposal, Progress Report, Final Thesis/Dissertation and Final Correction, Word files get an automatic format check: left margin 4.0 cm, other margins 2.5 cm, and in-text citations matched against the reference list. Submit Word (.docx) where you can; PDFs cannot be checked automatically.", "If you use a Drive link, make sure it is a file link. The portal shares it with your supervisors, the PG Coordinator and the inspectors."]}, {"t": "Drafts", "s": ["Open My Submissions. Drafts have the status Draft and show a link to the saved file.", "Press Submit for review when you are ready. The stage rules are checked at this moment, the format check runs, and your supervisors are given access to the file.", "Press Delete to remove a draft you no longer need. Only drafts can be deleted; submitted documents cannot."]}, {"t": "Track a submission and resubmit", "s": ["My Submissions lists every submission with its status: Submitted, Under Review, Changes Requested, Approved or Rejected, plus the Inspector Comments and Supervisor Notes.", "When a submission is Rejected or Changes Requested, read the numbered comments, fix your document and press Resubmit with the new file or link. It goes back to Submitted.", "Approval of your Research Proposal, Progress Report or Final Thesis moves your stage forward automatically and you are notified."]}, {"t": "Ask for a stage update", "s": ["If your stage is wrong, go to My Journey Stage, choose the stage you are at, add an optional note and press Request stage update.", "Only one stage request can wait at a time. The PG Coordinator approves or declines it and you are notified."]}, {"t": "Message your supervisors", "s": ["Press Message my supervisors on the Dashboard to open your conversation thread.", "Type a message, optionally attach a PDF, Word, PNG or JPG file (under 5 MB) and press Send. Your Main and Co-Supervisor are notified by bell and email.", "Replies appear in the same thread. The PG Coordinator and HoD can also read supervisor threads."]}, {"t": "Supervision meetings: scheduled meetings and notes", "s": ["When your supervisor schedules a meeting you get a bell notification and an email with a calendar file. Open that file to add the meeting to your calendar. Scheduled meetings show on your Dashboard with date, time and venue.", "After the meeting your supervisor records notes and action points. Read them under Supervision Meetings and press Acknowledge notes to confirm you have seen them.", "A cancelled meeting is shown crossed out and you are notified."]}, {"t": "Send an inquiry to the PG Coordinator / HoD", "s": ["Open Inquiries in the menu. Choose a Category, write a short Subject and your Message (10–2000 characters), then press Send inquiry.", "You can attach one file (PDF, Word, PNG or JPG, up to 5 MB), for example an admission letter. You can also attach a file when you send a follow-up.", "Your inquiry appears in the list as Open. When the PG Coordinator or HoD replies it becomes Answered and you are notified by bell and email.", "Open an inquiry to read the whole conversation, send a follow-up (it returns to Open), or press Mark as resolved to close it. A closed inquiry cannot be reopened by you; send a new one instead.", "You can have at most 10 unresolved inquiries at a time, so close the ones that are settled.", "Which one to use: Messages are for your supervisors, Inquiries are for general questions and requests to the PG Coordinator/HoD, and the Requests form is for a formal Supervisor change or Stage extension."]}, {"t": "Make a formal request (supervisor change or stage extension)", "s": ["In Requests on the Dashboard choose the Type, explain your reason (at least 10 characters) and press Send request.", "The PG Coordinator or HoD decides it. The decision and their note appear in your Requests table and you are notified."]}], "Staff": [{"t": "See the students you supervise", "s": ["Open My Students. It lists every student for whom you are Main Supervisor or Co-Supervisor, with photo, programme, stage, your role, the other supervisor and contact details.", "Needs attention lists students with no progress for over 90 days, submissions that were Rejected or sent back with Changes Requested, and submissions that have waited 3 or more days for your endorsement.", "You can see only your own assigned students."]}, {"t": "Log a supervision meeting", "s": ["Press Log meeting beside the student, set the date, write the meeting notes and the action points, and save.", "The student is notified, and the meeting appears under Supervision Meetings on their dashboard."]}, {"t": "Schedule a meeting and record the notes", "s": ["Press Schedule beside the student. Choose the date, time, venue and an optional agenda, then press Schedule.", "The student, you and the supervisors receive an email with a calendar file to add the meeting to a calendar.", "Under Supervision Meetings (bottom of the page) press Record notes after the meeting. Enter the notes and action points; the student is asked to acknowledge them. You can see who has acknowledged.", "Press Cancel if the meeting will not take place; the student is notified. Use Log meeting when the meeting already took place and you only need to record it."]}, {"t": "Message a student", "s": ["Press Messages beside a student to open your thread. Type, optionally attach a file, and press Send. Students are notified by bell and email.", "To write to one student or to all your assigned students at once, use the Send Message form and choose One of my assigned students or All my assigned students.", "Press Journey to see the student’s full timeline."]}, {"t": "Saved texts for messages", "s": ["Above a message box you will see Insert saved text. Pick a ready-made text or one of your own (marked with a star); it is added to the message so you can edit it.", "Write something you use often and press Save this text to keep it. My saved texts lets you delete texts you no longer need."]}, {"t": "Read, comment on and endorse submissions", "s": ["Submissions from My Students lists your students’ documents with status, files and inspector comments.", "Press Read / Edit to open the files inside the portal. You can edit Word files in Google Docs, and you have edit access in Drive.", "Press Add Note to record a supervisory note on a submission; the student can see it.", "Press Endorse once you are satisfied with a document. Several inspector checklists include Supervisor endorsement attached, so endorse before the inspector reviews it. The student is notified.", "If a submission waits for your endorsement, you get a bell notification and a reminder email every 3 days until you endorse it."]}, {"t": "When you are assigned or removed", "s": ["You get a bell notification and an email whenever the PG Coordinator assigns you to, or removes you from, a student, showing the student’s details and the other supervisor.", "Your Drive access to that student’s files is updated automatically."]}], "Submission_Inspector": [{"t": "Find submissions to review", "s": ["Open Submissions Review. Awaiting review lists new and in-progress submissions, oldest first, with the number of days each has waited. Reviewed history keeps your past decisions.", "Items waiting more than 7 days are flagged as overdue. If the PG Coordinator assigned a submission to you, you also get a notification.", "If a submission is assigned to you and you cannot take it, press Decline assignment and give a reason. It goes back to the PG Coordinator and HoD, who assign another inspector."]}, {"t": "Read the files and run the format check", "s": ["Press Read files to open the documents in the in-portal reader (you can also download them). You have comment access in Drive, not edit access.", "For Research Proposal, Progress Report, Final Thesis/Dissertation and Final Correction, the portal checks Word files automatically. Press Re-run format check to run it again.", "The result is Pass or Flagged. It checks margins (left 4.0 cm; top, right and bottom 2.5 cm) and compares in-text citations with the reference list. PDFs and old .doc files cannot be checked automatically, so read them yourself."]}, {"t": "Record the similarity (plagiarism) result", "s": ["On proposals, progress reports, theses and final corrections you will see a Similarity block. Enter the percentage from your similarity report, optionally paste the link to the report, and press Record.", "A result above the allowed limit (20% unless the department changed it) is marked in red. Use it when you request changes.", "If the department switched on the rule, a Final Thesis/Dissertation cannot be approved until a result within the limit is recorded."]}, {"t": "Approve, reject or request changes", "s": ["Tick every checklist item for the submission. All items must be ticked before you can Approve. Use Under Review to show a student you have started.", "To Reject or use Request Changes, comments are required. Write one issue per line; the portal numbers them for the student.", "Above the comment box, Insert saved text adds ready-made comments (for example about margins or missing references). Write a comment you reuse often and press Save this text to keep your own snippet.", "Approving a Research Proposal, Progress Report or Final Thesis automatically advances the student’s stage.", "The student is emailed your decision and comments, and the PG Coordinator and HoD are notified."]}, {"t": "Track your own work", "s": ["My reviews per week shows how many submissions you reviewed recently.", "After a student resubmits, the item returns to Awaiting review with the earlier history kept."]}], "PG_Coordinator": [{"t": "Approve or reject new registrations", "s": ["Open Coordinator. Pending Approvals lists new registrations.", "The Checks column warns about possible duplicates (the same phone number or name as another student) and links to the admission letter when the student attached one.", "Press Approve, or Reject and give a reason. The student is emailed either way.", "Approve all pending registrations approves everything waiting in one step; use it only after checking the list."]}, {"t": "Add or remove a student", "s": ["Use Add Student to register a student directly: fill in the form and save. The session is set from the registration number, and the student is emailed a one-time password. An email address already used by another account is refused.", "Remove deletes the student account and their submissions. It cannot be undone, so use it with care."]}, {"t": "Import many students from a CSV file", "s": ["In Import Students from CSV press Download template, fill it in (Excel can save as CSV), choose the file and press Import.", "Required columns: Reg Number, Surname, First Name, Gender, Phone, Email, Programme, Specialisation. Optional: Other Names, Faculty, Department (blank means Faculty of Physical Sciences / Physics).", "At most 60 students per file. Each valid row creates an approved student and emails a one-time password. A summary lists every row that failed and why, so you can fix and import only those rows."]}, {"t": "Assign supervisors", "s": ["Press Assign supervisors beside a student, choose the Main Supervisor and the Co-Supervisor (they must be different people) and save.", "The list shows each supervisor’s current number of students; you are warned before assigning someone who already has 8 or more.", "The student and both supervisors are notified, and Drive access to the student’s files is updated."]}, {"t": "Bulk actions on selected students", "s": ["Tick the box beside each student (cards or table). Select all shown ticks everyone matching the current filters; Clear unticks all.", "Set stage changes the journey stage for every selected student and notifies each one.", "Assign supervisors sets the Main and/or Co-Supervisor for everyone selected. Leave a role on Keep to change only the other one. Each supervisor receives one summary email instead of one per student.", "A result window lists any student the action could not be applied to."]}, {"t": "Update stages and handle stage requests", "s": ["Change a student’s stage with the Update journey stage drop-down on their card or row. The student is notified.", "Stage Update Requests lists students who asked for a change. Press Approve to move them to the requested stage, or Decline with a reason."]}, {"t": "Confirm thesis / dissertation titles", "s": ["Titles typed by students show as Awaiting confirmation in the Thesis Title column, and you get a notification.", "Press Confirm title once you have checked it. The student can then no longer change it before stage 11 (External Defence).", "Title Change Requests lists students who asked to change a confirmed title, showing the current title, the requested title and the reason. Press Approve to replace the title (it stays confirmed) or Decline with a reason."]}, {"t": "Find and filter students", "s": ["In the student list, filter by registration number, first name, last name, session, programme, specialisation, stage or main supervisor, then press Apply filters. Clear filters resets them.", "Switch between Cards view and Table view as you prefer."]}, {"t": "Manage staff and logins", "s": ["Staff List (Supervisors) shows rank and specialisation. Use Add Staff Member to add a supervisor, or Remove to take one off the list (their students become unassigned).", "Use Staff Logins & Roles to create or change a staff login. The staff ID must look like ACA1234. Choose the role (Staff, HoD, PG Coordinator or Submission Inspector); the person gets an email with an initial password.", "Deactivate or reactivate a login with the toggle beside it."]}, {"t": "Reset a student’s password", "s": ["Press Reset PW beside the student. A new one-time password is emailed to them and they must choose their own password at next sign-in. If the email cannot be sent, the page shows you the one-time password so you can give it to the student."]}, {"t": "Review submissions and assign inspectors", "s": ["Open Submissions Review to see all submissions. You can approve, reject or request changes there just like an inspector.", "Press Assign inspector to give a submission to a specific inspector; they are notified.", "Read / Edit opens a submission’s files, with edit access to Word documents."]}, {"t": "Answer student inquiries", "s": ["Open Inquiries. It starts on Open, the inquiries still waiting for a reply. Use the filter buttons for Answered, Closed or All.", "Press Reply to read the conversation, type your answer and press Send reply. The inquiry becomes Answered and the student is notified. The HoD can see and answer it too.", "Above the reply box, Insert saved text adds a ready-made reply; Save this text keeps your own. You can attach a file (PDF, Word, PNG or JPG, up to 5 MB) to a reply.", "Press Close inquiry when it is settled, or Reopen to continue a closed one. A closed inquiry must be reopened before anyone can reply.", "Forward to supervisor sends the conversation to a supervisor for input (the student only sees that it was forwarded).", "The Response time card at the top shows the average time to first reply, overall and for each category."]}, {"t": "Post announcements and send messages", "s": ["Post Announcement: write a title and body, choose the audience (Students only, Staff only or Every user), optionally tick the email option and pick a programme for the email, then post.", "Send Message: choose Individual, All students, All staff or Every user, add a subject and message, and send. Individual messages also appear in the student’s Messages thread."]}, {"t": "Deadlines, seminars, examiners and requests", "s": ["Open Overview & Reports. Add Deadline publishes a deadline that students see on their dashboard and can add to their calendar.", "Seminars: schedule a seminar with its presenters, then use Attendance to record who attended.", "Examiners & Defence Scores: assign an Internal or External examiner to a student (they receive an appointment email if you give an address), then use Record result to enter the score (0–100) and comments.", "Requests lists Supervisor change and Stage extension requests. Press Approve or Decline (a note is required to decline). Stage update requests are decided on the Coordinator page.", "If your department wants the HoD to approve examiners, set EXAMINER_APPROVAL_REQUIRED to yes in the Config tab. Examiners you assign then show as awaiting HoD approval and nobody is emailed until the HoD approves."]}, {"t": "Reports, exports, backup and audit", "s": ["Overview & Reports has charts by programme, gender, session, stage and submission status. Generate Report prints a statistics report, Print card prints a student card, and Export CSV downloads the student list.", "Supervisor List for HoD: choose a session and programme, press Generate, then print or save as PDF. It shows Reg No, Full Names, Programme, Session, Main Supervisor, Co-Supervisor and Title.", "Export Data (Coordinator page) has a Download CSV button for the students and submissions. Back up all data now copies the spreadsheet into the Backups folder.", "Audit Log lists who did what and when."]}, {"t": "Settings, reminders and privacy (Config tab)", "s": ["Run installAllTriggers once from the Apps Script editor (or the spreadsheet menu). It schedules the daily reminders, digests, weekly time-limit alert, backup and housekeeping, and adds the settings below to the Config tab. It is safe to run again.", "Settings (Config tab): SIMILARITY_LIMIT (default 20), REQUIRE_SIMILARITY (yes/no), EXAMINER_APPROVAL_REQUIRED (yes/no), ENDORSE_REMIND_DAYS (3), NUDGE_DAYS (30) and TIME_ALERT_MONTHS (6).", "Time limits: the LIMIT_MONTHS values for MSc, MPhil and PhD are placeholders. Enter your department’s real limits, then set TIME_LIMITS_ENABLED to yes. Until then no time-limit information is shown to anyone.", "Students with no progress for 90 days get a gentle reminder email at most every NUDGE_DAYS days, and supervisors are reminded about submissions waiting for their endorsement.", "Optional: run rotateLegacyDefaultPasswords (try it with dryRun = true first) to replace the old shared default password on accounts that never changed it.", "Optional: set PASSPORT_PRIVACY to private and run restrictExistingPassports once to stop passport photos being viewable by anyone with the link. Test with a few photos first, and note that printed cards cannot show private photos.", "Old audit log rows (24 months) and read notifications (90 days) are tidied automatically every month."]}], "HoD": [{"t": "Read the Overview & Reports page", "s": ["Open Overview & Reports. The top cards show total, approved and pending students and total submissions. Charts break students down by programme, gender, session and journey stage, and submissions by status.", "All Students lists every student with session, stage, supervisors and thesis title. Buttons beside each row open the student’s Card, Messages thread and Journey timeline.", "As HoD you have read access to student records. Registrations, adding or removing students, stages, thesis-title confirmation and password resets are handled by the PG Coordinator.", "Below the tables you will find Time-limit alerts (students close to or past their programme limit, once the PG Coordinator switches the limits on), Students at risk (no progress for 90 days), Supervisor workload (students per supervisor) and Average days to reach each stage."]}, {"t": "Print the supervisor list and reports", "s": ["Press Supervisor List for HoD, choose a session and programme (or leave them on All), then press Generate. Print it or save it as PDF.", "It lists S/N, Reg No, Full Names, Programme, Session, Main Supervisor, Co-Supervisor and Title. Titles still awaiting confirmation are marked.", "Generate Report prints the statistics report, Print card prints a student card, and Export CSV downloads the student list."]}, {"t": "Assign supervisors", "s": ["Press Assign supervisors beside a student, choose Main Supervisor and Co-Supervisor (different people) and save. You are warned if someone already supervises 8 or more students.", "The student and the supervisors are notified."]}, {"t": "Answer student inquiries", "s": ["Open Inquiries. It starts on Open (awaiting reply). Press Reply, read the conversation, write your answer and press Send reply.", "The student is notified and the inquiry becomes Answered. The PG Coordinator sees your reply and may also answer. Use Close inquiry when settled, or Reopen for a closed one.", "The Response time card shows how quickly inquiries get a first reply, overall and by category. Saved replies and attachments work the same way as for the PG Coordinator."]}, {"t": "Decide requests", "s": ["In Requests (Overview & Reports) you will see students’ Supervisor change and Stage extension requests. Press Approve or Decline; a note is required to decline.", "Stage update requests are decided by the PG Coordinator."]}, {"t": "Deadlines, seminars and examiners", "s": ["Add Deadline publishes a deadline to students. Seminars lets you schedule a seminar with presenters and record attendance afterwards.", "Examiners & Defence Scores lets you appoint Internal or External examiners and record each score and comments.", "If your department uses HoD approval for examiners, examiners proposed by the PG Coordinator appear as awaiting HoD approval. Press Approve (the examiner and student are notified) or Decline (the PG Coordinator is told to propose another)."]}, {"t": "Announcements and messages", "s": ["Post Announcement to Students only, Staff only or Every user, with an optional email.", "Send Message to an individual, all students, all staff or every user."]}, {"t": "Review submissions and the audit trail", "s": ["All Submissions & Review Decisions shows every submission, its status, who reviewed it, their comments and the files (read-only for you).", "You are notified when submissions are approved or rejected. Audit Log shows who did what and when."]}]};
     function howToHtml(role) {
       var block = function (title, list, open) {
         return '<div class="card"><h4 style="margin:0 0 8px">' + esc(title) + '</h4>' + list.map(function (g, i) {
@@ -3181,12 +3656,12 @@
       var done = []; try { done = JSON.parse(sub.checklist || '[]'); } catch (e) {}
       return '<div class="small" style="margin:8px 0"><strong>Checklist</strong> (all required to approve)' + (sub.checklistItems || []).map(function (it) { return '<label style="display:block;margin:2px 0"><input type="checkbox" data-chk="' + esc(sub.id) + '" value="' + esc(it) + '"' + (done.indexOf(it) > -1 ? ' checked' : '') + '> ' + esc(it) + '</label>'; }).join('') + '</div>';
     }
-    var DOC_MIME = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' };
+    var DOC_MIME = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
     var DOC_MAX = 50 * 1024 * 1024, DOC_SMALL = 8 * 1024 * 1024;
     /** PDF / Word up to 50 MB. Up to 8 MB goes in one call; bigger files are sent in 3 MB pieces. Resolves to the Drive URL. */
     function uploadDoc_(f, type, onProg) {
       var ext = String(f.name || '').split('.').pop().toLowerCase();
-      if (!DOC_MIME[ext]) return Promise.reject(new Error('Upload a PDF, DOC, DOCX or PPTX file.'));
+      if (!DOC_MIME[ext]) return Promise.reject(new Error('Upload a PDF, DOC, DOCX, PPTX, JPG or PNG file.'));
       if (f.size > DOC_MAX) return Promise.reject(new Error('That file is larger than 50 MB.'));
       var typed = f.slice(0, f.size, DOC_MIME[ext]);
       if (f.size <= DOC_SMALL) return readDataUrl(typed).then(function (u) { return authed('api_uploadSubmissionFile', { name: f.name, dataUrl: u, type: type }); }).then(function (r) { return r.url; });
@@ -3299,7 +3774,7 @@
         '<div><div class="cal-kicker">Next up</div>' + list(soon) + '</div></div></div>';
     }
     function viewCalendar() {
-      if (!state.calendar) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.calendar) return skeletonHtml();
       var ym = state.calMonth || calDefaultMonth_(), events = calAllEvents_();
       var monthEvents = events.filter(function (e) { return e.date.slice(0, 7) === ym; });
       var p = ym.split('-'), y = parseInt(p[0], 10), mo = parseInt(p[1], 10);
@@ -3442,7 +3917,7 @@
     }
     function hodExtras(h) {
       var opts = h.students.map(function (s) { return '<option value="' + esc(s.regNumber) + '">' + esc(s.fullName) + ' (' + esc(s.regNumber) + ')</option>'; }).join('');
-      var o = pipelineCard() + examinerQueueCard() + '<div class="card"><h4 style="margin:0 0 12px">Seminars</h4><form id="sem-form"><div class="row-cols" style="--cols:2"><div class="field"><label>Title</label><input type="text" name="title" required></div><div class="field"><label>Date</label><input type="date" name="date" required></div><div class="field"><label>Venue</label><input type="text" name="venue"></div><div class="field"><label>Presenters (reg numbers, comma-separated)</label><input type="text" name="presenters"></div></div><button class="btn btn-primary btn-sm" type="submit">Schedule</button></form>';
+      var o = pipelineCard() + examinerQueueCard() + noticeCard() + '<div class="card"><h4 style="margin:0 0 12px">Seminars</h4><form id="sem-form"><div class="row-cols" style="--cols:2"><div class="field"><label>Title</label><input type="text" name="title" required></div><div class="field"><label>Date</label><input type="date" name="date" required></div><div class="field"><label>Venue</label><input type="text" name="venue"></div><div class="field"><label>Presenters (reg numbers, comma-separated)</label><input type="text" name="presenters"></div></div><button class="btn btn-primary btn-sm" type="submit">Schedule</button></form>';
       o += (h.seminars || []).length ? '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Date</th><th>Title</th><th>Venue</th><th>Presenters</th><th>Attended</th><th></th></tr></thead><tbody>' + h.seminars.map(function (x) { return '<tr><td>' + esc(x.date) + '</td><td>' + esc(x.title) + '</td><td>' + esc(x.venue) + '</td><td class="small">' + esc(x.presenters || '—') + '</td><td class="small">' + (x.attendees ? x.attendees.split(',').length : 0) + '</td><td><button class="btn btn-outline btn-sm" data-action="attend" data-id="' + esc(x.id) + '">Attendance</button></td></tr>'; }).join('') + '</tbody></table></div>' : '';
       o += '</div><div class="card"><h4 style="margin:0 0 12px">Manual examiner record (legacy)</h4><form id="exm-form"><div class="row-cols" style="--cols:2"><div class="field"><label>Student</label><select name="regNumber" required><option value="">—</option>' + opts + '</select></div><div class="field"><label>Examiner name</label><input type="text" name="examinerName" required></div><div class="field"><label>Type</label><select name="type"><option>Internal</option><option>External</option></select></div><div class="field"><label>Email</label><input type="email" name="email"></div></div><button class="btn btn-primary btn-sm" type="submit">Assign examiner</button></form>';
       o += (h.examiners || []).length ? '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Student</th><th>Examiner</th><th>Type</th><th>Score</th><th>Comments</th><th></th></tr></thead><tbody>' + h.examiners.map(function (x) { return '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + '</span></td><td>' + esc(x.examinerName) + (x.status === 'Proposed' ? ' <span class="badge warn">awaiting HoD approval</span>' : x.status === 'Declined' ? ' <span class="badge bad">declined</span>' : '') + '</td><td>' + esc(x.type) + '</td><td>' + esc(x.score === '' ? '—' : x.score) + '</td><td class="small pre">' + esc(x.comments || '—') + '</td><td>' + (x.status === 'Scored' || x.status === 'Declined' ? '' : x.status === 'Proposed' ? (state.user.role === 'HoD' ? '<button class="btn btn-primary btn-sm" data-action="exm-approve" data-id="' + esc(x.id) + '">Approve</button> <button class="btn btn-danger btn-sm" data-action="exm-decline" data-id="' + esc(x.id) + '">Decline</button>' : '<span class="small muted">HoD approves</span>') : '<button class="btn btn-outline btn-sm" data-action="exm-result" data-id="' + esc(x.id) + '">Record result</button>') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '';
@@ -3457,7 +3932,7 @@
       return o;
     }
     function viewAudit() {
-      if (!state.audit) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.audit) return skeletonHtml();
       return '<h2 style="margin:0 0 20px">Audit Log <span class="muted small">(latest 300)</span></h2><div class="table-wrap"><table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead><tbody>' +
         state.audit.map(function (r) { return '<tr><td class="small">' + esc(r.at) + '</td><td>' + esc(r.actor) + '</td><td>' + esc(r.action) + '</td><td>' + esc(r.target) + '</td><td class="small">' + esc(r.detail) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     }
@@ -3468,7 +3943,7 @@
       state.unread = 0;
     }
     function viewSuperAdmin() {
-      if (!state.impUsers) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.impUsers) return skeletonHtml();
       var out = '<h2 style="margin:0 0 4px">Super Admin</h2><p class="muted" style="margin:0 0 16px">Sign in as any active user with that user&rsquo;s full access, or open a read-only preview to see their dashboard without being able to change anything. Both are written to the Audit Log under your name &mdash; sign-ins and previews are logged separately.</p>' + calendarMiniCard() +
         '<div class="card"><div class="field"><label>Find a user</label><input type="search" id="imp-search" placeholder="Name, ID, email or role" autocomplete="off"></div>';
       if (!state.impUsers.length) return out + '<p class="muted">No other active users.</p></div>';
@@ -3513,7 +3988,7 @@
       return o + '</tbody></table></div></div>';
     }
     function viewStaff() {
-      if (!state.staff) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.staff) return skeletonHtml();
       var st = state.staff, out = '<h2 style="margin:0 0 20px">Staff Dashboard</h2>' + annCard_(st.announcements) + calendarMiniCard();
       out += staffTilesHtml(st) + staffAttentionHtml(st) + '<div class="grid cols-2" style="margin-bottom:20px">' + supCalendarCard(st) + capacityCard(st) + '</div>';
       out += presentationIntentStaffCard(st) + msgFormHtml();
@@ -3540,7 +4015,7 @@
         '<div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"><input type="number" id="sim-pct-' + esc(sub.id) + '" min="0" max="100" step="0.1" placeholder="%" style="width:90px"><input type="url" id="sim-url-' + esc(sub.id) + '" placeholder="Report link (optional)" style="flex:1;min-width:180px"><button class="btn btn-outline btn-sm" data-action="sim-save" data-id="' + esc(sub.id) + '">Record</button></div></div>';
     }
     function viewInspector() {
-      if (!state.inspector) return '<div class="page-loading"><span class="spinner"></span></div>';
+      if (!state.inspector) return skeletonHtml();
       var out = '<h2 style="margin:0 0 20px">Submissions Review</h2>' + calendarMiniCard() + annCard_(state.annc) + '<input id="insp-q" type="search" placeholder="Search student, reg no., type or status…" style="max-width:420px;margin-bottom:16px">';
       if (!state.inspector.length) return out + '<div class="empty">No submissions yet.</div>';
       var open = function (s) { return s.status === 'Submitted' || s.status === 'Changes Requested' || s.status === 'Under Review'; };
@@ -3564,8 +4039,114 @@
       return out;
     }
 
+
+    /* ================= DIALOGS, TOASTS, FOCUS (Stage 1) ================= */
+    var DLGFOCUS = [];
+    function focusables_(root) { return [].filter.call(root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'), function (n) { return n.offsetParent !== null || n === document.activeElement; }); }
+    function focusIn_(root) {
+      var pref = root.querySelector('[data-autofocus],textarea,input:not([type=hidden]),select'), list = focusables_(root);
+      var t = pref || list[0] || root; if (t === root) root.setAttribute('tabindex', '-1');
+      setTimeout(function () { try { t.focus(); } catch (e) {} }, 30);
+    }
+    function restoreFocus_() { var n = DLGFOCUS.pop(); if (n && n.focus && document.contains(n)) { try { n.focus(); } catch (e) {} } }
+    function topOverlay_() { return document.getElementById('dlg') || document.getElementById('modal'); }
+    document.addEventListener('keydown', function (e) {
+      var o = topOverlay_(); if (!o) return;
+      if (e.key === 'Escape') { e.preventDefault(); if (o.id === 'dlg') dlgCancel_(); else closeModal(); return; }
+      if (e.key === 'Tab') {
+        var f = focusables_(o); if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (!o.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    /* ---- toasts ---- */
+    function toast(msg, kind) {
+      msg = String(msg === undefined || msg === null ? '' : msg).trim(); if (!msg) return;
+      var box = document.getElementById('toasts');
+      if (!box) { box = document.createElement('div'); box.id = 'toasts'; box.setAttribute('aria-live', 'polite'); box.setAttribute('role', 'status'); document.body.appendChild(box); }
+      var t = document.createElement('div'); t.className = 'toast ' + (kind || 'info'); t.textContent = msg.length > 300 ? msg.slice(0, 297) + '…' : msg;
+      if (kind === 'error') t.setAttribute('role', 'alert');
+      var gone = function () { if (t.parentNode) t.remove(); };
+      t.addEventListener('click', gone);
+      while (box.children.length >= 3) box.firstChild.remove();
+      box.appendChild(t); setTimeout(gone, kind === 'error' ? 8000 : 4500);
+    }
+
+    /* ---- dialogs: confirm / prompt / alert replacements ----
+       The click and submit handlers call confirm()/prompt() synchronously. Instead of rewriting ~60 call sites,
+       the handler is wrapped: the first call opens a dialog and aborts the handler; once the user answers, the
+       handler is replayed with the answers supplied in order, so the code after each dialog runs unchanged.
+       Cancel simply aborts. */
+    var DLG = { answers: [], idx: 0, cur: null };
+    var DLG_PENDING = { dialogPending: true }, DLG_REPLAY = { replay: true };
+    function dlgWrap_(fn) {
+      var w = function (e, rp) {
+        if (rp !== DLG_REPLAY) DLG.answers = [];
+        DLG.idx = 0;
+        var prev = DLG.cur; DLG.cur = { run: function () { w(e, DLG_REPLAY); } };
+        try { return fn.call(this, e); }
+        catch (err) { if (err === DLG_PENDING) return; throw err; }
+        finally { DLG.cur = prev; }
+      };
+      return w;
+    }
+    function closeDlg_() { var d = document.getElementById('dlg'); if (d) { d.remove(); restoreFocus_(); } }
+    var dlgState_ = null;
+    function dlgCancel_() { dlgState_ = null; closeDlg_(); }
+    function openDlg_(opts) {
+      closeDlg_();
+      var d = document.createElement('div'); d.id = 'dlg'; d.className = 'modal-overlay'; d.style.zIndex = 650;
+      var danger = /permanent|cannot be undone|remove|delete|decline|reject|revoke|cancel this/i.test(opts.msg);
+      var isPrompt = opts.kind === 'prompt', info = opts.kind === 'info';
+      var field = '';
+      if (isPrompt) {
+        var single = /score|link|name for|reg numbers/i.test(opts.msg);
+        field = '<div class="dlg-field field">' + (single ? '<input type="text" id="dlg-input" aria-labelledby="dlg-msg" autocomplete="off">' : '<textarea id="dlg-input" aria-labelledby="dlg-msg" rows="4"></textarea>') + '</div><div class="dlg-err" id="dlg-err" role="alert"></div>';
+      }
+      d.innerHTML = '<div class="modal-card" role="' + (info ? 'alertdialog' : 'dialog') + '" aria-modal="true" aria-labelledby="dlg-msg">' +
+        '<p class="dlg-msg" id="dlg-msg">' + esc(opts.msg) + '</p>' + field +
+        '<div class="dlg-actions">' + (info ? '' : '<button type="button" class="btn btn-outline" id="dlg-no">Cancel</button>') +
+        '<button type="button" class="btn ' + (danger && !isPrompt && !info ? 'btn-danger-solid' : 'btn-primary') + '" id="dlg-yes" data-autofocus>' + (info ? 'OK' : (isPrompt ? 'Continue' : (danger ? 'Yes, continue' : 'Confirm'))) + '</button></div></div>';
+      DLGFOCUS.push(document.activeElement);
+      document.body.appendChild(d);
+      var inp = d.querySelector('#dlg-input'), optional = /optional/i.test(opts.msg);
+      var yes = function () {
+        var val = true;
+        if (isPrompt) {
+          val = inp.value.trim();
+          if (!val && !optional) { d.querySelector('#dlg-err').textContent = 'This field is required.'; inp.focus(); return; }
+        }
+        var run = opts.run; dlgState_ = null; DLG.answers.push(val); d.remove(); restoreFocus_();
+        if (run) run();
+      };
+      d.querySelector('#dlg-yes').addEventListener('click', yes);
+      var no = d.querySelector('#dlg-no'); if (no) no.addEventListener('click', dlgCancel_);
+      if (inp) inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (inp.tagName === 'INPUT' || e.ctrlKey || e.metaKey)) { e.preventDefault(); yes(); } });
+      d.addEventListener('mousedown', function (e) { if (e.target === d && !info) dlgCancel_(); });
+      if (info) d.querySelector('#dlg-yes').addEventListener('click', function () {});
+      focusIn_(d.firstChild);
+    }
+    window.confirm = (function (native) { return function (msg) {
+      if (!DLG.cur) return native.call(window, msg);
+      if (DLG.idx < DLG.answers.length) return DLG.answers[DLG.idx++] === true;
+      openDlg_({ kind: 'confirm', msg: String(msg), run: DLG.cur.run }); throw DLG_PENDING;
+    }; })(window.confirm);
+    window.prompt = (function (native) { return function (msg, dflt) {
+      if (!DLG.cur) return native.call(window, msg, dflt);
+      if (DLG.idx < DLG.answers.length) { var v = DLG.answers[DLG.idx++]; return typeof v === 'string' ? v : null; }
+      openDlg_({ kind: 'prompt', msg: String(msg), run: DLG.cur.run }); throw DLG_PENDING;
+    }; })(window.prompt);
+    window.alert = function (msg) {
+      msg = String(msg === undefined || msg === null ? '' : msg);
+      if (msg.length > 150 || /password|backup created|https?:\/\//i.test(msg)) { openDlg_({ kind: 'info', msg: msg }); return; }
+      toast(msg, /^(saved|done|issues copied)/i.test(msg) ? 'success' : (/required|choose|enter|select|write|first|allow|no issues|there are no|could not|failed|only the/i.test(msg) ? 'warn' : 'info'));
+    };
+
     /* ================= EVENT DELEGATION ================= */
-    document.addEventListener('click', function (e) {
+    document.addEventListener('click', dlgWrap_(function (e) {
       var nav = e.target.closest('[data-nav]');
       if (nav) { document.body.classList.remove('nav-open'); navigate(nav.getAttribute('data-nav')); return; }
       var el = e.target.closest('[data-action]');
@@ -3614,7 +4195,8 @@
           }).catch(setError);
           break;
         case 'stop-imp': endImpersonation(false); break;
-        case 'toggle-nav': document.body.classList.toggle('nav-open'); break;
+        case 'toggle-nav': var navOpen = document.body.classList.toggle('nav-open'); el.setAttribute('aria-expanded', navOpen ? 'true' : 'false'); break;
+        case 'skip-main': var ciSkip = document.getElementById('ci'); if (ciSkip) ciSkip.focus(); break;
         case 'toggle-pw': {
           var wrap = el.closest('.pw-wrap');
           var input = wrap && wrap.querySelector('input');
@@ -3857,6 +4439,7 @@
         }
         case 'examiner-assign': openExaminerModal(el.getAttribute('data-kind'), el.getAttribute('data-reg'), el.getAttribute('data-sub')); break;
         case 'examiner-view': showExaminerAssessment_(id); break;
+        case 'notice-generate': generateNotice_(el); break;
         case 'examiner-revoke':
           if (confirm('Revoke this examiner? Their access ends and a replacement can be assigned.')) act(authed('api_revokeExaminer', id), 'Examiner revoked.', function () { loadView('hod'); });
           break;
@@ -4044,11 +4627,12 @@
           }).catch(setError);
           break;
       }
-    });
+    }));
 
-    document.addEventListener('submit', function (e) {
+    document.addEventListener('submit', dlgWrap_(function (e) {
       e.preventDefault();
       var form = e.target;
+      if (state.busy && form.id !== 'login-form' && form.id !== 'forgot-form') { toast('Please wait a moment\u2026', 'info'); return; }
       if (form.id === 'login-form') doLogin(form);
       else if (form.id === 'forgot-form') {
         var fd = collect(form);
@@ -4073,6 +4657,7 @@
         act(prep.then(function () { return authed('api_createSubmission', d); }).then(function (r) { if (r && r.id && !r.draft) authed('api_runComplianceCheck', r.id).catch(function () {}); return r; }), d.asDraft ? 'Draft saved. Find it in My Submissions.' : 'Submission created.', function () { loadView(d.asDraft ? 'submissions' : 'dashboard'); });
       }
       else if (form.id === 'title-intent-form') {
+        if (!enforceForm(form)) return;
         var tix = collect(form);
         act(authed('api_savePresentationIntent', { kind: TITLE_KIND, title: tix.title, id: form.getAttribute('data-id') || '' }), 'Title sent to your supervisors. Both must approve it.', function () { loadView('dashboard'); });
       }
@@ -4102,7 +4687,7 @@
         var ns = collect(form);
         act(authed('api_addStudent', ns), 'Student added. Sign-in details emailed.', function () { loadView('coordinator'); });
       }
-      else if (form.id === 'titlechg-form') { var tc = collect(form); act(authed('api_requestTitleChange', tc.newTitle, tc.reason), 'Title change request sent to the PG Coordinator.', function () { loadView('dashboard'); }); }
+      else if (form.id === 'titlechg-form') { if (!enforceForm(form)) return; var tc = collect(form); act(authed('api_requestTitleChange', tc.newTitle, tc.reason), 'Title change request sent to the PG Coordinator.', function () { loadView('dashboard'); }); }
       else if (form.id === 'emailreq-form') { var er = collect(form); authed('api_requestEmailChange', er.newEmail).then(function (r) { state.emailPending = true; setNotice(r.message); render(); }).catch(setError); }
       else if (form.id === 'emailcode-form') { var ec = collect(form); authed('api_confirmEmailChange', ec.code).then(function (r) { state.user.email = r.email; state.emailPending = false; setNotice('Your email address was changed to ' + r.email + '.'); render(); }).catch(setError); }
       else if (form.id === 'stage-form') { var sg = collect(form); act(authed('api_requestStageChange', sg.stage, sg.note || ''), 'Stage update requested. The PG Coordinator will review it.', function () { loadView('dashboard'); }); }
@@ -4142,7 +4727,7 @@
         if (!loadOk([main, co])) return;
         act(authed('api_assignSupervisors', assignId, main, co), 'Supervisors assigned.', function () { closeModal(); loadView(state.view === 'hod' ? 'hod' : 'coordinator'); });
       }
-    });
+    }));
 
     document.addEventListener('change', function (e) {
       var t = e.target;
@@ -4168,7 +4753,7 @@
         '</form></div>';
       document.body.appendChild(modal);
     }
-    function closeModal() { var m = document.getElementById('modal'); if (m) m.remove(); }
+    function closeModal() { var m = document.getElementById('modal'); if (m) { m.remove(); restoreFocus_(); } }
 
     /* ================= BOOT ================= */
     function start() {
@@ -4178,7 +4763,7 @@
           state.user = u; state.busy = false;
           if (u.impersonator) { state.impersonator = u.impersonator; state.adminToken = sessionStorage.getItem('pgs_admin_token') || ''; }
           if (u.firstLogin && !u.impersonator) { state.view = 'pwchange'; render(); return; }
-          var target = INITIAL_VIEW && roleAllowed(INITIAL_VIEW) ? INITIAL_VIEW : defaultView_();
+          var target = startView_();
           navigate(target);
         }).catch(function () {
           state.token = ''; state.user = null; state.busy = false;
@@ -4332,8 +4917,10 @@
       form.querySelectorAll('[name]').forEach(function (el) { if (el.type !== 'file') d[el.getAttribute('name')] = el.value; });
       var regRe1 = /^UA\/pg20\d{2}\/\d{6}$/;
       var regRe2 = /^\d{2}\/\d{3}[A-Z]{3,4}\/\d{3,4}$/;
-      if (!regRe1.test(d.regNumber) && !regRe2.test(d.regNumber)) {
-        regMsg('error', 'Invalid registration number format. Use UA/pg2026/003531 or 26/408PHYX/040.');
+      var regRe3 = /^(PHD|MSC|MPHIL)\/[A-Z]{2,6}\/\d{5,10}$/i, regRe4 = /^\d{9,10}$/;
+      d.regNumber = String(d.regNumber || '').replace(/\s+/g, '');
+      if (!regRe1.test(d.regNumber) && !regRe2.test(d.regNumber) && !regRe3.test(d.regNumber) && !regRe4.test(d.regNumber)) {
+        regMsg('error', 'Invalid registration number format. Use UA/pg2026/003531, 26/408PHYX/040, Phd/sci/16586006 or 1750806006.');
         return;
       }
       regMsg('', '');

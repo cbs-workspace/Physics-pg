@@ -56,7 +56,7 @@ npx serve dist                # preview the built output
   portal"*).
 - `tools/serve-pg.js` renders the same template against an in-memory mock of
   **29 of the 114** public `api_*` entrypoints; anything else fails at runtime.
-  Demo accounts mirror `SeedData.md`, password `PhysicsPG2026!`.
+  Demo accounts mirror `docs/SeedData.md`, password `PhysicsPG2026!`.
 - `GAS_EXEC` (build-pg.js:40) is the live deployment URL and the `embedUrl`
   base; it must stay in sync with the actual deployment.
 
@@ -76,8 +76,8 @@ npx serve dist                # preview the built output
 ## Code.gs conventions (critical gotchas)
 
 - Auth: `requireUser_(token)` takes **only** a token; the role check is a
-  separate `assertRole_(user, ['Role'], message)`. (`audit.md` and
-  `AGENT-GUIDE.md` show the wrong `requireUser_(token, roles…)` signature.)
+  separate `assertRole_(user, ['Role'], message)`. (`docs/audit.md` and
+  `docs/AGENT-GUIDE.md` show the wrong `requireUser_(token, roles…)` signature.)
 - Mutating endpoints come in pairs; **two conventions coexist**:
   - older: `api_x_locked_(…)` does the work, `api_x()` wraps it in
     `withScriptLock_` (30 s);
@@ -170,10 +170,11 @@ npx serve dist                # preview the built output
 - Public JSONP endpoints in `doGet`: `?public=announcements`, `?public=enquiry`,
   `?public=facdep`. The static bridge only exposes the first two.
 - `tools/make-guides.ps1` regenerates the `.docx` guides via Word COM (needs
-  Windows + Microsoft Word) and hardcodes `$out` to an old Desktop path
-  (`C:\Users\Abel U. Osagie\…`) — repoint it at the current repo `docs/` first.
+  Windows + Microsoft Word) and writes to `docs/guides/` — check `$out` at the top
+  of the script if the repo moves.
 - `docs/Staff.xlsx` (staff roster) is PII/local-only if present — never commit
-  it. Tracked `docs/` files are the generated guides + roadmap.
+  it. Tracked `docs/` content is the generated role guides (`docs/guides/`) and
+  the stage references (`docs/reference/`).
 
 ## Deploy rules
 
@@ -200,11 +201,11 @@ npx serve dist                # preview the built output
 
 - `README.md` — conventions, setup, roles, journey stages, theming (music and
   stage references now match the code; the folder tree is only partly accurate).
-- `DEPLOYMENT.md` — step-by-step deploy for both targets (current).
-- `AGENT-GUIDE.md` — practical runbook, but stale: `npm run deploy:preview`
+- `docs/DEPLOYMENT.md` — step-by-step deploy for both targets (current).
+- `docs/AGENT-GUIDE.md` — practical runbook, but stale: `npm run deploy:preview`
   (does not exist), the "section 12a migration", and the
   `requireUser_(token, roles…)` signature.
-- `audit.md` — architecture/data-model/security audit. Stale: the
+- `docs/audit.md` — architecture/data-model/security audit. Stale: the
   `requireUser_(token, roles…)` signature and `GAS_Files/Admission.html`
   (no such file).
-- `SeedData.md` — demo rows + hash generator; local/dev seeding only.
+- `docs/SeedData.md` — demo rows + hash generator; local/dev seeding only.

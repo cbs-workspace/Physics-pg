@@ -1,7 +1,7 @@
 # Agent Guide — Physics-pg continuation runbook
 
 **For:** a developer/agent picking this project up.
-**Read first:** `README.md` (conventions) and `audit.md` (full forensic audit). This file is the practical runbook.
+**Read first:** [`README.md`](../README.md) (conventions) and [`audit.md`](audit.md) (full forensic audit). This file is the practical runbook.
 
 ---
 
@@ -22,7 +22,7 @@ npm run build    # static site → dist/ (Cloudflare)
 ```
 
 - Change the port: `PORT=8082 npm run pg` or `node tools/serve-pg.js 8082`.
-- The preview uses in-memory demo data (accounts from `SeedData.md`, password `PhysicsPG2026!`).
+- The preview uses in-memory demo data (accounts from `docs/SeedData.md`, password `PhysicsPG2026!`).
 - Kill a stale server: `Get-NetTCPConnection -LocalPort 8081 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }`.
 
 ---
@@ -78,7 +78,7 @@ npm run build    # static site → dist/ (Cloudflare)
 - Do NOT re-run `setUp()` on the live sheet (it auto-appends duplicate headers).
 
 ### Re-seed demo data
-- Temp tab → run `setUp()` → paste seed rows from `SeedData.md`.
+- Temp tab → run `setUp()` → paste seed rows from `docs/SeedData.md`.
 
 ---
 
@@ -106,7 +106,7 @@ npm run build    # static site → dist/ (Cloudflare)
 
 **These are gone from the live sheet** (deleted 2026-10-22 with
 `removeDemoAccounts()`); the rows above only describe what the local preview
-(`npm run pg`) and `SeedData.md` seed. **Never re-seed the live sheet.**
+(`npm run pg`) and `docs/SeedData.md` seed. **Never re-seed the live sheet.**
 The live site is tested with a real HoD account — the site owner holds the
 credentials, they are not in this repo.
 

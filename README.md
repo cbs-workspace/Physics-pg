@@ -49,7 +49,7 @@ Three pieces, each with one job:
   `/exec` link never changes.
 
 Full step-by-step for future releases (GitHub push, Cloudflare auto-deploy,
-manual fallback, connection repair): **[`DEPLOYMENT.md`](DEPLOYMENT.md)**.
+manual fallback, connection repair): **[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)**.
 
 ### Cloudflare Pages build settings
 
@@ -79,22 +79,25 @@ Physics-pg/
 │   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
 │   ├── PG_Journey_Animated.svg ← animated journey poster on Home (set JOURNEY_IMAGE_URL)
 │   └── PG_Journey_Infographic.png ← older 15-step poster (not shown; kept for its URL)
+├── audio/
+│   └── music1.mp3         ← background music (copied to dist/audio/ by the build)
 ├── docs/
-│   ├── PG_Journey_Stages.docx ← 16-stage reference (5 phases)
-│   ├── PG Journey Roadmap.docx ← older 15-step roadmap (kept for history)
-│   └── Staff.xlsx          ← internal staff roster (local only, never committed)
-├── README.md
-├── SeedData.md              ← seed rows + hash generator for demo accounts
-├── audit.md                 ← forensic audit (architecture, data, security, bugs)
-├── AGENT-GUIDE.md           ← runbook for the next agent
-├── student_guide.docx        ← student guide (task-based)
-├── staff_guide.docx          ← staff guide (task-based)
-├── admin_guide.docx          ← admin/technical guide (roles, deploy, data model)
-└── tools/
-    ├── pg-template.js       ← shared template renderer (doGet semantics)
-    ├── serve-pg.js          ← npm run pg — local preview with demo backend
-    ├── build-pg.js          ← npm run build — static site into dist/ (Cloudflare)
-    └── make-guides.ps1      ← regenerates the three .docx guides (Word COM)
+│   ├── DEPLOYMENT.md      ← deploy runbook: GitHub → Cloudflare Pages, Apps Script
+│   ├── AGENT-GUIDE.md     ← runbook for the next agent
+│   ├── audit.md           ← forensic audit (architecture, data, security, bugs)
+│   ├── SeedData.md        ← seed rows + hash generator for demo accounts
+│   ├── guides/            ← generated role guides (.docx/.pdf) + training programme
+│   │   └── …              ← produced by tools/make-guides.ps1
+│   ├── reference/         ← PG_Journey_Stages.docx + pg_journey_roadmap.html
+│   └── Staff.xlsx         ← internal staff roster (local only, never committed)
+├── tools/
+│   ├── pg-template.js     ← shared template renderer (doGet semantics)
+│   ├── serve-pg.js        ← npm run pg — local preview with demo backend
+│   ├── build-pg.js        ← npm run build — static site into dist/ (Cloudflare)
+│   └── make-guides.ps1    ← regenerates the role guides into docs/guides/ (Word COM)
+├── package.json
+├── AGENTS.md              ← conventions + gotchas for coding agents
+└── README.md
 ```
 
 > Apps Script page URLs: `…/exec` (Home) · `…/exec?page=register|contact|login`.
@@ -110,16 +113,18 @@ Physics-pg/
 ## Public site (no login required)
 
 - **Home** — hero (department photo background) + live announcements from the
-  Announcements tab (`api_publicAnnouncements`), then **Your Postgraduate Journey**:
-  the animated 16-stage poster (opens full size in a new tab) with the five phases
-  summarised as cards and the decision gates (Steps 7, 10, 12, 13, 15) highlighted,
-  and a **Please note** callout.
+  Announcements tab (`api_publicAnnouncements`), then directly **Your Postgraduate
+  Journey**: the animated 16-stage poster (opens full size in a new tab) with the five
+  phases summarised as cards and the decision gates (Steps 7, 10, 12, 13, 15)
+  highlighted. Then **About the Department**, three highlight cards (Register Online /
+  Track Your Journey / Supervision & Submissions), and the **Please note** callout last,
+  just above the footer.
 - **Notice / caveat** — the site is strictly for journey navigation and departmental
   PG coordination, progress monitoring and documentation; other matters (incl. SPGS
   referrals) go to the Head, Department of Physics or the PG Coordinator. Full callout
-  on Home; one-line version in the footer of every public page.
-- **About** — condensed into a single **About the Department** section on Home
-  (the standalone About page was retired; `/about/` redirects to `/`).
+  closes the Home page; one-line version in the footer of every public page.
+- **About** — condensed into a single **About the Department** section on Home, below
+  the journey (the standalone About page was retired; `/about/` redirects to `/`).
 - **Register** — full registration form (`api_register`) with a **two-step flow**: the
   student first reviews a summary card (all details + passport preview) and can go back
   to edit before pressing *Submit Registration*; then a **status-check box**
@@ -164,7 +169,7 @@ Open the spreadsheet (ID already embedded as `DEFAULT_SPREADSHEET_ID` in `Code.g
 
 Run the `setUp()` function once from the Apps Script editor. It creates all tabs
 with the exact `HEADERS` schema and seeds the Config tab. Then paste demo rows
-from `SeedData.md` (generate the password hashes with `generateSeedHashes()`
+from `docs/SeedData.md` (generate the password hashes with `generateSeedHashes()`
 snippet in that file).
 
 Tabs: **Users, Students, Staff, Submissions, Announcements, Config, AuditLog**

@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-19
 **Scope:** full audit — architecture, data model, auth/security, all API endpoints, known bugs, tech debt, risks.
-**Auditor:** automated forensic pass over `GAS_Files/`, `tools/`, `README.md`, `DEPLOYMENT.md`, `package.json`.
+**Auditor:** automated forensic pass over `GAS_Files/`, `tools/`, `../README.md`, `DEPLOYMENT.md`, `package.json`.
 
 ---
 
@@ -159,22 +159,24 @@ Short codes (for `nextId_`): Users=`U`, Students=`S`, Staff=`F`, Submissions=`Su
 Physics-pg/
 ├── GAS_Files/
 │   ├── Code.gs            ← server (paste as "Code")
-│   ├── index.html         ← ONE template (paste as "index")
-│   └── Admission.html     ← legacy public admission form (superseded)
-├── images/                ← Phy_Complex.png (hero), PG_Journey_Infographic.png
+│   └── index.html         ← ONE template (paste as "index")
+├── images/                ← Phy_Complex.png (hero), PG_Journey_Animated.svg, PG_Journey_Infographic.png
+├── audio/                 ← music1.mp3 (copied to dist/audio/)
 ├── docs/
-│   ├── PG Journey Roadmap.docx
+│   ├── DEPLOYMENT.md      ← deploy runbook (GitHub → Cloudflare, Apps Script)
+│   ├── AGENT-GUIDE.md     ← runbook for the next agent
+│   ├── audit.md           ← this file
+│   ├── SeedData.md        ← demo seed rows + hash generator
+│   ├── guides/            ← generated role guides (.docx/.pdf)
+│   ├── reference/         ← PG_Journey_Stages.docx, pg_journey_roadmap.html
 │   └── Staff.xlsx         ← internal roster (NEVER commit)
 ├── tools/
 │   ├── pg-template.js     ← GAS-compatible template renderer
 │   ├── serve-pg.js        ← local preview (mock backend)
-│   └── build-pg.js        ← static build → dist/ (Cloudflare)
+│   ├── build-pg.js        ← static build → dist/ (Cloudflare)
+│   └── make-guides.ps1    ← regenerates docs/guides/ via Word COM
 ├── dist/                  ← build output (gitignored)
-├── audit.md               ← this file
-├── AGENT-GUIDE.md         ← runbook for the next agent
-├── student_guide.docx        ← student guide
-├── staff_guide.docx          ← staff guide
-├── admin_guide.docx          ← admin/technical guide
+├── AGENTS.md              ← conventions + gotchas for coding agents
 ├── README.md
 └── package.json           ← scripts: pg, build
 ```
