@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postgraduate Academic Journey - Department of Physics, University of Abuja</title>
+    <!-- Tailwind CSS for styling layout and controls -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            600: '#16a34a',
+                            800: '#166534',
+                            900: '#14532d',
+                            950: '#052e16',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1f13;
+            color: #f3f4f6;
+        }
+
+        /* SVG Animation Styles */
+        .path-line {
+            stroke-dasharray: 8 8;
+            animation: dash 30s linear infinite;
+        }
+
+        .path-active-line {
+            transition: stroke-dashoffset 0.5s ease-out;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+
+        .pulse-ring {
+            transform-origin: center;
+            animation: pulse-ring-anim 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring-anim {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.4); opacity: 0; }
+            100% { transform: scale(0.9); opacity: 0; }
+        }
+
+        .node-circle {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .node-circle:hover {
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.8));
+        }
+
+        /* Glassmorphism overlays */
+        .glass-panel {
+            background: rgba(20, 83, 45, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .glass-card {
+            background: rgba(5, 46, 22, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #052e16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #166534;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f59e0b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden text-slate-100">
+
+    <!-- Header Section -->
+    <header class="border-b border-brand-800/50 bg-brand-950/80 sticky top-0 z-40 backdrop-blur-md px-4 py-3 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-brand-900 border-2 border-gold-500 flex items-center justify-center shadow-inner">
+                    <i class="fa-solid font-bold text-2xl text-gold-400 fa-atom"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wide text-white flex items-center gap-2">
+                        UNIVERSITY OF ABUJA
+                    </h1>
+                    <p class="text-xs md:text-sm text-gold-400 font-medium tracking-wider">
+                        DEPARTMENT OF PHYSICS • POSTGRADUATE (PG) JOURNEY
+                    </p>
+                </div>
+            </div>
+
+            <!-- Controls Toolbar -->
+            <div class="flex items-center gap-2 bg-brand-900/60 p-1.5 rounded-xl border border-brand-800/80 shadow-md">
+                <button id="btnPrev" onclick="step(-1)" class="p-2.5 rounded-lg bg-brand-800 hover:bg-brand-600 text-white transition flex items-center justify-center text-sm" title="Previous Stage">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+                <button id="btnPlay" onclick="togglePlay()" class="px-4 py-2 rounded-lg bg-gold-500 hover:bg-gold-400 text-brand-950 font-bold transition flex items-center gap-2 text-sm shadow-md" title="Play/Pause">
+                    <i id="playIcon" class="fa-solid fa-play"></i>
+                    <span id="playText">Autoplay</span>
+                </button>
+                <button id="btnNext" onclick="step(1)" class="p-2.5 rounded-lg bg-brand-800 hover:bg-brand-600 text-white transition flex items-center justify-center text-sm" title="Next Stage">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+                <div class="h-6 w-px bg-brand-700/50 mx-1"></div>
+                <button id="btnSpeed" onclick="cycleSpeed()" class="px-3 py-2 rounded-lg bg-brand-800/80 hover:bg-brand-700 text-xs font-semibold text-gold-400 transition" title="Toggle Speed">
+                    <span id="speedLabel">1.0x Speed</span>
+                </button>
+                <button onclick="toggleSVGModal()" class="p-2.5 rounded-lg bg-brand-800/80 hover:bg-gold-500 hover:text-brand-950 text-white transition text-sm" title="Export SVG Source">
+                    <i class="fa-solid fa-code"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+        
+        <!-- Status Bar & Progress Indicator -->
+        <div class="glass-panel rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <div id="stageBadge" class="w-12 h-12 rounded-xl bg-gold-500 text-brand-950 font-extrabold text-xl flex items-center justify-center shadow-lg shrink-0">
+                    01
+                </div>
+                <div class="min-w-0">
+                    <span class="text-xs uppercase tracking-widest text-emerald-400 font-semibold">Current Milestone</span>
+                    <h2 id="stageTitle" class="text-lg md:text-xl font-bold text-white truncate">Admission</h2>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full md:w-1/2 flex flex-col gap-1.5">
+                <div class="flex justify-between text-xs text-slate-300 font-medium">
+                    <span>Overall Progress</span>
+                    <span id="progressPercent">6.25%</span>
+                </div>
+                <div class="w-full h-3 bg-brand-950/80 rounded-full overflow-hidden p-0.5 border border-brand-800">
+                    <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-gold-400 rounded-full transition-all duration-500" style="width: 6.25%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive SVG Canvas & Info Overlay Container -->
+        <div class="relative glass-panel rounded-2xl p-2 md:p-6 shadow-2xl overflow-hidden min-h-[500px] flex items-center justify-center">
+            
+            <!-- Serpentine Path SVG -->
+            <svg id="journeySvg" viewBox="0 0 1000 620" class="w-full h-auto max-h-[700px] drop-shadow-md select-none">
+                <defs>
+                    <!-- Background Grid Pattern -->
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(22, 101, 52, 0.15)" stroke-width="1"/>
+                    </pattern>
+
+                    <!-- Path Gradient -->
+                    <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10b981" />
+                        <stop offset="50%" stop-color="#059669" />
+                        <stop offset="100%" stop-color="#f59e0b" />
+                    </linearGradient>
+
+                    <!-- Active Glow Filter -->
+                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="6" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                    
+                    <!-- Gold Node Glow -->
+                    <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="8" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                </defs>
+
+                <!-- Grid Background -->
+                <rect width="1000" height="620" fill="url(#grid)" rx="16"/>
+
+                <!-- Serpentine Path Connections (Background Track) -->
+                <path id="basePath" d="
+                    M 100 100 H 900 
+                    C 960 100, 960 250, 900 250 
+                    H 100 
+                    C 40 250, 40 400, 100 400 
+                    H 900 
+                    C 960 400, 960 550, 900 550 
+                    H 100" 
+                    fill="none" stroke="#166534" stroke-width="8" stroke-linecap="round" opacity="0.4"/>
+
+                <!-- Animated Dashed Line Track -->
+                <path d="
+                    M 100 100 H 900 
+                    C 960 100, 960 250, 900 250 
+                    H 100 
+                    C 40 250, 40 400, 100 400 
+                    H 900 
+                    C 960 400, 960 550, 900 550 
+                    H 100" 
+                    fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" class="path-line" opacity="0.6"/>
+
+                <!-- Active Progress Overlay Path -->
+                <path id="activePath" d="
+                    M 100 100 H 900 
+                    C 960 100, 960 250, 900 250 
+                    H 100 
+                    C 40 250, 40 400, 100 400 
+                    H 900 
+                    C 960 400, 960 550, 900 550 
+                    H 100" 
+                    fill="none" stroke="url(#pathGradient)" stroke-width="8" stroke-linecap="round" filter="url(#glow)"
+                    stroke-dasharray="3200" stroke-dashoffset="3200" class="path-active-line"/>
+
+                <!-- Traveler Particle / Active Indicator -->
+                <g id="travelerGroup" transform="translate(100, 100)">
+                    <circle r="18" fill="#f59e0b" opacity="0.4" class="pulse-ring"/>
+                    <circle r="10" fill="#fbbf24" filter="url(#goldGlow)"/>
+                    <circle r="4" fill="#ffffff"/>
+                </g>
+
+                <!-- Nodes Container -->
+                <g id="nodesContainer"></g>
+            </svg>
+
+            <!-- Floating Active Stage Info Card -->
+            <div id="infoCard" class="glass-card absolute bottom-6 right-6 left-6 md:left-auto md:w-96 rounded-xl p-5 shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 border-l-4 border-l-gold-500">
+                <div class="flex justify-between items-start mb-2">
+                    <span id="cardBadge" class="text-xs font-extrabold px-2.5 py-1 rounded-md bg-gold-500/20 text-gold-400 border border-gold-500/30">
+                        STAGE 1 OF 16
+                    </span>
+                    <span id="cardCategory" class="text-xs text-emerald-300 font-medium">
+                        Initiation
+                    </span>
+                </div>
+                <h3 id="cardTitle" class="text-lg font-bold text-white mb-2">Admission</h3>
+                <p id="cardDesc" class="text-sm text-slate-300 leading-relaxed mb-3">
+                    Formal admission into the University of Abuja Postgraduate School for Physics M.Sc./Ph.D. program.
+                </p>
+                <div class="flex items-center gap-2 text-xs text-emerald-400 font-semibold pt-2 border-t border-brand-800/80">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span id="cardRequirement">Requirement: Verification of O'Level & Degree Credentials</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stage Grid Selector -->
+        <div class="glass-panel rounded-2xl p-4 md:p-6 shadow-xl">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-gold-400"></i> Direct Navigation & Overview
+            </h3>
+            <div id="quickNavGrid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
+                <!-- Javascript will populate 16 grid buttons -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-brand-900 bg-brand-950 py-4 px-6 text-center text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p>© University of Abuja • Department of Physics Postgraduate Management System</p>
+            <p class="text-slate-400">Interactive Academic Workflow Visualization</p>
+        </div>
+    </footer>
+
+    <!-- SVG Source Export Modal -->
+    <div id="svgModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card max-w-3xl w-full rounded-2xl p-6 flex flex-col gap-4 max-h-[85vh] border border-brand-700">
+            <div class="flex justify-between items-center border-b border-brand-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-code text-gold-400"></i> SVG Markup Source
+                </h3>
+                <button onclick="toggleSVGModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300">
+                You can copy the inline SVG code below for embedding directly into reports, presentations, or web pages.
+            </p>
+            <textarea id="svgSourceText" readonly class="w-full h-64 bg-brand-950 text-emerald-300 font-mono text-xs p-3 rounded-xl border border-brand-800 focus:outline-none resize-none"></textarea>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="copySVGToClipboard()" class="px-4 py-2 rounded-lg bg-gold-500 hover:bg-gold-400 text-brand-950 font-bold text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-copy"></i> Copy Markup
+                </button>
+                <button onclick="toggleSVGModal()" class="px-4 py-2 rounded-lg bg-brand-800 hover:bg-brand-700 text-white font-medium text-sm transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gold-500 text-brand-950 font-bold px-4 py-2 rounded-xl shadow-2xl text-sm transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
+        <i class="fa-solid fa-circle-info"></i>
+        <span id="toastMsg">Notification</span>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Data for the 16 Postgraduate Journey Stages
+        const stagesData = [
+            { id: 1, title: "Admission", category: "Enrollment", icon: "fa-id-card", desc: "Official entry and clearance into the University of Abuja Physics Postgraduate program.", req: "Original credentials verification & registration payment." },
+            { id: 2, title: "Lecture Attendance", category: "Coursework", icon: "fa-book-open", desc: "Attending required advanced Physics lectures and completing coursework assessments.", req: "Minimum 75% attendance requirement." },
+            { id: 3, title: "Supervisor Allocation", category: "Advising", icon: "fa-user-tie", desc: "Assignment of qualified academic supervisors by the Departmental PG Committee.", req: "Matching research interest area." },
+            { id: 4, title: "Title Approval", category: "Research", icon: "fa-heading", desc: "Approval of research thesis topic and scope by the Departmental PG Board.", req: "Preliminary literature review & scope definition." },
+            { id: 5, title: "Proposal Submission", category: "Documentation", icon: "fa-file-lines", desc: "Formally drafting and submitting the detailed research proposal framework.", req: "Supervisor consent & formatted draft." },
+            { id: 6, title: "Defence Readiness", category: "Evaluation", icon: "fa-list-check", desc: "Verification of readiness for proposal presentation by supervisors and HOD.", req: "Completed proposal copies distribution." },
+            { id: 7, title: "Proposal Defence", category: "Presentation", icon: "fa-chalkboard-user", desc: "Defending the research methodology and objectives before the Departmental Board.", req: "Oral presentation & defense defense clearance." },
+            { id: 8, title: "Progress Report Intent", category: "Monitoring", icon: "fa-chart-line", desc: "Submitting formal intent and benchmarks for mid-stage research progression.", req: "Data collection & laboratory analysis log." },
+            { id: 9, title: "Internal Examiner Assignment", category: "Evaluation", icon: "fa-users-gear", desc: "Official appointment of Internal Examiners to evaluate research trajectory.", req: "Departmental recommendation." },
+            { id: 10, title: "Progress Presentation", category: "Presentation", icon: "fa-person-chalkboard", desc: "Presenting experimental findings or theoretical derivations to the department.", req: "Satisfactory research progress evidence." },
+            { id: 11, title: "Final Examination Intent", category: "Graduation Prep", icon: "fa-paper-plane", desc: "Formal notice of readiness to submit completed thesis for final examination.", req: "All coursework passed & publication draft." },
+            { id: 12, title: "Thesis Submission", category: "Documentation", icon: "fa-book", desc: "Submitting bound copies of the completed thesis to the PG School.", req: "Plagiarism check clearance (<15% similarity)." },
+            { id: 13, title: "External Examiner Assignment", category: "Audit", icon: "fa-user-shield", desc: "Appointment of an external expert in the specialized area of Physics.", req: "PG School Senate approval." },
+            { id: 14, title: "Examiners Comments", category: "Review", icon: "fa-comments", desc: "Receipt of detailed feedback and recommendations from external & internal examiners.", req: "Comprehensive review report." },
+            { id: 15, title: "Final Compliance", category: "Revisions", icon: "fa-file-circle-check", desc: "Effecting all corrections and modifications requested by the examination panel.", req: "Supervisor and Head of Dept sign-off." },
+            { id: 16, title: "Signed Copies & Completion", category: "Graduation", icon: "fa-graduation-cap", desc: "Submission of final hardbound signed copies and clearance for graduation.", req: "Final Senate clearance & certificate issuance." }
+        ];
+
+        // Coordinate Mapping for 16 Nodes in a 4x4 Serpentine Pattern (1000x620 canvas)
+        const nodeCoordinates = [
+            // Row 1
+            { x: 100, y: 100 }, { x: 366, y: 100 }, { x: 633, y: 100 }, { x: 900, y: 100 },
+            // Row 2
+            { x: 900, y: 250 }, { x: 633, y: 250 }, { x: 366, y: 250 }, { x: 100, y: 250 },
+            // Row 3
+            { x: 100, y: 400 }, { x: 366, y: 400 }, { x: 633, y: 400 }, { x: 900, y: 400 },
+            // Row 4
+            { x: 900, y: 550 }, { x: 633, y: 550 }, { x: 366, y: 550 }, { x: 100, y: 550 }
+        ];
+
+        // System State Variables
+        let currentStageIndex = 0;
+        let isPlaying = false;
+        let playInterval = null;
+        let speeds = [1.0, 1.5, 2.0, 0.5];
+        let speedIdx = 0;
+        let pathLength = 0;
+
+        // Initialize Application
+        window.onload = function() {
+            renderNodes();
+            renderQuickGrid();
+            
+            const activePath = document.getElementById('activePath');
+            pathLength = activePath.getTotalLength();
+            activePath.style.strokeDasharray = pathLength;
+            activePath.style.strokeDashoffset = pathLength;
+
+            updateStage(0);
+        };
+
+        // Render SVG Nodes
+        function renderNodes() {
+            const container = document.getElementById('nodesContainer');
+            container.innerHTML = '';
+
+            stagesData.forEach((stage, idx) => {
+                const pos = nodeCoordinates[idx];
+                
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.setAttribute("class", "node-group");
+                g.setAttribute("onclick", `selectStage(${idx})`);
+
+                // Circle Background
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", pos.x);
+                circle.setAttribute("cy", pos.y);
+                circle.setAttribute("r", "22");
+                circle.setAttribute("id", `node-circle-${idx}`);
+                circle.setAttribute("class", "node-circle");
+                circle.setAttribute("fill", "#052e16");
+                circle.setAttribute("stroke", "#166534");
+                circle.setAttribute("stroke-width", "3");
+
+                // Text Number
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", pos.x);
+                text.setAttribute("y", pos.y + 5);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("fill", "#9ca3af");
+                text.setAttribute("font-size", "12");
+                text.setAttribute("font-weight", "bold");
+                text.setAttribute("id", `node-text-${idx}`);
+                text.textContent = stage.id.toString().padStart(2, '0');
+
+                // Label Text Below/Above node
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", pos.x);
+                label.setAttribute("y", pos.y + (idx >= 4 && idx <= 7 || idx >= 12 ? -32 : 38));
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("fill", "#e5e7eb");
+                label.setAttribute("font-size", "11");
+                label.setAttribute("font-weight", "600");
+                label.setAttribute("id", `node-label-${idx}`);
+                
+                const shortTitle = stage.title.length > 18 ? stage.title.substring(0, 16) + '…' : stage.title;
+                label.textContent = shortTitle;
+
+                g.appendChild(circle);
+                g.appendChild(text);
+                g.appendChild(label);
+                container.appendChild(g);
+            });
+        }
+
+        // Render Quick Navigation Grid
+        function renderQuickGrid() {
+            const grid = document.getElementById('quickNavGrid');
+            grid.innerHTML = '';
+
+            stagesData.forEach((stage, idx) => {
+                const btn = document.createElement('button');
+                btn.id = `grid-btn-${idx}`;
+                btn.onclick = () => selectStage(idx);
+                btn.className = `p-2 rounded-xl text-left border transition flex flex-col justify-between h-16 bg-brand-950/60 border-brand-800/80 hover:border-gold-500/50`;
+                btn.innerHTML = `
+                    <div class="flex items-center justify-between w-full">
+                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-brand-900 text-slate-400 font-mono">${stage.id}</span>
+                        <i class="fa-solid ${stage.icon} text-xs text-brand-600"></i>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-200 truncate w-full">${stage.title}</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        // Update Active Stage View
+        function updateStage(index) {
+            currentStageIndex = index;
+            const stage = stagesData[index];
+            const pos = nodeCoordinates[index];
+
+            // 1. Update Header / Status
+            document.getElementById('stageBadge').innerText = stage.id.toString().padStart(2, '0');
+            document.getElementById('stageTitle').innerText = stage.title;
+            
+            const pct = Math.round(((index + 1) / 16) * 100);
+            document.getElementById('progressPercent').innerText = `${pct}%`;
+            document.getElementById('progressBar').style.width = `${pct}%`;
+
+            // 2. Move Active Traveler Group
+            const traveler = document.getElementById('travelerGroup');
+            traveler.setAttribute('transform', `translate(${pos.x}, ${pos.y})`);
+
+            // 3. Update Path Offset
+            const activePath = document.getElementById('activePath');
+            const targetOffset = pathLength - (pathLength * (index / 15));
+            activePath.style.strokeDashoffset = targetOffset;
+
+            // 4. Update Node Visual States
+            stagesData.forEach((_, i) => {
+                const circle = document.getElementById(`node-circle-${i}`);
+                const text = document.getElementById(`node-text-${i}`);
+                const label = document.getElementById(`node-label-${i}`);
+                const gridBtn = document.getElementById(`grid-btn-${i}`);
+
+                if (i < index) {
+                    circle.setAttribute('fill', '#14532d');
+                    circle.setAttribute('stroke', '#22c55e');
+                    text.setAttribute('fill', '#86efac');
+                    label.setAttribute('fill', '#9ca3af');
+                    gridBtn.className = "p-2 rounded-xl text-left border transition flex flex-col justify-between h-16 bg-brand-900/40 border-emerald-600/40 text-emerald-300";
+                } else if (i === index) {
+                    circle.setAttribute('fill', '#f59e0b');
+                    circle.setAttribute('stroke', '#fef08a');
+                    circle.setAttribute('stroke-width', '4');
+                    text.setAttribute('fill', '#052e16');
+                    label.setAttribute('fill', '#fbbf24');
+                    gridBtn.className = "p-2 rounded-xl text-left border-2 transition flex flex-col justify-between h-16 bg-gold-500/20 border-gold-400 text-white shadow-lg";
+                } else {
+                    circle.setAttribute('fill', '#052e16');
+                    circle.setAttribute('stroke', '#166534');
+                    circle.setAttribute('stroke-width', '3');
+                    text.setAttribute('fill', '#6b7280');
+                    label.setAttribute('fill', '#6b7280');
+                    gridBtn.className = "p-2 rounded-xl text-left border transition flex flex-col justify-between h-16 bg-brand-950/60 border-brand-800/80 text-slate-400 hover:border-gold-500/50";
+                }
+            });
+
+            // 5. Update Info Card
+            document.getElementById('cardBadge').innerText = `STAGE ${stage.id} OF 16`;
+            document.getElementById('cardCategory').innerText = stage.category;
+            document.getElementById('cardTitle').innerText = stage.title;
+            document.getElementById('cardDesc').innerText = stage.desc;
+            document.getElementById('cardRequirement').innerText = `Requirement: ${stage.req}`;
+        }
+
+        // Direct Node Selection
+        function selectStage(index) {
+            if (isPlaying) pause();
+            updateStage(index);
+        }
+
+        // Step Forward/Backward
+        function step(delta) {
+            if (isPlaying) pause();
+            let newIndex = currentStageIndex + delta;
+            if (newIndex >= 0 && newIndex < 16) {
+                updateStage(newIndex);
+            }
+        }
+
+        // Autoplay Logic
+        function togglePlay() {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        }
+
+        function play() {
+            isPlaying = true;
+            document.getElementById('playIcon').className = 'fa-solid fa-pause';
+            document.getElementById('playText').innerText = 'Pause';
+            
+            if (currentStageIndex === 15) {
+                updateStage(0);
+            }
+
+            const intervalTime = 2500 / speeds[speedIdx];
+            playInterval = setInterval(() => {
+                if (currentStageIndex < 15) {
+                    updateStage(currentStageIndex + 1);
+                } else {
+                    pause();
+                }
+            }, intervalTime);
+        }
+
+        function pause() {
+            isPlaying = false;
+            document.getElementById('playIcon').className = 'fa-solid fa-play';
+            document.getElementById('playText').innerText = 'Autoplay';
+            if (playInterval) clearInterval(playInterval);
+        }
+
+        // Cycle Speed
+        function cycleSpeed() {
+            speedIdx = (speedIdx + 1) % speeds.length;
+            const currentSpeed = speeds[speedIdx];
+            document.getElementById('speedLabel').innerText = `${currentSpeed.toFixed(1)}x Speed`;
+            
+            if (isPlaying) {
+                pause();
+                play();
+            }
+            showToast(`Playback speed set to ${currentSpeed.toFixed(1)}x`);
+        }
+
+        // Modal for Raw SVG Markup
+        function toggleSVGModal() {
+            const modal = document.getElementById('svgModal');
+            if (modal.classList.contains('hidden')) {
+                const svgContent = document.getElementById('journeySvg').outerHTML;
+                document.getElementById('svgSourceText').value = svgContent;
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Copy SVG Markup to Clipboard
+        function copySVGToClipboard() {
+            const text = document.getElementById('svgSourceText').value;
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            showToast("SVG source copied to clipboard!");
+            toggleSVGModal();
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

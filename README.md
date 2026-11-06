@@ -12,7 +12,7 @@ token auth, `HEADERS` schema, `_locked_` wrappers).
 ## Tech Stack
 
 - **Public site (this repo → Cloudflare Pages)** — one combined `index.html`
-  (all five public views) pre-rendered by `tools/build-pg.js`; announcements and
+  (all five public views) pre-rendered by `project/tools/build-pg.js`; announcements and
   contact enquiries reach the portal through JSONP.
 - **Portal (Google Apps Script)** — HtmlService (`doGet` + `createTemplateFromFile('index')`),
   2 files total: the combined `index.html` template + `Code.gs`. All transactions
@@ -27,7 +27,7 @@ Three pieces, each with one job:
 | Piece | Holds | Serves |
 |-------|-------|--------|
 | **GitHub `Physics-pg`** (this repo) | source of truth | pushes to `main` build & deploy automatically (Cloudflare Git integration) |
-| **Cloudflare Pages `physics-pg`** | `dist/` built by `npm run build` | the public site: home (with About condensed into it), contact |
+| **Cloudflare Pages `physics-pg`** | `project/dist/` built by `npm run build` | the public site: home (with About condensed into it), contact |
 | **Apps Script `/exec`** | the 2 pasted files + Spreadsheet | the portal: register, status check, login, dashboards |
 
 - The static site follows the KMSS `loginMode: 'page'` logic for the **Login**
@@ -55,49 +55,53 @@ manual fallback, connection repair): **[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md
 
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Root directory: repository root (no monorepo path)
+- Root directory: `project`
 - Node: any recent LTS (the build script uses Node built-ins only)
 
 Every push to `main` then redeploys the site automatically. The Git connection
 is already established in the dashboard (project `physics-pg` ← GitHub repo
 `cbs-workspace/Physics-pg`, branch `main`), and the fields above are exactly
 what Cloudflare runs on each push. Manual fallback if ever needed:
-`npx wrangler pages deploy dist --project-name physics-pg --branch main`.
+`npx wrangler pages deploy project/dist --project-name physics-pg --branch main`.
 
 ## Folder contents
 
 ```
 Physics-pg/
-├── GAS_Files/
-│   ├── Code.gs            ← paste into Apps Script editor as "Code"
-│   └── index.html         ← file name "index" — ONE template, selected
-│                              server-side by the `page` scriptlet: the public
-│                              views (home — About is condensed into a Home
-│                              section — register, contact) and the portal SPA
-│                              (?page=login)
-├── images/
-│   ├── Phy_Complex.png    ← hero background photo (set HERO_IMAGE_URL — see below)
-│   ├── PG_Journey_Animated.svg ← animated journey poster on Home (set JOURNEY_IMAGE_URL)
-│   └── PG_Journey_Infographic.png ← older 15-step poster (not shown; kept for its URL)
-├── audio/
-│   └── music1.mp3         ← background music (copied to dist/audio/ by the build)
+├── project/                 ← application source, assets and build tooling
+│   ├── GAS_Files/
+│   │   ├── Code.gs          ← paste into Apps Script editor as "Code"
+│   │   └── index.html       ← file name "index" — ONE template, selected
+│   │                          server-side by the `page` scriptlet: the public
+│   │                          views (home — About is condensed into a Home
+│   │                          section — register, contact) and the portal SPA
+│   │                          (?page=login)
+│   ├── images/
+│   │   ├── Phy_Complex.png  ← hero background photo (set HERO_IMAGE_URL — see below)
+│   │   ├── PG_Journey_Animated.svg ← animated journey poster on Home (set JOURNEY_IMAGE_URL)
+│   │   └── PG_Journey_Infographic.png ← older 15-step poster (not shown; kept for its URL)
+│   ├── audio/
+│   │   └── music1.mp3       ← background music (copied to dist/audio/ by the build)
+│   ├── tools/
+│   │   ├── pg-template.js   ← shared template renderer (doGet semantics)
+│   │   ├── serve-pg.js      ← npm run pg — local preview with demo backend
+│   │   ├── build-pg.js      ← npm run build — static site into dist/ (Cloudflare)
+│   │   └── make-guides.ps1  ← regenerates the role guides into docs/guides/ (Word COM)
+│   ├── package.json         ← scripts: pg, build (run from this folder)
+│   └── dist/                ← build output (gitignored; Cloudflare deploys this)
 ├── docs/
-│   ├── DEPLOYMENT.md      ← deploy runbook: GitHub → Cloudflare Pages, Apps Script
-│   ├── AGENT-GUIDE.md     ← runbook for the next agent
-│   ├── audit.md           ← forensic audit (architecture, data, security, bugs)
-│   ├── SeedData.md        ← seed rows + hash generator for demo accounts
-│   ├── guides/            ← generated role guides (.docx/.pdf) + training programme
-│   │   └── …              ← produced by tools/make-guides.ps1
-│   ├── reference/         ← PG_Journey_Stages.docx + pg_journey_roadmap.html
-│   └── Staff.xlsx         ← internal staff roster (local only, never committed)
-├── tools/
-│   ├── pg-template.js     ← shared template renderer (doGet semantics)
-│   ├── serve-pg.js        ← npm run pg — local preview with demo backend
-│   ├── build-pg.js        ← npm run build — static site into dist/ (Cloudflare)
-│   └── make-guides.ps1    ← regenerates the role guides into docs/guides/ (Word COM)
-├── package.json
-├── AGENTS.md              ← conventions + gotchas for coding agents
-└── README.md
+│   ├── AGENTS.md            ← full conventions + gotchas for coding agents
+│   ├── DEPLOYMENT.md        ← deploy runbook: GitHub → Cloudflare Pages, Apps Script
+│   ├── AGENT-GUIDE.md       ← runbook for the next agent
+│   ├── audit.md             ← forensic audit (architecture, data, security, bugs)
+│   ├── SeedData.md          ← seed rows + hash generator for demo accounts
+│   ├── guides/              ← generated role guides (.docx/.pdf) + training programme
+│   │   └── …                ← produced by project/tools/make-guides.ps1
+│   ├── reference/           ← PG_Journey_Stages.docx + pg_journey_roadmap.html
+│   └── Staff.xlsx           ← internal staff roster (local only, never committed)
+├── AGENTS.md                ← root pointer to docs/AGENTS.md (agents load this)
+├── README.md                ← this file
+└── .gitignore
 ```
 
 > Apps Script page URLs: `…/exec` (Home) · `…/exec?page=register|contact|login`.
@@ -196,9 +200,9 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 ## Step 3 — Apps Script project
 
 1. [script.google.com](https://script.google.com) → **New project** → rename `Physics_PG_Portal`.
-2. Paste `GAS_Files/Code.gs` over the default `Code.gs`.
+2. Paste `project/GAS_Files/Code.gs` over the default `Code.gs`.
 3. Create **one** HTML file: File → New → HTML file → name it exactly `index` →
-   paste `GAS_Files/index.html`. **Delete every other HTML file** in the project
+   paste `project/GAS_Files/index.html`. **Delete every other HTML file** in the project
    (`login`, `styles`, `common`, and any old standalone `about`, `programmes`,
    `register`, `contact`) — the single template supersedes all of them.
 4. (Optional) Script Properties: `SPREADSHEET_ID`, `PASSPORT_FOLDER_ID`,
@@ -306,16 +310,17 @@ Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes
   `index.html` (`TRACKS`). The track is served from the live static host
   (`HOST = https://physics-pg.pages.dev/` → `dist/audio/music1.mp3`) because Apps
   Script cannot serve binary files; `npm run build` copies it from
-  `audio/music1.mp3`.
+  `project/audio/music1.mp3`.
 
 ## Local preview (no Apps Script needed)
 
 ```
+cd project
 npm run pg          →  http://localhost:8081          (Home)
                        http://localhost:8081/?page=register   etc.
 ```
 
-`tools/serve-pg.js` renders the `index.html` template scriptlets exactly like
+`project/tools/serve-pg.js` renders the `index.html` template scriptlets exactly like
 `doGet` and mocks `google.script.run` with the SeedData accounts
 (password `PhysicsPG2026!`), including the public APIs
 (`api_publicAnnouncements`, `api_checkRegistrationStatus`, `api_publicEnquiry`).
@@ -323,12 +328,13 @@ npm run pg          →  http://localhost:8081          (Home)
 ## Static build (Cloudflare Pages)
 
 ```
+cd project
 npm run build       →  dist/  (index + contact/
                                + register/ & login/ iframe pages + images
                                + _redirects: /about/ & /programmes/ → /)
 ```
 
-`tools/build-pg.js` pre-renders the public views from the same combined
+`project/tools/build-pg.js` pre-renders the public views from the same combined
 `index.html`, rewrites register/login links to the in-site `/register/` and
 `/login/` iframe pages, and injects the
 JSONP bridge (`?public=announcements` / `?public=enquiry`) instead of the demo
