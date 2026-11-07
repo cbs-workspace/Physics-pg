@@ -753,7 +753,9 @@ function supervisesAny_(u) {
   try { return !!findWhere_('Students', function (s) { return supOf_(u, s); }); } catch (e) { return false; }
 }
 function publicUser_(u) {
-  return { supervises: supervisesAny_(u), id: u.id, regNumber: u.regNumber, role: u.role, fullName: u.fullName, email: u.email, status: u.status, firstLogin: toBool_(u.firstLogin), emailPref: u.emailPref || 'instant', photoPrivate: passportPrivate_() };
+  var out = { supervises: supervisesAny_(u), id: u.id, regNumber: u.regNumber, role: u.role, fullName: u.fullName, email: u.email, status: u.status, firstLogin: toBool_(u.firstLogin), emailPref: u.emailPref || 'instant', photoPrivate: passportPrivate_() };
+  out.expiresAt = new Date(Date.now() + CFG.SESSION_TTL_SECONDS * 1000).toISOString();   // Phase 4: sliding session — the client warns 5 min before this
+  return out;
 }
 function sessionEpoch_(userId) {
   var v = CacheService.getScriptCache().get('ue_' + userId);
@@ -805,6 +807,10 @@ function requireUser_(token) {
     __actor = actor;
     __previewReadOnly = !!sess.readOnly;
   }
+  /* Phase 4 (sliding session): every validated request refreshes the session TTL, so an
+     active user slides forward instead of holding a fixed 6 h from sign-in. The epoch check
+     above still ends the session on a password change / temp-password issue. */
+  try { CacheService.getScriptCache().put('sess_' + token, raw, CFG.SESSION_TTL_SECONDS); } catch (e) {}
   return user;
 }
 function hasRole_(user, roles) { if (!user) return false; return roles.indexOf(user.role) !== -1; }
@@ -837,6 +843,12 @@ function api_me(token) {
   if (__actor) u.impersonator = { regNumber: __actor.regNumber, fullName: __actor.fullName };
   if (__previewReadOnly) u.previewReadOnly = true;
   return u;
+}
+/** Phase 4: sliding-session heartbeat — the client calls this from the "Stay signed in"
+ *  action of the session-expiry toast; requireUser_ slides the TTL forward as a side effect. */
+function api_heartbeat(token) {
+  var u = requireUser_(token);
+  return { ok: true, expiresAt: new Date(Date.now() + CFG.SESSION_TTL_SECONDS * 1000).toISOString() };
 }
 
 function api_changePassword(token, oldPassword, newPassword) {
@@ -1443,7 +1455,9 @@ function savePassportPhoto_(filePayload, regNumber) {
   var parts = String(filePayload.dataUrl).split(',');
   var mimeMatch = parts[0].match(/data:(.*?);/);
   var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-  if (['image/jpeg', 'image/png'].indexOf(mime) === -1) throw new Error('Passport must be JPG or PNG.');
+  // Phase 4: HEIC (phone cameras) is accepted here and stored as JPG — the browser normally
+  // converts to JPEG via the resize step before the upload, so this is a tolerance, not a path.
+  if (['image/jpeg', 'image/png', 'image/heic', 'image/heif'].indexOf(mime) === -1) throw new Error('Passport must be a photo (JPG, PNG or HEIC).');
   var bytes = Utilities.base64Decode(parts[1]);
   if (bytes.length > CFG.UPLOAD_MAX_BYTES) throw new Error('Passport photo must be under 1 MB.');
   var ext = mime === 'image/png' ? 'png' : 'jpg';

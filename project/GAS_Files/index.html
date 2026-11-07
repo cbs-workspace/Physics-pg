@@ -163,6 +163,7 @@
     #toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 700; display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(420px, calc(100vw - 24px)); pointer-events: none; }
     .toast { pointer-events: auto; width: 100%; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-left: 4px solid var(--info); border-radius: 10px; box-shadow: var(--shadow); padding: 10px 14px; font-size: 14px; line-height: 1.4; cursor: pointer; animation: toast-in .18s ease-out; }
     .toast.success { border-left-color: var(--ok); } .toast.error { border-left-color: var(--danger); } .toast.warn { border-left-color: var(--warn); }
+    .toast .toast-act { flex: none; margin-left: 8px; }
     @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
     .btn-danger { background: var(--surface); border-color: var(--danger-border); color: var(--danger); } .btn-danger:hover { background: var(--danger-soft); }
@@ -822,7 +823,7 @@
                     </select>
                   </div>
                 </div>
-                <div class="field"><label>Passport Photo * <span class="muted" style="font-weight:400">(JPG/PNG &mdash; large photos are resized for you)</span></label><input type="file" name="passportPhoto" accept="image/jpeg,image/png" required></div>
+                <div class="field"><label>Passport Photo * <span class="muted" style="font-weight:400">(JPG/PNG/HEIC &mdash; large photos are resized for you)</span></label><input type="file" name="passportPhoto" accept="image/jpeg,image/png,image/heic,image/heif" required></div>
                 <div class="field"><label>Admission letter <span class="muted" style="font-weight:400">(optional &mdash; PDF, JPG or PNG, max 3 MB; only the PG Coordinator and HoD can open it)</span></label><input type="file" name="admissionLetter" accept=".pdf,image/jpeg,image/png"></div>
                 <div class="sticky-actions"><button class="btn btn-primary btn-block" type="submit" id="reg-submit">Review Details</button></div>
               </form>
@@ -1025,7 +1026,10 @@
         var file = input.files[0];
         if (!file) { reject(new Error('Please choose a file.')); return; }
         if (file.size > 25 * 1024 * 1024) { reject(new Error('That file is too large. Please choose a photo under 25 MB.')); return; }
-        if (['image/jpeg', 'image/png'].indexOf(file.type) === -1) { reject(new Error('Only JPG or PNG allowed.')); return; }
+        if (['image/jpeg', 'image/png', 'image/heic', 'image/heif'].indexOf(file.type) === -1) { reject(new Error('Only JPG, PNG or HEIC photos are allowed.')); return; }
+        /* Phase 4: HEIC (what many phone cameras produce) always goes through the browser-side
+           resize to a <1 MB JPEG; JPG/PNG under the limit go straight through. */
+        if (file.type === 'image/heic' || file.type === 'image/heif') return compressImage(file).then(resolve, reject);
         if (file.size <= MAX_UPLOAD_BYTES) {
           var reader = new FileReader();
           reader.onload = function () { resolve({ name: file.name, mimeType: file.type, dataUrl: reader.result }); };
@@ -1457,6 +1461,7 @@
       error: '',
       notice: '',
       busy: false,
+      warnArmed: false,
       dashboard: null,
       coordinator: null,
       hod: null,
@@ -1706,8 +1711,12 @@
       state.busy = true; clearMsgs(); render();
       call('api_login', d.regNumber, d.password).then(function (r) {
         state.token = r.token; state.user = r.user;
+        state.user.expiresAt = r.user.expiresAt || new Date(Date.now() + SESSION_TTL_MS).toISOString();
+        try { sessionStorage.setItem('pgs_exp', String(Date.parse(state.user.expiresAt))); } catch (e) {}
+        state.warnArmed = false; clearTimeout(sessionWarnTimer); armSession();
         sessionStorage.setItem('pgs_token', r.token);
         state.busy = false;
+        startBellPoll();
         if (r.user.firstLogin) { state.view = 'pwchange'; render(); return; }
         var target = startView_();
         navigate(target);
@@ -1726,6 +1735,9 @@
     function doLogout() {
       if (state.impersonator) { var at = state.adminToken || sessionStorage.getItem('pgs_admin_token'); endImpersonation(true); if (at) call('api_logout', at).catch(function () {}); return; }
       authed('api_logout').catch(function () {});
+      clearTimeout(sessionWarnTimer); state.warnArmed = false;
+      try { sessionStorage.removeItem('pgs_exp'); } catch (e) {}
+      stopBellPoll();
       state.token = ''; state.user = null; state.view = 'login'; state.calendar = null; state.calMonth = '';
       sessionStorage.removeItem('pgs_token'); setHash_('');
       render();
@@ -2677,7 +2689,15 @@
         '<form id="sub-form">' +
           '<div class="field"><label>Type</label><select name="type" required>' + optionsHtml(SUBMISSION_TYPES, null, '') + '</select>' +
           '<p class="small muted" style="margin:6px 0 0">Current stage: <strong>' + esc(state.dashboard.student.currentStage || 'not set') + '</strong>. Each document opens at its own stage: Research Proposal at stage 5, Signed Proposal Defence Form at 6, the PPTX at 10, the thesis at 12, the receipt of fees and evidence of payment from 11 (before the external examination), and the examiner-correction files at 14. The server checks this rule; request a stage update and wait for PG Coordinator approval if your stage is wrong.</p></div>' +
-          '<div class="field"><label>Upload file (PDF/DOC/DOCX; PPTX only for the progress presentation; PDF/JPG/PNG for fee receipts and proof of payment; max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
+          '<div class="field"><label>Upload file (PDF/DOC/DOCX; PPTX only for the progress presentation; PDF/JPG/PNG for fee receipts and proof of payment; max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
+
+    function onDocFileChange(input) {
+      if (!input || !input.files || !input.files[0]) return;
+      var f = input.files[0];
+      if (f.size > 50 * 1024 * 1024) { alert('File must be under 50 MB.'); input.value = ''; return; }
+      if (!['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'].some(function (ext) { return f.name.toLowerCase().endsWith(ext); })) { alert('Upload a PDF, DOC, DOCX, PNG, JPG or JPEG file.'); input.value = ''; return; }
+    }
+    input.addEventListener('change', function () { onDocFileChange(this); });' +
           '<div class="sticky-actions"><button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button> <button class="btn btn-outline" type="submit" data-draft="1"' + (state.busy ? ' disabled' : '') + '>Save as draft</button></div>' +
           '<p class="small muted" style="margin:8px 0 0">A draft is private to you. It is not sent to reviewers until you press Submit for review in My Submissions.</p>' +
         '</form></div>';
@@ -3646,6 +3666,12 @@
         HELPTXT[L].map(function (f) { return '<div class="card"><strong>' + esc(f[0]) + '</strong><p style="margin:6px 0 0">' + esc(f[1]) + '</p></div>'; }).join('');
     }
     function refreshBell() { if (!state.user) return; authed('api_getNotifications').then(function (r) { state.unread = r.unread; state.notes = r.items; var el = document.getElementById('bell-n'); if (el) el.textContent = r.unread || ''; }).catch(function () {}); }
+    /* Phase 4 (live notifications): while signed in, poll the bell unread count on an interval
+       so other people's actions show up without a manual reload. Opening the bell / marking read
+       stay explicit actions on top of this. */
+    var BELL_POLL_MS = 30000, bellTimer = 0;
+    function stopBellPoll() { if (bellTimer) { clearInterval(bellTimer); bellTimer = 0; } }
+    function startBellPoll() { stopBellPoll(); if (!state.user || (typeof document !== 'undefined' && document.hidden)) return; bellTimer = setInterval(function () { if (!state.user || (typeof document !== 'undefined' && document.hidden)) { stopBellPoll(); return; } refreshBell(); }, BELL_POLL_MS); }
     /* Notification centre: history (All / Unread), per-item "Mark read" and Mark all read. Opening the bell no
        longer silently marks everything read, so the unread count keeps meaning something. */
     function openBell(filter) {
@@ -3909,10 +3935,31 @@ function linkify(t) {
     function downloadIcs() { downloadCalendarIcs_(); }
     function staffLoad(id) { var l = (state.coordinator && state.coordinator.staff) || (state.hod && state.hod.staff) || []; var s = l.filter(function (x) { return String(x.id) === String(id); })[0]; return s && s.load !== undefined ? s : null; }
     function loadOk(ids) { for (var i = 0; i < ids.length; i++) { var s = ids[i] && staffLoad(ids[i]); if (s && s.load >= 8 && !confirm(s.fullName + ' already supervises ' + s.load + ' students. Assign anyway?')) return false; } return true; }
+    /* ---- Phase 4: sliding session + expiry warning (toast, 5 min before sign-out, "Stay signed in") ---- */
+    var SESSION_TTL_MS = 21600000, SESSION_WARN_BEFORE_MS = 5 * 60 * 1000, sessionWarnTimer = 0;
+    function sessionExpiresAt() {
+      if (state.user && state.user.expiresAt) { var t = Date.parse(state.user.expiresAt); if (!isNaN(t)) return t; }
+      try { var e = parseInt(sessionStorage.getItem('pgs_exp') || '0', 10); if (e) return e; } catch (err) {}
+      return Date.now() + SESSION_TTL_MS;
+    }
     function armSession() {
-      if (state.warnArmed || !state.user) return; state.warnArmed = true; var at;
-      try { at = parseInt(sessionStorage.getItem('pgs_at') || '0', 10); if (!at) { at = Date.now(); sessionStorage.setItem('pgs_at', String(at)); } } catch (e) { at = Date.now(); }
-      setTimeout(function () { if (state.user) showModal('<h3 style="margin:0 0 8px">Session expiring soon</h3><p>Your session ends in about 15 minutes. Save your work; you will need to sign in again.</p><button class="btn btn-primary" data-action="close-modal">OK</button>'); }, Math.max(6 * 3600000 - 900000 - (Date.now() - at), 1000));
+      if (state.warnArmed || !state.user) return;
+      state.warnArmed = true;
+      clearTimeout(sessionWarnTimer);
+      sessionWarnTimer = setTimeout(function () {
+        if (state.user && state.warnArmed) showSessionWarning();
+      }, Math.max(1000, sessionExpiresAt() - SESSION_WARN_BEFORE_MS - Date.now()));
+    }
+    function showSessionWarning() {
+      if (!state.user || !state.warnArmed) return;
+      toast('Your session will end soon. Save your work — you will need to sign in again.', 'warn', 'Stay signed in', function () { staySignedIn(); });
+    }
+    function staySignedIn() {
+      authed('api_heartbeat').then(function (r) {
+        state.warnArmed = false;
+        if (r && r.expiresAt) { state.user.expiresAt = r.expiresAt; try { sessionStorage.setItem('pgs_exp', String(Date.parse(r.expiresAt))); } catch (e) {} }
+        armSession();
+      }).catch(function () { doLogout(); });
     }
     function extraInfo(sub) {
       var s = '';
@@ -3993,11 +4040,11 @@ function linkify(t) {
       state.impersonator = null; state.adminToken = ''; state.adminUser = null;
       sessionStorage.removeItem('pgs_admin_token');
       resetData_();
-      if (toLogin || !adminTok) { state.token = ''; state.user = null; state.view = 'login'; sessionStorage.removeItem('pgs_token'); render(); return; }
+      if (toLogin || !adminTok) { state.token = ''; state.user = null; state.view = 'login'; sessionStorage.removeItem('pgs_token'); stopBellPoll(); render(); return; }
       state.token = adminTok; sessionStorage.setItem('pgs_token', adminTok);
       state.busy = true; clearMsgs(); render();
-      call('api_me', adminTok).then(function (u) { state.user = u; state.busy = false; navigate('superadmin'); })
-        .catch(function () { state.token = ''; state.user = null; state.busy = false; state.view = 'login'; sessionStorage.removeItem('pgs_token'); setNotice('Your Super Admin session expired. Please sign in again.'); render(); });
+      call('api_me', adminTok).then(function (u) { state.user = u; state.busy = false; startBellPoll(); navigate('superadmin'); })
+        .catch(function () { state.token = ''; state.user = null; state.busy = false; state.view = 'login'; sessionStorage.removeItem('pgs_token'); stopBellPoll(); setNotice('Your Super Admin session expired. Please sign in again.'); render(); });
     }
 
     /* ---- Staff Dashboard ---- */
@@ -4090,16 +4137,22 @@ function linkify(t) {
     });
 
     /* ---- toasts ---- */
-    function toast(msg, kind) {
+    function toast(msg, kind, actionLabel, onAction) {
       msg = String(msg === undefined || msg === null ? '' : msg).trim(); if (!msg) return;
       var box = document.getElementById('toasts');
       if (!box) { box = document.createElement('div'); box.id = 'toasts'; box.setAttribute('aria-live', 'polite'); box.setAttribute('role', 'status'); document.body.appendChild(box); }
       var t = document.createElement('div'); t.className = 'toast ' + (kind || 'info'); t.textContent = msg.length > 300 ? msg.slice(0, 297) + '…' : msg;
       if (kind === 'error') t.setAttribute('role', 'alert');
       var gone = function () { if (t.parentNode) t.remove(); };
+      if (actionLabel && onAction) {
+        var act = document.createElement('button'); act.type = 'button'; act.className = 'btn btn-primary btn-sm toast-act'; act.textContent = actionLabel;
+        act.addEventListener('click', function (ev) { ev.stopPropagation(); t.remove(); onAction(); });
+        t.appendChild(act);
+      }
       t.addEventListener('click', gone);
       while (box.children.length >= 3) box.firstChild.remove();
-      box.appendChild(t); setTimeout(gone, kind === 'error' ? 8000 : 4500);
+      box.appendChild(t);
+      if (!(actionLabel && onAction)) setTimeout(gone, kind === 'error' ? 8000 : 4500);
     }
 
     /* ---- dialogs: confirm / prompt / alert replacements ----
@@ -4199,7 +4252,7 @@ function linkify(t) {
           state.coordinatorStudentFilters = { regNumber: '', firstName: '', lastName: '', yearOfAdmission: '', programme: '', specialisation: '', currentStage: '', mainSupervisor: '' };
           render();
           break;
-        case 'signout': try { sessionStorage.removeItem('pgs_at'); } catch (e) {} state.warnArmed = false; doLogout(); break;
+        case 'signout': try { sessionStorage.removeItem('pgs_exp'); } catch (e) {} clearTimeout(sessionWarnTimer); state.warnArmed = false; doLogout(); break;
         case 'impersonate':
           if (!confirm('Sign in as this user? You will have their full access, and your actions are recorded under your Super Admin account.')) break;
           state.busy = true; clearMsgs(); render();
@@ -4797,15 +4850,18 @@ function linkify(t) {
         call('api_me', state.token).then(function (u) {
           state.user = u; state.busy = false;
           if (u.impersonator) { state.impersonator = u.impersonator; state.adminToken = sessionStorage.getItem('pgs_admin_token') || ''; }
+          startBellPoll();
           if (u.firstLogin && !u.impersonator) { state.view = 'pwchange'; render(); return; }
           var target = startView_();
           navigate(target);
         }).catch(function () {
           state.token = ''; state.user = null; state.busy = false;
           sessionStorage.removeItem('pgs_token');
+          stopBellPoll();
           render();
         });
       } else {
+        stopBellPoll();
         render();
       }
     }
