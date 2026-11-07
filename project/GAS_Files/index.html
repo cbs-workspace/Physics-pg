@@ -2697,7 +2697,6 @@
       if (f.size > 50 * 1024 * 1024) { alert('File must be under 50 MB.'); input.value = ''; return; }
       if (!['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'].some(function (ext) { return f.name.toLowerCase().endsWith(ext); })) { alert('Upload a PDF, DOC, DOCX, PNG, JPG or JPEG file.'); input.value = ''; return; }
     }
-    input.addEventListener('change', function () { onDocFileChange(this); });' +
           '<div class="sticky-actions"><button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button> <button class="btn btn-outline" type="submit" data-draft="1"' + (state.busy ? ' disabled' : '') + '>Save as draft</button></div>' +
           '<p class="small muted" style="margin:8px 0 0">A draft is private to you. It is not sent to reviewers until you press Submit for review in My Submissions.</p>' +
         '</form></div>';
