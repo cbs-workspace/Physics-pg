@@ -11,7 +11,7 @@
  * Serves any page with:
  *  - the template scriptlets rendered exactly like doGet (tools/pg-template.js)
  *  - a mocked google.script.run backed by in-memory demo data
- *    (same accounts as SeedData.md, password PhysicsPG2026!)
+ *    (the demo accounts below, password PhysicsPG2026!)
  *  - /images/* served from images/ (hero background) and the repo root
  *
  * Usage: npm run pg   →   http://localhost:8081  (home)
@@ -1123,7 +1123,39 @@ window.__PG_MOCK_API__ = (function () {
       DB.enquiries = DB.enquiries || [];
       DB.enquiries.push({ name: n, email: em, message: msg, at: now() });
       return { ok: true, message: 'Thank you. Your enquiry has been sent to the PG Coordinator.' };
-    }
+    },
+    /* ---- notification centre (Phase 3): kept in memory, no server rows locally ---- */
+    api_getNotifications: function (token, which) {
+      var user = requireUser(token);
+      DB.notifications = DB.notifications || [];
+      var mine = filter(DB.notifications, function (n) { return n.regNumber === user.regNumber; }).slice().reverse();
+      var unread = filter(mine, function (n) { return !n.read; }).length;
+      var shown = String(which) === 'unread' ? filter(mine, function (n) { return !n.read; }) : mine;
+      return { unread: unread, total: mine.length, items: shown.slice(0, 60) };
+    },
+    api_markNotificationRead: function (token, id) {
+      var user = requireUser(token);
+      DB.notifications = DB.notifications || [];
+      var n = find(DB.notifications, function (x) { return x.id === id && x.regNumber === user.regNumber; });
+      if (!n) throw new Error('Notification not found.');
+      n.read = true;
+      return { ok: true };
+    },
+    api_markNotificationsRead: function (token) {
+      var user = requireUser(token);
+      DB.notifications = DB.notifications || [];
+      filter(DB.notifications, function (n) { return n.regNumber === user.regNumber; }).forEach(function (n) { n.read = true; });
+      return { ok: true };
+    },
+    /* Every real upload is private and served through this call; the local mock has no
+       Drive files, so it returns the canonical Drive URL for the id. */
+    api_getFileAccess: function (token, fileId) {
+      requireUser(token);
+      var id = String(fileId || '').replace(/[^A-Za-z0-9_-]/g, '');
+      if (id.length < 10) throw new Error('File not found.');
+      return { url: 'https://drive.google.com/file/d/' + id + '/view', id: id, name: 'attachment' };
+    },
+    api_getPhotos: function (token) { requireUser(token); return {}; }
   };
 })();
 </script>

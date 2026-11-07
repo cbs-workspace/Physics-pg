@@ -206,13 +206,46 @@ function withScriptLock_(fn, timeoutMs) {
   try { return fn(); } finally { lockRelease_(); }
 }
 
-/* ---- Password hashing ---- */
-function makeSalt_() { return Utilities.getUuid().replace(/-/g, ''); }
-function hashPassword_(password, salt) {
-  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(password) + ':' + String(salt), Utilities.Charset.UTF_8);
+/* ---- Password hashing ----
+ * Current format:  pbkdf2$<iterations>$<hex>  — an iterated HMAC-SHA256 loop.
+ * Rows created before this change hold a bare 64-character SHA-256 hex digest;
+ * verifyPassword_ accepts both, and api_login rewrites the old format in place at
+ * the next successful sign-in (needsRehash_).
+ * Six-digit e-mail codes (OTP / reset / e-mail change) use the single-round
+ * hashCode_ so they stay instant; they are already rate-limited and short-lived. */
+var HASH_ITERATIONS = 1000;   // tune here: about a second on a cold start is a safe Apps Script budget
+function bytesToHex_(bytes) {
   var out = '';
   for (var i = 0; i < bytes.length; i++) { var h = (bytes[i] & 0xff).toString(16); out += h.length === 1 ? '0' + h : h; }
   return out;
+}
+function hashCode_(value) {
+  return bytesToHex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value), Utilities.Charset.UTF_8));
+}
+function hashPasswordRaw_(password, salt, iterations) {
+  var key = String(password) + ':' + String(salt), u = Utilities.computeHmacSha256Signature(key, String(salt));
+  for (var i = 1; i < iterations; i++) u = Utilities.computeHmacSha256Signature(u, key);
+  return 'pbkdf2$' + iterations + '$' + bytesToHex_(u);
+}
+function hashPassword_(password, salt) { return hashPasswordRaw_(password, salt, HASH_ITERATIONS); }
+function needsRehash_(stored) { return !/^pbkdf2\$\d+\$[0-9a-f]+$/i.test(String(stored || '')); }
+function safeEqual_(a, b) {
+  a = String(a); b = String(b);
+  if (a.length !== b.length) return false;
+  var d = 0;
+  for (var i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+/** Compares a typed password with the stored hash, whichever format the row uses. */
+function verifyPassword_(password, salt, stored) {
+  stored = String(stored || '');
+  var m = /^pbkdf2\$(\d+)\$([0-9a-f]+)$/i.exec(stored);
+  if (m) {
+    var n = parseInt(m[1], 10);
+    if (!(n > 0) || n > 200000) return false;
+    return safeEqual_(hashPasswordRaw_(password, salt, n), stored);
+  }
+  return safeEqual_(hashCode_(String(password) + ':' + String(salt)), stored);   // legacy single SHA-256
 }
 function assertStrongPassword_(pw, username) {
   var s = String(pw || '');
@@ -259,7 +292,7 @@ function rotateLegacyDefaultPasswords(dryRun) {
   var n = 0, mailed = 0, failed = [];
   readTable_('Users').forEach(function (u) {
     if (u.role === 'SuperAdmin' || !toBool_(u.active) || String(u.status) !== 'Approved' || !toBool_(u.firstLogin)) return;
-    if (hashPassword_(CFG.DEFAULT_PASSWORD, u.salt) !== String(u.passwordHash)) return;
+    if (!verifyPassword_(CFG.DEFAULT_PASSWORD, u.salt, u.passwordHash)) return;
     n++;
     if (dryRun) return;
     var pw = issueTempPassword_(u), ok = false;
@@ -789,8 +822,11 @@ function api_login(regNumber, password) {
   if (!user || !toBool_(user.active)) { recordLoginFailure_(key); throw new Error('Invalid registration number / staff ID or password.'); }
   if (String(user.status) === 'Pending') throw new Error('Awaiting PG Coordinator approval. You cannot log in yet.');
   if (String(user.status) === 'Rejected') throw new Error('Your registration was rejected. Please contact the PG Coordinator.');
-  if (hashPassword_(password, user.salt) !== String(user.passwordHash)) { recordLoginFailure_(key); throw new Error('Invalid registration number / staff ID or password.'); }
+  if (!verifyPassword_(password, user.salt, user.passwordHash)) { recordLoginFailure_(key); throw new Error('Invalid registration number / staff ID or password.'); }
   clearLoginFailures_(key);
+  if (needsRehash_(user.passwordHash)) {   // upgrade an old single-round hash in place, at the next successful sign-in
+    try { updateRow_('Users', user.id, { passwordHash: hashPassword_(password, user.salt) }); } catch (e) { Logger.log('rehash ' + user.regNumber + ': ' + e); }
+  }
   var token = Utilities.getUuid();
   CacheService.getScriptCache().put('sess_' + token, JSON.stringify({ id: user.id, epoch: sessionEpoch_(user.id) }), CFG.SESSION_TTL_SECONDS);
   return { token: token, user: publicUser_(user) };
@@ -806,7 +842,7 @@ function api_me(token) {
 function api_changePassword(token, oldPassword, newPassword) {
   var user = requireUser_(token);
   if (__actor) throw new Error('Passwords cannot be changed while signed in as another user. Return to Super Admin first.');
-  if (hashPassword_(oldPassword, user.salt) !== String(user.passwordHash)) throw new Error('Old password is incorrect.');
+  if (!verifyPassword_(oldPassword, user.salt, user.passwordHash)) throw new Error('Old password is incorrect.');
   assertStrongPassword_(newPassword, user.regNumber);
   var salt = makeSalt_();
   updateRow_('Users', user.id, { passwordHash: hashPassword_(newPassword, salt), salt: salt, firstLogin: false });
@@ -937,7 +973,7 @@ function setUp() {
 /** Settings you can change in the Config tab (key | value). Missing ones are added with these defaults; existing values are never overwritten.
  *  LIMIT_MONTHS_* are PLACEHOLDER programme time limits \u2014 enter the real ones, then set TIME_LIMITS_ENABLED = yes. */
 var NEW_SETTINGS = [
-  ['SIMILARITY_LIMIT', '20'], ['REQUIRE_SIMILARITY', 'no'], ['EXAMINER_APPROVAL_REQUIRED', 'no'], ['PASSPORT_PRIVACY', 'public'],
+  ['SIMILARITY_LIMIT', '20'], ['REQUIRE_SIMILARITY', 'no'], ['EXAMINER_APPROVAL_REQUIRED', 'no'], ['PASSPORT_PRIVACY', 'private'],
   ['TIME_LIMITS_ENABLED', 'no'], ['LIMIT_MONTHS_MSc', '24'], ['LIMIT_MONTHS_MPhil', '36'], ['LIMIT_MONTHS_PhD', '60'], ['TIME_ALERT_MONTHS', '6'], ['ENDORSE_REMIND_DAYS', '3'], ['NUDGE_DAYS', '30'],
   ['BLOCK_APPROVAL_ON_FORMAT', 'yes'], ['PROGRAMME_START_MONTH', '2026-11'], ['PROGRAMME_TIMEZONE', 'Africa/Lagos'], ['PROGRAMME_SEEDED', 'no'], ['SUPERVISOR_MAX_STUDENTS', '8'], ['FEEDBACK_DAYS', '7'], ['TEMPLATE_PROPOSAL_DEFENCE_FORM', ''], ['TEMPLATE_PROGRESS_PPTX', ''],
   ['LETTER_REF_PREFIX', 'UA/PHY/FPS'], ['LETTER_REF_SERIAL', '0'], ['LETTER_REF_PAD', '2'], ['LETTER_REF_RESET_YEARLY', 'no'], ['LETTER_REF_YEAR', ''],
@@ -1236,11 +1272,8 @@ function authorizeServices() {
   var folderId = getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID);
   var folder = DriveApp.getFolderById(folderId);          // forces the Drive scope prompt
   var probe = folder.createFile('authorize-check.txt', 'ok');   // forces WRITE access
-  try { probe.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
-  catch (e) {
-    Logger.log('WARNING: per-file link sharing is blocked (' + e.message + '). Uploads will still work. ' +
-      'Share the passport FOLDER itself (Anyone with the link: Viewer) so photos are visible, or ask your Workspace admin to allow link sharing.');
-  }
+  try { probe.getSharingAccess(); }                       // forces READ of sharing metadata
+  catch (e) { Logger.log('WARNING: the portal cannot read file sharing (' + e.message + '). Uploads still work, but access checks may be limited.'); }
   probe.setTrashed(true);
   getSpreadsheet_().getName();                            // Sheets scope
   MailApp.getRemainingDailyQuota();                       // Mail scope
@@ -1248,7 +1281,7 @@ function authorizeServices() {
     var pr = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/about?fields=user', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
     if (pr.getResponseCode() !== 200) Logger.log('WARNING: Drive API check returned ' + pr.getResponseCode() + '. Enable the Drive API service (Services +) or uploads over 10 MB will fail.');
   } catch (e) { Logger.log('WARNING: UrlFetchApp not authorised: ' + e); }
-  Logger.log('Authorised OK. Drive folder: ' + folder.getName() + '. Now redeploy as a NEW VERSION.');
+  Logger.log('Authorised OK. Drive folder: ' + folder.getName() + '. Files stay private; the portal grants access per viewer. Now redeploy as a NEW VERSION.');
 }
 
 /**
@@ -1313,10 +1346,11 @@ function dupFlags_(stu, all) {
   return flags.slice(0, 3);
 }
 
-/* ---- passport photo privacy (OPT-IN). Default "public" keeps today's behaviour (anyone with the link can view the photo).
- *      Set PASSPORT_PRIVACY = private in the Config tab, then run restrictExistingPassports() once: photos are no longer link-shared
- *      and the portal itself serves them to people allowed to see the student. ---- */
-function passportPrivate_() { try { return String(getSetting_('PASSPORT_PRIVACY', 'public')).toLowerCase() === 'private'; } catch (e) { return false; } }
+/* ---- passport photo privacy ----
+ * Passport photos are ALWAYS private: they are never link-shared, and the portal serves them
+ * through api_getPhotos to the student, their supervisors and the Coordinator / HoD / Super Admin.
+ * PASSPORT_PRIVACY in the Config tab is kept for older sheets but is no longer read. */
+function passportPrivate_() { return true; }
 function api_getPhotos(token, ids) {
   var user = requireUser_(token), want = (ids || []).slice(0, 8).map(String), allowed = {};
   readTable_('Students').forEach(function (st) {
@@ -1336,7 +1370,7 @@ function api_getPhotos(token, ids) {
   });
   return out;
 }
-/** RUN ONCE after setting PASSPORT_PRIVACY = private: removes link sharing from every existing passport photo. */
+/** Existing rows may still hold a link-shared photo; run once (safe to re-run) to remove it. */
 function restrictExistingPassports() {
   var n = 0, t0 = Date.now();
   readTable_('Students').forEach(function (st) {
@@ -1418,10 +1452,7 @@ function savePassportPhoto_(filePayload, regNumber) {
     var folderId = getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID);
     var folder = DriveApp.getFolderById(folderId);
     var file = folder.createFile(blob);
-    if (!passportPrivate_()) {
-      try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
-      catch (shareErr) { Logger.log('Passport sharing failed (file still saved): ' + shareErr); }
-    }
+    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);   // photos are served through api_getPhotos only
     return { id: file.getId(), url: file.getUrl() };
   } catch (e) {
     Logger.log('savePassportPhoto_ failed: ' + e);
@@ -2382,7 +2413,7 @@ function api_requestEmailChange(token, newEmail) {
   if (n >= 3) throw new Error('Too many requests. Please try again in an hour.');
   cache.put('emcn_' + user.id, String(n + 1), 3600);
   var code = String(Math.floor(100000 + Math.random() * 900000));
-  cache.put('emc_' + user.id, JSON.stringify({ h: hashPassword_(code, user.id), email: em }), 1800); cache.remove('emca_' + user.id);
+  cache.put('emc_' + user.id, JSON.stringify({ h: hashCode_(code + ':' + user.id), email: em }), 1800); cache.remove('emca_' + user.id);
   sendPortalMail_({ to: em, subject: 'Confirm your new email address', body: 'Your confirmation code is ' + code + '. It expires in 30 minutes. If you did not request this change, ignore this email.' });
   return { message: 'A 6-digit code was sent to ' + em + '. Enter it to confirm the change.' };
 }
@@ -2390,7 +2421,7 @@ function api_confirmEmailChange(token, code) {
   var user = requireUser_(token), cache = CacheService.getScriptCache(), raw = cache.get('emc_' + user.id), tries = parseInt(cache.get('emca_' + user.id) || '0', 10);
   if (!raw || tries >= 5) throw new Error('The code expired or there were too many attempts. Request a new code.');
   var st = JSON.parse(raw);
-  if (hashPassword_(String(code || '').trim(), user.id) !== st.h) { cache.put('emca_' + user.id, String(tries + 1), 1800); throw new Error('Incorrect code.'); }
+  if (!safeEqual_(hashCode_(String(code || '').trim() + ':' + user.id), String(st.h))) { cache.put('emca_' + user.id, String(tries + 1), 1800); throw new Error('Incorrect code.'); }
   if (findWhere_('Users', function (x) { return String(x.email || '').toLowerCase() === st.email && String(x.id) !== String(user.id); })) throw new Error('That email address is already used by another account.');
   var old = String(user.email || '');
   updateRow_('Users', user.id, { email: st.email });
@@ -3178,10 +3209,25 @@ function checklistFor_(type) {
   return l;
 }
 function addNote_(reg, text) { try { appendRow_('Notifications', { regNumber: reg, text: String(text).slice(0, 300), read: false, createdAt: nowIso_() }); } catch (e) { Logger.log('addNote_ ' + e); } }
-function api_getNotifications(token) {
+function api_getNotifications(token, filter) {
   var user = requireUser_(token);
   var mine = readTableTail_('Notifications', 1500).filter(function (n) { return String(n.regNumber) === String(user.regNumber); });
-  return { unread: mine.filter(function (n) { return !toBool_(n.read); }).length, items: mine.slice(-30).reverse().map(function (n) { return { text: n.text, at: n.createdAt, read: toBool_(n.read) }; }) };
+  var items = mine.slice().reverse().map(function (n) { return { id: n.id, text: n.text, at: n.createdAt, read: toBool_(n.read) }; });
+  var unread = items.filter(function (n) { return !n.read; }).length;
+  var shown = String(filter || '') === 'unread' ? items.filter(function (n) { return !n.read; }) : items;
+  return { unread: unread, total: items.length, items: shown.slice(0, 60) };
+}
+/** Marks one notification read; the bell modal calls this per item. */
+function api_markNotificationRead(token, id) {
+  var user = requireUser_(token), n = findById_('Notifications', id);
+  if (!n || String(n.regNumber) !== String(user.regNumber)) throw new Error('Notification not found.');
+  if (!toBool_(n.read)) {
+    withScriptLock_(function () {
+      writeRowPatch_(getSheet_('Notifications'), sheetHeaders_('Notifications'), n._row, { read: true });
+      invalidateTable_('Notifications');
+    }, 30000);
+  }
+  return { ok: true };
 }
 function api_markNotificationsRead(token) {
   var user = requireUser_(token);
@@ -3209,7 +3255,7 @@ function api_requestReset(regNumber) {
   if (u && toBool_(u.active) && String(u.status) === 'Approved' && EMAIL_RE.test(String(u.email || ''))) {
     cache.put('rstn_' + key, String(n + 1), 3600);   // only real, deliverable requests use up the hourly allowance
     var code = genResetCode_(), sent = false;
-    cache.put('rst_' + key, hashPassword_(code, key), 1800); cache.remove('rsta_' + key);
+    cache.put('rst_' + key, hashCode_(code + ':' + key), 1800); cache.remove('rsta_' + key);
     try {
       sent = sendPortalMail_({ to: u.email, subject: 'Password reset code — ' + u.regNumber,
         body: 'Your password reset code is ' + code + '. It expires in 30 minutes. If you did not request this, ignore this email.',
@@ -3233,7 +3279,7 @@ function api_resetWithCode(regNumber, code, newPassword) {
   var key = normReg_(regNumber), cache = CacheService.getScriptCache();
   var tries = parseInt(cache.get('rsta_' + key) || '0', 10), stored = cache.get('rst_' + key);
   if (!stored || tries >= 5) throw new Error('Code expired or too many attempts. Request a new code.');
-  if (hashPassword_(String(code || '').trim(), key) !== stored) { cache.put('rsta_' + key, String(tries + 1), 1800); throw new Error('Incorrect code.'); }
+  if (!safeEqual_(hashCode_(String(code || '').trim() + ':' + key), String(stored))) { cache.put('rsta_' + key, String(tries + 1), 1800); throw new Error('Incorrect code.'); }
   var u = findUserByReg_(key);
   if (!u) throw new Error('Account not found.');
   assertStrongPassword_(newPassword, u.regNumber);
@@ -3302,7 +3348,9 @@ function submissionsFolder_() {
   var it = root.getFoldersByName('Submissions');
   return it.hasNext() ? it.next() : root.createFolder('Submissions');
 }
-function shareViewable_(file) { try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) { Logger.log('Share failed: ' + e); } }
+/* Every uploaded file is private in Drive. Named people are granted access on demand
+ * (accessPlanFor_ at upload time, grantFileRole_ when someone opens it through the API).
+ * Nothing is ever shared with "anyone with the link". */
 
 /** Small files (up to SMALL_UPLOAD_BYTES): one call. Larger files use api_beginLargeUpload / api_uploadLargeChunk. */
 function api_uploadSubmissionFile(token, p) {
@@ -3314,7 +3362,7 @@ function api_uploadSubmissionFile(token, p) {
   var bytes = Utilities.base64Decode(parts[1]);
   if (bytes.length > CFG.SMALL_UPLOAD_BYTES) throw new Error('Use the large-file upload for files over 10 MB.');
   var file = submissionsFolder_().createFile(Utilities.newBlob(bytes, mime, String(user.regNumber).replace(/[\/\\]/g, '-') + '_' + typeSlug_(p && p.type) + '_' + new Date().getTime() + '.' + ok[mime]));
-  if (isLockedFileType_(p && p.type)) lockFile_(file); else shareViewable_(file);
+  lockFile_(file);
   return { url: file.getUrl(), id: file.getId() };
 }
 
@@ -3367,7 +3415,7 @@ function api_uploadLargeChunk(token, uploadId, start, b64) {
   if (code === 200 || code === 201) {
     cache.remove('upl_' + String(uploadId));
     var id = JSON.parse(r.getContentText()).id, file = DriveApp.getFileById(id);
-    if (isLockedFileType_(st.type)) lockFile_(file); else shareViewable_(file);
+    lockFile_(file);
     return { done: true, url: file.getUrl(), id: id };
   }
   Logger.log('uploadLargeChunk failed: ' + code + ' ' + String(r.getContentText()).slice(0, 300));
@@ -3478,8 +3526,8 @@ function api_uploadInquiryFile(token, p) {
   var bytes = Utilities.base64Decode(parts[1] || ''); if (bytes.length > 5 * 1024 * 1024) throw new Error('Attachment must be under 5 MB.');
   var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Attachments'), folder = it.hasNext() ? it.next() : root.createFolder('Attachments');
   var file = folder.createFile(Utilities.newBlob(bytes, mime, 'inq_' + new Date().getTime() + '.' + ok[mime]));
-  shareViewable_(file);
-  return { url: file.getUrl() };
+  lockFile_(file);
+  return { url: file.getUrl(), id: file.getId() };
 }
 function api_createInquiry_l(token, category, subject, text, attachUrl) {
   var user = requireUser_(token);
@@ -4102,8 +4150,8 @@ function api_uploadMessageFile(token, p, reg) {
   var bytes = Utilities.base64Decode(parts[1]); if (bytes.length > 5 * 1024 * 1024) throw new Error('Attachment must be under 5 MB.');
   var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Attachments'), folder = it.hasNext() ? it.next() : root.createFolder('Attachments');
   var file = folder.createFile(Utilities.newBlob(bytes, mime, 'msg_' + new Date().getTime() + '.' + ok[mime]));
-  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
-  return { url: file.getUrl() };
+  lockFile_(file);
+  return { url: file.getUrl(), id: file.getId() };
 }
 /* ---- seminars ---- */
 function regList_(v) { return String(v || '').split(/[\s,;]+/).map(function (x) { return x.trim(); }).filter(Boolean); }
@@ -4233,17 +4281,26 @@ function sendDailyDigest() {
     if (items.length) { try { sendPortalMail_({ to: u.email, subject: 'Your daily portal digest (' + items.length + ')', body: items.map(function (n) { return '- ' + n.text; }).join('\n') }); } catch (e) {} }
   });
 }
+var BACKUP_KEEP = 30;   // nightly copies kept in the Backups folder
 function backupCore_() {
   var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Backups'), folder = it.hasNext() ? it.next() : root.createFolder('Backups');
-  return DriveApp.getFileById(getSpreadsheet_().getId()).makeCopy('PG Backup ' + nowIso_().slice(0, 16), folder).getUrl();
+  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HHmmss');
+  var copy = DriveApp.getFileById(getSpreadsheet_().getId()).makeCopy('PG Backup ' + stamp, folder);
+  try {
+    var files = [], fit = folder.getFiles();
+    while (fit.hasNext()) { var f = fit.next(); if (/^PG Backup /.test(f.getName())) files.push(f); }
+    files.sort(function (a, b) { return b.getDateCreated().getTime() - a.getDateCreated().getTime(); });
+    files.slice(BACKUP_KEEP).forEach(function (old) { try { old.setTrashed(true); } catch (e) {} });
+  } catch (e) { Logger.log('backup prune: ' + e); }
+  return copy.getUrl();
 }
 function autoBackup() { backupCore_(); }
 function api_backupNow(token) { var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can back up.'); logAudit_(user.id, user.regNumber, 'BACKUP', 'Spreadsheet', 'Manual'); return { url: backupCore_() }; }
-/** Run once: weekly HoD digest (Mon 7am), daily user digest (5pm), weekly backup (Sun 2am). */
+/** Run once: weekly HoD digest (Mon 7am), daily user digest (5pm), nightly backup (2am, 30 kept). */
 function installDigestTriggers() {
   ScriptApp.newTrigger('sendWeeklyDigest').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(7).create();
   ScriptApp.newTrigger('sendDailyDigest').timeBased().everyDays(1).atHour(17).create();
-  ScriptApp.newTrigger('autoBackup').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).create();
+  ScriptApp.newTrigger('autoBackup').timeBased().everyDays(1).atHour(2).create();
 }
 
 
@@ -4367,6 +4424,30 @@ function sendStalledNudges() {
   });
 }
 
+/** Daily e-mail to the PG Coordinator and HoD: submissions waiting too long for review, plus seminars in the
+ *  next 7 days. Silent when there is nothing to report. Bell notifications are left alone (they would repeat daily). */
+function sendCoordinatorReminders() {
+  var subs = readTable_('Submissions').filter(overdue_);
+  var today = nowIso_().slice(0, 10);
+  var soon = Utilities.formatDate(new Date(Date.now() + 7 * 864e5), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var sems = seminarList_(true).filter(function (s) { return String(s.date) >= today && String(s.date) <= soon; });
+  if (!subs.length && !sems.length) return;
+  var body = 'Postgraduate review reminders\n\n';
+  body += 'Overdue submissions (' + subs.length + '):\n' + (subs.slice(0, 40).map(function (s) {
+    return '- ' + s.type + ' \u2014 ' + s.regNumber + ' (' + daysSince_(s.updatedAt || s.createdAt) + ' days waiting' + (s.assignedTo ? ', assigned to ' + s.assignedTo : '') + ')';
+  }).join('\n') || '- none') + '\n\n';
+  body += 'Seminars in the next 7 days (' + sems.length + '):\n' + (sems.map(function (s) {
+    return '- ' + s.date + ' ' + s.title + (s.venue ? ' at ' + s.venue : '') + (s.presenters ? ' \u2014 ' + s.presenters : '');
+  }).join('\n') || '- none') + '\n\nOpen the portal to review the submissions or to publish the seminar details.';
+  var seen = {};
+  filterWhere_('Users', function (u) { return (u.role === 'HoD' || u.role === 'PG_Coordinator') && toBool_(u.active) && String(u.status) === 'Approved' && EMAIL_RE.test(String(u.email || '')); }).forEach(function (u) {
+    var key = String(u.email).toLowerCase();
+    if (seen[key]) return;
+    seen[key] = 1;
+    try { sendPortalMail_({ to: u.email, subject: 'Overdue reviews and upcoming seminars (' + subs.length + ' overdue, ' + sems.length + ' seminar(s))', body: body }); } catch (e) { Logger.log('coordinator reminder: ' + e); }
+  });
+}
+
 /* ---- numbers shown on the menu tabs ---- */
 function api_getNavCounts(token) {
   var user = requireUser_(token), c = {}, subs = readTable_('Submissions');
@@ -4481,8 +4562,9 @@ function archiveOldRecords() {
 /** RUN ONCE from the editor (or from the spreadsheet menu): installs every scheduled job exactly once; safe to run again. */
 var PORTAL_TRIGGERS = [
   { fn: 'sendDeadlineReminders', every: 'day', hour: 8 }, { fn: 'sendSupervisorReminders', every: 'day', hour: 9 }, { fn: 'sendStalledNudges', every: 'day', hour: 10 }, { fn: 'sendSupervisionReminders', every: 'day', hour: 11 }, { fn: 'syncStaffEmails', every: 'day', hour: 6 },
+  { fn: 'sendCoordinatorReminders', every: 'day', hour: 12 },
   { fn: 'sendDailyDigest', every: 'day', hour: 17 }, { fn: 'sendWeeklyDigest', every: 'week', day: 'MONDAY', hour: 7 }, { fn: 'sendTimeLimitAlerts', every: 'week', day: 'MONDAY', hour: 8 },
-  { fn: 'autoBackup', every: 'week', day: 'SUNDAY', hour: 2 }, { fn: 'archiveOldRecords', every: 'month', hour: 3 }, { fn: 'checkPendingSubmissions', every: 'minutes', n: 10 }
+  { fn: 'autoBackup', every: 'day', hour: 2 }, { fn: 'archiveOldRecords', every: 'month', hour: 3 }, { fn: 'checkPendingSubmissions', every: 'minutes', n: 10 }
 ];
 function installAllTriggers() {
   try { ensureSettings_(); } catch (e) { Logger.log('ensureSettings_: ' + e); }
@@ -4500,6 +4582,18 @@ function installAllTriggers() {
   });
   Logger.log('Triggers added: ' + (added.join(', ') || 'none (all were already installed)'));
   return added;
+}
+/** RUN ONCE after changing the schedule (e.g. the backup moved from weekly to nightly): deletes the portal's own
+ *  triggers and installs the current list again. installAllTriggers alone cannot change an existing time. */
+function reinstallAllTriggers() {
+  var names = PORTAL_TRIGGERS.map(function (j) { return j.fn; });
+  var removed = 0;
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (names.indexOf(t.getHandlerFunction()) !== -1) { ScriptApp.deleteTrigger(t); removed++; }
+  });
+  var added = installAllTriggers();
+  Logger.log('reinstallAllTriggers: removed ' + removed + ', added ' + added.length + '.');
+  return { removed: removed, added: added };
 }
 
 /* =========================== 16. WEB ENTRY =========================== */
@@ -4568,7 +4662,7 @@ function accessPlanFor_(reg, type) {
   var add = function (email, role) { email = String(email || '').trim().toLowerCase(); if (EMAIL_RE.test(email) && (!plan[email] || rank[role] > rank[plan[email]])) plan[email] = role; };
   var stu = studentByReg_(reg);
   if (stu && !restricted) supervisorEmails_([stu.mainSupervisorId, stu.coSupervisorId]).forEach(function (e) { add(e, 'writer'); });
-  if (stu && isLockedFileType_(type)) add(stu.email, 'reader');   // locked files are not link-shared, so the owner is granted explicitly
+  if (stu) add(stu.email, 'reader');   // every upload is private, so the owner is granted explicitly
   readTable_('Users').forEach(function (u) {
     if (!toBool_(u.active) || String(u.status) !== 'Approved') return;
     if (u.role === 'PG_Coordinator') add(u.email, restricted ? 'commenter' : 'writer');   // commenter = view + download, no edit
@@ -4601,14 +4695,14 @@ function syncAllSubmissionAccess() {
   Logger.log('syncAllSubmissionAccess: ' + done + ' submissions synced, ' + left + ' left (run again if > 0).');
 }
 
-/** RUN ONCE from the Apps Script editor after deploying: makes EXISTING progress reports, theses and plagiarism certificates private in Drive
+/** RUN ONCE from the Apps Script editor after deploying: makes EXISTING submission files private in Drive
  *  (no more "anyone with the link"), then re-grants only the named people (student, supervisors, Coordinator(s), Inspector(s), HoD) and the
  *  examiner(s) currently assigned to that very document. Any other examiner is removed. Re-run if it stops at the time limit. */
 function lockdownPrivateFiles() {
   var t0 = Date.now(), done = 0, left = 0;
   var exRows = readTable_('Examiners').filter(function (x) { return String(x.status) === 'Assigned'; });
   var allExaminerEmails = readTable_('Users').filter(function (u) { return u.role === 'Examiner'; }).map(function (u) { return String(u.email || '').toLowerCase(); }).filter(Boolean);
-  readTable_('Submissions').filter(function (s) { return isLockedFileType_(s.type) && !isRestrictedType_(s.type); }).forEach(function (sub) {
+  readTable_('Submissions').filter(function (s) { return !isRestrictedType_(s.type); }).forEach(function (sub) {
     if (Date.now() - t0 > 300000) { left++; return; }
     try {
       var allowed = [];
@@ -4624,6 +4718,39 @@ function lockdownPrivateFiles() {
     } catch (e) { Logger.log('lockdownPrivateFiles ' + sub.id + ': ' + e); }
   });
   Logger.log('lockdownPrivateFiles: ' + done + ' submission(s) locked, ' + left + ' left (run again if > 0).');
+}
+
+/** PUBLIC-FILE AUDIT. Lists every file in the portal's Drive folders that is still shared with
+ *  "anyone with the link", and — only when you ask — removes that sharing.
+ *    auditPublicFiles()        -> report only (no change)
+ *    auditPublicFiles(false)   -> make every hit private
+ *  Run syncAllSubmissionAccess() afterwards so the right people keep access. Photos, theses,
+ *  admission letters and attachments are then served by the portal itself (api_getPhotos /
+ *  api_getSubmissionFiles / api_getFileAccess). */
+function auditPublicFiles(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID));
+  var folders = [root], t0 = Date.now(), out = [];
+  ['Submissions', 'Admission Letters', 'Attachments'].forEach(function (n) {
+    var it = root.getFoldersByName(n); if (it.hasNext()) folders.push(it.next());
+  });
+  folders.forEach(function (folder) {
+    var files = folder.getFiles();
+    while (files.hasNext() && Date.now() - t0 < 240000) {
+      var f = files.next(), access = '';
+      try { access = String(f.getSharingAccess()); } catch (e) { continue; }
+      if (access !== 'ANYONE_WITH_LINK' && access !== 'ANYONE') continue;
+      var row = { id: f.getId(), name: f.getName(), folder: folder.getName(), access: access };
+      if (!dryRun) {
+        try { f.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE); row.locked = true; }
+        catch (e) { row.error = String((e && e.message) || e); }
+      }
+      out.push(row);
+    }
+  });
+  Logger.log('auditPublicFiles' + (dryRun ? ' (dry run)' : '') + ': ' + out.length + ' public file(s).' +
+    (dryRun ? ' Run auditPublicFiles(false), then syncAllSubmissionAccess().' : ' Now run syncAllSubmissionAccess() so named people keep access.'));
+  return { dryRun: !!dryRun, count: out.length, files: out };
 }
 
 /* ---- who can open what ---- */
@@ -4647,7 +4774,7 @@ function api_getSubmissionFiles(token, subId) {
   if (!sub) throw new Error('Submission not found.');
   if (!canSeeSubmission_(user, sub)) throw new Error('You cannot open this submission.');
   var canEdit = canEditSubmission_(user, sub), ids = fileIdsFromUrls_(sub.driveFileUrls), files = [], cache = CacheService.getScriptCache();
-  var restr = isRestrictedType_(sub.type), myRole = canEdit ? 'writer' : ((user.role === 'Submission_Inspector' || (user.role === 'PG_Coordinator' && restr)) ? 'commenter' : ((user.role === 'HoD' || user.role === 'Examiner' || (user.role === 'Student' && isLockedFileType_(sub.type))) ? 'reader' : ''));
+  var restr = isRestrictedType_(sub.type), myRole = canEdit ? 'writer' : ((user.role === 'Submission_Inspector' || (user.role === 'PG_Coordinator' && restr)) ? 'commenter' : ((user.role === 'HoD' || user.role === 'Examiner' || user.role === 'Student') ? 'reader' : ''));
   ids.forEach(function (id) {
     var o = { id: id, name: 'File', mime: '', size: 0, error: '', canEdit: false, edit: '',
       preview: 'https://drive.google.com/file/d/' + id + '/preview', open: 'https://drive.google.com/file/d/' + id + '/view',
@@ -4664,6 +4791,61 @@ function api_getSubmissionFiles(token, subId) {
   });
   var stu = studentByReg_(sub.regNumber);
   return { id: sub.id, type: sub.type, regNumber: sub.regNumber, studentName: stu ? fullNameOf_(stu) : '', files: files, compliance: (user.role === 'Student' || user.role === 'Examiner') ? null : parseCompliance_(sub.compliance) };
+}
+
+/* ---- one API for every private upload ----
+ * Every file the portal stores in Drive (submission, passport, admission letter, message and
+ * inquiry attachment) is private. The browser never opens a Drive link directly: it asks this
+ * API, which finds the row that owns the file, applies that section's access rule, grants the
+ * viewer the matching Drive role and returns the link. */
+function submissionForFile_(id) {
+  var want = String(id);
+  return findWhere_('Submissions', function (s) { return fileIdsFromUrls_(s.driveFileUrls).indexOf(want) > -1; });
+}
+/** The text of a message / inquiry thread embeds the attachment's Drive URL. */
+function textMentionsFile_(text, id) {
+  var t = String(text || '');
+  return t.indexOf('/d/' + id) > -1 || t.indexOf('id=' + id) > -1;
+}
+function api_getFileAccess(token, fileId) {
+  var user = requireUser_(token), id = String(fileId || '').replace(/[^A-Za-z0-9_-]/g, '');
+  if (id.length < 10) throw new Error('File not found.');
+  var role = 'reader', ok = false;
+  var sub = submissionForFile_(id);
+  if (sub) {
+    if (!canSeeSubmission_(user, sub)) throw new Error('You cannot open this file.');
+    if (canEditSubmission_(user, sub) && !isRestrictedType_(sub.type)) role = 'writer';
+    ok = true;
+  }
+  if (!ok) {
+    var q = findWhere_('Inquiries', function (x) { return textMentionsFile_(x.thread, id); });
+    if (q) { inquiryFor_(user, q.id); ok = true; }   // throws when the ticket is not yours to read
+  }
+  if (!ok) {
+    var m = findWhere_('Messages', function (x) { return textMentionsFile_(x.text, id); });
+    if (m) { threadStudent_(user, m.regNumber); ok = true; }
+  }
+  if (!ok) {
+    var st = findWhere_('Students', function (x) { return String(x.passportFileId) === id; });
+    if (st) {
+      var may = user.role === 'Student' ? String(st.regNumber) === String(user.regNumber)
+        : user.role === 'Staff' ? supOf_(user, st) : ['PG_Coordinator', 'HoD', 'SuperAdmin'].indexOf(user.role) > -1;
+      if (!may) throw new Error('You cannot open this file.');
+      ok = true;
+    }
+  }
+  if (!ok) {
+    var ad = findWhere_('Students', function (x) { return textMentionsFile_(x.admissionLetterUrl, id); });
+    if (ad) {
+      var mayAd = user.role === 'Student' ? String(ad.regNumber) === String(user.regNumber) : ['PG_Coordinator', 'HoD', 'SuperAdmin'].indexOf(user.role) > -1;
+      if (!mayAd) throw new Error('You cannot open this file.');
+      ok = true;
+    }
+  }
+  if (!ok) throw new Error('File not found.');
+  var file = DriveApp.getFileById(id);
+  if (user.email) grantFileRole_(id, user.email, role);
+  return { url: file.getUrl(), id: id, name: file.getName() };
 }
 
 /* ---- format & citation check (Word files) ---- */

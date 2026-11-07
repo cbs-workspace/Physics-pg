@@ -5,6 +5,7 @@
   "description": "Department of Physics Postgraduate Journey, University of Abuja — public site (Cloudflare Pages) + role portal (Google Apps Script)",
   "scripts": {
     "pg": "node tools/serve-pg.js",
-    "build": "node tools/build-pg.js"
+    "build": "node tools/check-escape.js && node tools/build-pg.js",
+    "check:escape": "node tools/check-escape.js"
   }
 }

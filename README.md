@@ -49,7 +49,7 @@ Three pieces, each with one job:
   `/exec` link never changes.
 
 Full step-by-step for future releases (GitHub push, Cloudflare auto-deploy,
-manual fallback, connection repair): **[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)**.
+manual fallback, connection repair): **[`AGENTS.md`](AGENTS.md)**.
 
 ### Cloudflare Pages build settings
 
@@ -81,7 +81,8 @@ Physics-pg/
 │   │   ├── PG_Journey_Animated.svg ← animated journey poster on Home (set JOURNEY_IMAGE_URL)
 │   │   └── PG_Journey_Infographic.png ← older 15-step poster (not shown; kept for its URL)
 │   ├── audio/
-│   │   └── music1.mp3       ← background music (copied to dist/audio/ by the build)
+│   │   ├── music1.mp3       ← background music (TRACKS; copied to dist/audio/ by the build)
+│   │   └── music2.mp3       ← alternate track (copied, not referenced yet)
 │   ├── tools/
 │   │   ├── pg-template.js   ← shared template renderer (doGet semantics)
 │   │   ├── serve-pg.js      ← npm run pg — local preview with demo backend
@@ -90,16 +91,11 @@ Physics-pg/
 │   ├── package.json         ← scripts: pg, build (run from this folder)
 │   └── dist/                ← build output (gitignored; Cloudflare deploys this)
 ├── docs/
-│   ├── AGENTS.md            ← full conventions + gotchas for coding agents
-│   ├── DEPLOYMENT.md        ← deploy runbook: GitHub → Cloudflare Pages, Apps Script
-│   ├── AGENT-GUIDE.md       ← runbook for the next agent
-│   ├── audit.md             ← forensic audit (architecture, data, security, bugs)
-│   ├── SeedData.md          ← seed rows + hash generator for demo accounts
 │   ├── guides/              ← generated role guides (.docx/.pdf) + training programme
 │   │   └── …                ← produced by project/tools/make-guides.ps1
 │   ├── reference/           ← PG_Journey_Stages.docx + pg_journey_roadmap.html
 │   └── Staff.xlsx           ← internal staff roster (local only, never committed)
-├── AGENTS.md                ← root pointer to docs/AGENTS.md (agents load this)
+├── AGENTS.md                ← conventions, gotchas + deploy runbook for coding agents
 ├── README.md                ← this file
 └── .gitignore
 ```
@@ -172,17 +168,20 @@ Open the spreadsheet (ID already embedded as `DEFAULT_SPREADSHEET_ID` in `Code.g
 `1cybEF_Fjhyazj4SIH5HnSht6KD31UWftT5fQyGi29uc`
 
 Run the `setUp()` function once from the Apps Script editor. It creates all tabs
-with the exact `HEADERS` schema and seeds the Config tab. Then paste demo rows
-from `docs/SeedData.md` (generate the password hashes with `generateSeedHashes()`
-snippet in that file).
+with the exact `HEADERS` schema and seeds the Config tab. Demo rows are **not**
+re-seeded on a live sheet (the `demo.*` accounts were removed on 2026-10-22) —
+local preview data lives in `project/tools/serve-pg.js`; see `AGENTS.md` for the
+preview logins.
 
-Tabs: **Users, Students, Staff, Submissions, Announcements, Config, AuditLog**
+The 7 core tabs are **Users, Students, Staff, Submissions, Announcements, Config,
+AuditLog**; `setUp()` also creates the other operational tabs listed in
+`HEADERS` (Meetings, Actions, Programmes sessions, Examiners, …).
 
 Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 
 - Users: `id, regNumber, email, passwordHash, salt, role, fullName, firstLogin, active, status, createdAt`
 - Students: `… passportFileId, passportUrl, mainSupervisorId, coSupervisorId, currentStage, yearOfAdmission, …`
-- Staff: `id, fullName, email, rank, specialisation, active, createdAt`
+- Staff: `id, fullName, email, rank, specialisation, active, createdAt, role`
 
 ---
 
@@ -240,9 +239,12 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
   epoch invalidation on password change; token kept in `sessionStorage` client-side.
 - The sign-in form's password field has a show/hide eye toggle (same pattern as the
   KMSS site); it starts masked and reveals on click.
-- Passwords: SHA-256 of `password:salt` via `hashPassword_`; default `PhysicsPG2026!`
-  banned from reuse (`assertStrongPassword_`).
-- All mutating APIs run inside `_locked_` (`withScriptLock_`) and pass `requireUser_(token, roles…)`.
+- Passwords: `pbkdf2$<iterations>$<hex>` from an iterated HMAC-SHA256 loop
+  (`hashPassword_`, `HASH_ITERATIONS`); older single-round SHA-256 rows still verify
+  and are re-hashed at the next successful sign-in (`verifyPassword_`/`needsRehash_`).
+  The default `PhysicsPG2026!` is banned from reuse (`assertStrongPassword_`).
+- All mutating APIs run inside a script lock (`withScriptLock_`/`L_`) and take
+  `requireUser_(token)`, with a separate `assertRole_` check.
 - First login (`firstLogin=TRUE`) forces password change before any other view.
 
 ## Reg Number Validation
@@ -321,9 +323,9 @@ npm run pg          →  http://localhost:8081          (Home)
 ```
 
 `project/tools/serve-pg.js` renders the `index.html` template scriptlets exactly like
-`doGet` and mocks `google.script.run` with the SeedData accounts
-(password `PhysicsPG2026!`), including the public APIs
-(`api_publicAnnouncements`, `api_checkRegistrationStatus`, `api_publicEnquiry`).
+`doGet` and mocks `google.script.run` with in-memory demo accounts
+(registration number + password `PhysicsPG2026!`; the list is in `AGENTS.md`),
+covering 29 of the portal's `api_*` functions — anything else fails at runtime.
 
 ## Static build (Cloudflare Pages)
 
@@ -348,7 +350,8 @@ server works).
 - ~~Deactivate every `demo.*` account~~ — **done 2026-10-22**: the seeded demo
   accounts were deleted from the live sheet with `removeDemoAccounts()`. All
   seven demo logins now refuse to sign in.
-- Change Config `DEFAULT_PASSWORD` if seeding more real accounts.
+- Change `CFG.DEFAULT_PASSWORD` in `Code.gs` if seeding more real accounts (it is
+  no longer written to the Config sheet).
 - Sheet/Drive sharing: the site owner **is** both the PG Coordinator and the
   Super Admin, so unrestricted access for those two roles is accepted by
   design — share the sheet and the passport folder with the coordinator only
