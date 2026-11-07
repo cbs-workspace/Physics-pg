@@ -633,6 +633,7 @@ function readTableTail_(name, n) {
 /** Write a {field: value} patch into ONE physical sheet row (by row number),
  *  coalescing adjacent columns into single setValues calls. */
 function writeRowPatch_(sheet, headers, rowNum, patch) {
+  assertWritable_();
   var lc = LINK_COLUMNS[sheet.getName()] || {};
   var cols = [], linkCols = [];
   headers.forEach(function (h, ci) {
