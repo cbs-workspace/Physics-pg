@@ -183,6 +183,8 @@ function cellSafe_(v) {
   if (/^=/.test(v) || (/^[+\-@][A-Za-z(]/.test(v))) return "'" + v;
   if (/^0\d{10}$/.test(v)) return "'" + v;   // phone numbers: stay text so the leading 0 survives
   if (/^\d{9,10}$/.test(v)) return "'" + v;   // plain matric numbers (e.g. 1750806006): stay text so a leading 0 survives
+  if (/^\d{4}-\d{2}$/.test(v)) return "'" + v;   // month patterns like 2026-11: stay text
+  if (/^\d{1,2}:\d{2}$/.test(v)) return "'" + v;   // time patterns like 10:00: stay text
   return v;
 }
 function fullNameOf_(rec) { return [rec.firstName, rec.otherNames, rec.surname].filter(Boolean).join(' '); }
