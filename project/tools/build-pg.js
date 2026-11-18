@@ -26,7 +26,7 @@
  *     call rejects with "runs on the official portal")
  *
  * Assets: images/Phy_Complex.png, images/PG_Journey_Animated.svg,
- * images/PG_Journey_Infographic.png + _preview.jpg (detailed poster under it) and
+ * images/PG_Journey_Infographic.png (detailed poster below the animated one) and
  * audio/music1.mp3 are copied.
  * Run: npm run build   (output in dist/, deploy that folder).
  */
@@ -349,7 +349,7 @@ writeFile("login/index.html", portalFramePage({
 copyAsset("images/Phy_Complex.png");
 checkJourneyArt("images/PG_Journey_Animated.svg");
 copyAsset("images/PG_Journey_Animated.svg");
-// the previous 15-step poster is no longer shown, but keep its URL resolving
+// older 15-step poster shown beneath the animated one on the public site
 copyAsset("images/PG_Journey_Infographic.png");
 copyAsset("audio/music1.mp3");
 copyAsset("audio/music2.mp3");

@@ -155,10 +155,11 @@ Physics-pg/
   then the portal's Home poster is hidden (the phase cards still show). The local
   harness serves `/images/…` from `images/`.
   `npm run build` fails if the poster's 16 labels drift from `CFG.JOURNEY_STAGES`.
-- The older 15-step poster `images/PG_Journey_Infographic.png` is no longer shown
-  or linked on the page (its step names differ from the 16 canonical stages), but
-  the build still copies it so `/images/PG_Journey_Infographic.png` keeps
-  resolving.
+- The older 15-step poster `images/PG_Journey_Infographic.png` is shown in its own
+  card directly beneath the animated poster on the public site (its step names
+  differ from the 16 canonical stages). The build copies it to
+  `/images/PG_Journey_Infographic.png`; on the portal it hides itself via
+  `onerror`, since Apps Script cannot serve static binaries.
 
 ---
 

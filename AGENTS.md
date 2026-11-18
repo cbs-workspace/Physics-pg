@@ -168,8 +168,10 @@ output dir `dist`. `/exec` URL is baked into `GAS_EXEC` in
   `images/PG_Journey_Infographic.svg`, **which does not exist**, and is then
   overridden from `BRAND.journeyImgUrl` (static build → the animated SVG; live
   portal → the `JOURNEY_IMAGE_URL` property, empty by default, so the block hides
-  via `onerror`). The older 15-step `PG_Journey_Infographic.png` is intentionally
-  not shown; the build copies it only so its URL keeps answering. Do not re-add it.
+  via `onerror`). The older 15-step `PG_Journey_Infographic.png` is shown in its
+  own card directly beneath the animated one on the public/static site, served
+  from `/images/PG_Journey_Infographic.png`; its own `onerror` hides it on the
+  portal, which cannot serve static binaries.
 - Music: `HOST = 'https://physics-pg.pages.dev/'` + a single-element `TRACKS`
   (`audio/music1.mp3`); the build copies both `music1`/`music2` into
   `project/dist/audio/` because Apps Script cannot serve binaries. Edit
