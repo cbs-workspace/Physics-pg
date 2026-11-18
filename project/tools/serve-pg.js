@@ -48,11 +48,11 @@ const STAGES = [
   "1 - Admission", "2 - Lecture Attendance", "3 - Supervisor Allocation",
   "4 - Proposal Submission", "5 - Proposal Defence Form", "6 - Proposal Defence",
   "7 - Progression Clearance", "8 - Progress Report", "9 - Compliance Inspection",
-  "10 - Plagiarism Check", "10b - Second Internal Examination (PhD)", "11 - Final Examination Intent", "12 - Examiners Comments",
+  "10 - Plagiarism Check", "10b - Internal Examination II (PhD)", "11 - Final Examination Intent", "12 - External Examination",
   "13 - Final Compliance", "14 - Signed Copies", "15 - Completion",
 ];
 /** PhD-only gate between the shared first internal examination and stage 11. */
-const SECOND_INTERNAL_STAGE = "10b - Second Internal Examination (PhD)";
+const SECOND_INTERNAL_STAGE = "10b - Internal Examination II (PhD)";
 
 /** Stage given to every newly registered / added student, matching Code.gs START_STAGE_. */
 const START_STAGE = "3 - Supervisor Allocation";
@@ -162,29 +162,29 @@ const DOCUMENT_CONFIG = [
     required: true, requiresExaminer: true, viewers: ["Student", "PG_Coordinator", "HoD", "Staff"], resubmit: true, type: "Corrected Clean Copy (Internal Examiner) (Second Internal)" },
   { id: "fee-receipt", name: "School Fees Payment Receipt", section: "Final Examination Intent", stage: "11 - Final Examination Intent",
     description: "Proof of school fees payment. PDF only; visible to authorised postgraduate administrators.", programmes: ["MPhil", "MSc", "PhD"],
-    trigger: "Final Examination Intent submitted", closesAt: "12 - Examiners Comments", uploader: "Student", formats: ["pdf"],
+    trigger: "Final Examination Intent submitted", closesAt: "12 - External Examination", uploader: "Student", formats: ["pdf"],
     required: true, requiresExaminer: false, viewers: ["Student", "PG_Coordinator", "HoD"], resubmit: true, type: "Receipt of Fees" },
   { id: "exam-fee", name: "External Examination Fee Payment Receipt", section: "Final Examination Intent", stage: "11 - Final Examination Intent",
     description: "Proof of payment for the external examination. PDF only; authorised administrators only.", programmes: ["MPhil", "MSc", "PhD"],
-    trigger: "Final Examination Intent submitted", closesAt: "12 - Examiners Comments", uploader: "Student", formats: ["pdf"],
+    trigger: "Final Examination Intent submitted", closesAt: "12 - External Examination", uploader: "Student", formats: ["pdf"],
     required: true, requiresExaminer: false, viewers: ["Student", "PG_Coordinator", "HoD"], resubmit: true, type: "Evidence of Payment for Examination" },
   { id: "plagiarism", name: "Plagiarism Certificate / Report", section: "Final Examination Intent", stage: "11 - Final Examination Intent",
     description: "The similarity / plagiarism report. PDF only; visible to authorised postgraduate administrators.", programmes: ["MPhil", "MSc", "PhD"],
-    trigger: "Final Examination Intent submitted", closesAt: "12 - Examiners Comments", uploader: "Student", formats: ["pdf"],
+    trigger: "Final Examination Intent submitted", closesAt: "12 - External Examination", uploader: "Student", formats: ["pdf"],
     required: true, requiresExaminer: false, viewers: ["Student", "PG_Coordinator", "HoD", "Staff", "Submission_Inspector"], resubmit: true, type: "Plagiarism Certificate" },
-  { id: "thesis", name: "Final Dissertation / Thesis", section: "Final Examination Intent", stage: "12 - Examiners Comments",
+  { id: "thesis", name: "Final Dissertation / Thesis", section: "Final Examination Intent", stage: "12 - External Examination",
     description: "The final dissertation/thesis. MS Word only. The assigned External Examiner can open it before the External Defence.", programmes: ["MPhil", "MSc", "PhD"],
     trigger: "Thesis Submission stage", uploader: "Student", formats: ["doc", "docx"],
     required: true, requiresExaminer: true, viewers: ["Student", "PG_Coordinator", "HoD", "Staff", "Submission_Inspector", "Examiner"], resubmit: true, type: "Final Thesis/Dissertation" },
-  { id: "external-report", name: "External Examiner’s Report / Comments", section: "After External Defence", stage: "12 - Examiners Comments",
+  { id: "external-report", name: "External Examiner’s Report / Comments", section: "After External Defence", stage: "12 - External Examination",
     description: "The External Examiner may upload a Word report or enter comments directly in the assessment field.", programmes: ["MPhil", "MSc", "PhD"],
     trigger: "External examination completed", uploader: "External Examiner", formats: ["doc", "docx"],
     required: false, requiresExaminer: true, viewers: ["Student", "PG_Coordinator", "HoD", "Staff", "Examiner"], resubmit: false, type: "__external__" },
-  { id: "external-response", name: "Response to External Examiner’s Comments", section: "After External Defence", stage: "12 - Examiners Comments",
+  { id: "external-response", name: "Response to External Examiner’s Comments", section: "After External Defence", stage: "12 - External Examination",
     description: "A point-by-point response to every External Examiner comment. MS Word only.", programmes: ["MPhil", "MSc", "PhD"],
     trigger: "External Examiner feedback received", unlock: "feedback", feedbackCycle: "external", uploader: "Student", formats: ["doc", "docx"],
     required: true, requiresExaminer: true, viewers: ["Student", "PG_Coordinator", "HoD", "Staff"], resubmit: true, type: "Comment-by-Comment Response (External Examiner)" },
-  { id: "external-clean", name: "Corrected Clean Copy after External Comments", section: "After External Defence", stage: "12 - Examiners Comments",
+  { id: "external-clean", name: "Corrected Clean Copy after External Comments", section: "After External Defence", stage: "12 - External Examination",
     description: "The final corrected clean copy following the External Examiner’s comments. MS Word only.", programmes: ["MPhil", "MSc", "PhD"],
     trigger: "External Examiner feedback received", unlock: "feedback", feedbackCycle: "external", uploader: "Student", formats: ["doc", "docx"],
     required: true, requiresExaminer: true, viewers: ["Student", "PG_Coordinator", "HoD", "Staff"], resubmit: true, type: "Final Correction" }
@@ -297,7 +297,7 @@ function seedDb() {
     { id: "Stu01", regNumber: "UA/pg2026/000001", surname: "Okafor", firstName: "Chinedu", otherNames: "Emeka", gender: "Male", phoneNumber: "08012345678", email: "demo.student1@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "MSc", specialisation: "Experimental Solid-State Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "Stf02", currentStage: "4 - Proposal Submission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
     { id: "Stu02", regNumber: "UA/pg2026/000002", surname: "Adamu", firstName: "Fatima", otherNames: "Yusuf", gender: "Female", phoneNumber: "08098765432", email: "demo.student2@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "", coSupervisorId: "", currentStage: "1 - Admission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
     { id: "Stu03", regNumber: "26/408PHYX/040", surname: "Eze", firstName: "Blessing", otherNames: "Chidi", gender: "Female", phoneNumber: "08055556666", email: "demo.student4@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Solar Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", currentStage: "8 - Progress Report", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
-    { id: "Stu04", regNumber: "UA/pg2026/000003", surname: "Obi", firstName: "Ngozi", otherNames: "Nneka", gender: "Female", phoneNumber: "08011112222", email: "demo.phd2@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", currentStage: "10b - Second Internal Examination (PhD)", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
+    { id: "Stu04", regNumber: "UA/pg2026/000003", surname: "Obi", firstName: "Ngozi", otherNames: "Nneka", gender: "Female", phoneNumber: "08011112222", email: "demo.phd2@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", currentStage: "10b - Internal Examination II (PhD)", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
   ];
   const staff = [
     { id: "Stf01", fullName: "Dr. Bala Ahmed", email: "bala.ahmed@uniabuja.edu.ng", rank: "Senior Lecturer", specialisation: "Solid-State Physics", active: true, createdAt: now },
@@ -720,7 +720,7 @@ const API = {
     if (!stu) throw new Error("Student not found.");
     if (STAGES.indexOf(stage) === -1) throw new Error("Invalid stage.");
     if (stage === SECOND_INTERNAL_STAGE && !/phd/i.test(stu.programme || ""))
-      throw new Error("The second internal examination is a PhD-only stage.");
+      throw new Error("Internal Examination II is a PhD-only stage.");
     stu.currentStage = stage;
     stu.updatedAt = now();
     return true;
@@ -731,8 +731,8 @@ const API = {
     if (["Passed", "Passed with corrections", "Not passed"].indexOf(outcome) === -1) throw new Error("Choose an outcome.");
     const stu = DB.students.find((s) => s.regNumber === reg);
     if (!stu) throw new Error("Student not found.");
-    if (!/phd/i.test(stu.programme || "")) throw new Error("The second internal examination is a PhD-only stage.");
-    if (stu.currentStage !== SECOND_INTERNAL_STAGE) throw new Error("This student is not at the Second Internal Examination stage.");
+    if (!/phd/i.test(stu.programme || "")) throw new Error("Internal Examination II is a PhD-only stage.");
+    if (stu.currentStage !== SECOND_INTERNAL_STAGE) throw new Error("This student is not at Internal Examination II.");
     note = String(note || "").trim().slice(0, 800);
     if (outcome !== "Passed" && !note) throw new Error("Add a note (corrections required, or reason).");
     const moved = outcome === "Not passed" ? "" : "11 - Final Examination Intent";
@@ -1105,7 +1105,7 @@ window.__PG_MOCK_API__ = (function () {
   }
   function checkFinalPackage_ (reg) {
     var stu = find(DB.students, function (s) { return String(s.regNumber) === String(reg); });
-    if (!stu || String(stu.currentStage) !== '12 - Examiners Comments' || !finalPackageStatus_(reg).complete) return;
+    if (!stu || String(stu.currentStage) !== '12 - External Examination' || !finalPackageStatus_(reg).complete) return;
     stu.currentStage = '13 - Final Compliance';
     stu.updatedAt = now();
     addNote_(reg, 'Final compliance check started. All external assessment and correction files are in.');
@@ -1439,11 +1439,11 @@ window.__PG_MOCK_API__ = (function () {
     },
     api_assignSecondInternal: function (token, reg) {
       var user = requireUser(token);
-      assertRole(user, ['PG_Coordinator'], 'Only the PG Coordinator can open the second internal examination.');
+      assertRole(user, ['PG_Coordinator'], 'Only the PG Coordinator can open Internal Examination II.');
       var stu = find(DB.students, function (s) { return String(s.regNumber) === String(reg); });
       if (!stu) throw new Error('Student not found.');
-      if (!/phd/i.test(String(stu.programme || ''))) throw new Error('The second internal examination is PhD-only.');
-      if (String(stu.currentStage) !== SECOND_INTERNAL_STAGE) throw new Error('This student is not at the second internal examination stage.');
+      if (!/phd/i.test(String(stu.programme || ''))) throw new Error('Internal Examination II is PhD-only.');
+      if (String(stu.currentStage) !== SECOND_INTERNAL_STAGE) throw new Error('This student is not at Internal Examination II.');
       DB.examiners = DB.examiners || [];
       if (find(DB.examiners, function (x) { return String(x.regNumber) === String(stu.regNumber) && x.type === 'Internal (Second)' && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; }))
         throw new Error('The second internal examiner has already been assigned.');
@@ -1455,7 +1455,7 @@ window.__PG_MOCK_API__ = (function () {
         status: 'Assigned', createdAt: now(), reportUrl: '', comments: '', recommendation: '', scores: '', submittedAt: '' };
       DB.examiners.push(row);
       addNote_(stu.regNumber, 'Second internal examiner assigned. Examiner identities are kept confidential.');
-      addNote_(first.examLogin, 'You have been assigned a PhD second internal examination. Open My Assignments to submit your assessment.');
+      addNote_(first.examLogin, 'You have been assigned PhD Internal Examination II. Open My Assignments to submit your assessment.');
       return { id: row.id, loginId: first.examLogin };
     },
     /** One locked-style action: revoke the old assignment and appoint the replacement in the same call. */
@@ -1538,7 +1538,7 @@ window.__PG_MOCK_API__ = (function () {
         var main = s.mainSupervisorId ? find(DB.staff, function (x) { return x.id === s.mainSupervisorId; }) : null;
         return { regNumber: s.regNumber, studentName: fullNameOf(s), programme: s.programme, stage: s.currentStage,
           title: s.thesisTitle || '', titleStatus: s.titleStatus || 'Not Submitted', mainSupervisor: main ? main.fullName : '',
-          waitingOn: String(s.currentStage) === SECOND_INTERNAL_STAGE ? (mine.some(function (e) { return e.type === 'Internal (Second)'; }) ? 'PG Coordinator: record second internal examination outcome' : 'PG Coordinator: assign second internal examiner') : 'Student / examiner',
+          waitingOn: String(s.currentStage) === SECOND_INTERNAL_STAGE ? (mine.some(function (e) { return e.type === 'Internal (Second)'; }) ? 'PG Coordinator: record Internal Examination II outcome' : 'PG Coordinator: assign second internal examiner') : 'Student / examiner',
           waitingDays: 0, detail: [], secondInternal: mine.some(function (e) { return e.type === 'Internal (Second)'; }) };
       });
     },
@@ -1682,7 +1682,7 @@ window.__PG_MOCK_API__ = (function () {
       var stu = find(DB.students, function (s) { return s.regNumber === regNumber; });
       if (!stu) throw new Error('Student not found.');
       if (STAGES.indexOf(stage) === -1) throw new Error('Invalid stage.');
-      if (stage === SECOND_INTERNAL_STAGE && !/phd/i.test(String(stu.programme || ''))) throw new Error('The second internal examination is a PhD-only stage.');
+      if (stage === SECOND_INTERNAL_STAGE && !/phd/i.test(String(stu.programme || ''))) throw new Error('Internal Examination II is a PhD-only stage.');
       stu.currentStage = stage;
       stu.updatedAt = now();
       return true;
@@ -1693,8 +1693,8 @@ window.__PG_MOCK_API__ = (function () {
       if (['Passed', 'Passed with corrections', 'Not passed'].indexOf(outcome) === -1) throw new Error('Choose an outcome.');
       var stu = find(DB.students, function (s) { return String(s.regNumber) === String(reg); });
       if (!stu) throw new Error('Student not found.');
-      if (!/phd/i.test(String(stu.programme || ''))) throw new Error('The second internal examination is a PhD-only stage.');
-      if (String(stu.currentStage) !== SECOND_INTERNAL_STAGE) throw new Error('This student is not at the Second Internal Examination stage.');
+      if (!/phd/i.test(String(stu.programme || ''))) throw new Error('Internal Examination II is a PhD-only stage.');
+      if (String(stu.currentStage) !== SECOND_INTERNAL_STAGE) throw new Error('This student is not at Internal Examination II.');
       note = String(note || '').trim().slice(0, 800);
       if (outcome !== 'Passed' && !note) throw new Error('Add a note (corrections required, or reason).');
       var moved = outcome === 'Not passed' ? '' : '11 - Final Examination Intent';

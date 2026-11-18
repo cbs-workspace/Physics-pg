@@ -61,8 +61,8 @@ var CFG = {
     '1 - Admission', '2 - Lecture Attendance', '3 - Supervisor Allocation',
     '4 - Title Approval', '5 - Proposal Submission', '6 - Defence Readiness',
     '7 - Proposal Defence', '8 - Progress Report Intent', '9 - Internal Examiner Assignment',
-    '10 - Progress Presentation', '10b - Second Internal Examination (PhD)', '11 - Final Examination Intent', '12 - Thesis Submission',
-    '13 - External Examiner Assignment', '14 - Examiners Comments', '15 - Final Compliance',
+    '10 - Progress Presentation/Internal Examination I', '10b - Internal Examination II (PhD)', '11 - Final Examination Intent', '12 - Thesis Submission',
+    '13 - External Examiner Assignment', '14 - External Examination', '15 - Final Compliance',
     '16 - Signed Copies and Completion'
   ],
   TEMPLATES: {
@@ -75,10 +75,10 @@ var CFG = {
 };
 var STAGE_COMPLETE = '16 - Signed Copies and Completion';
 var S_ = { TITLE: '4 - Title Approval', PROPOSAL: '5 - Proposal Submission', READY: '6 - Defence Readiness', DEFENCE: '7 - Proposal Defence',
-  PROG_INTENT: '8 - Progress Report Intent', INT_EXAM: '9 - Internal Examiner Assignment', PRESENT: '10 - Progress Presentation',
-  SECOND_INTERNAL: '10b - Second Internal Examination (PhD)',
+  PROG_INTENT: '8 - Progress Report Intent', INT_EXAM: '9 - Internal Examiner Assignment', PRESENT: '10 - Progress Presentation/Internal Examination I',
+  SECOND_INTERNAL: '10b - Internal Examination II (PhD)',
   FINAL_INTENT: '11 - Final Examination Intent', THESIS: '12 - Thesis Submission', EXT_EXAM: '13 - External Examiner Assignment',
-  COMMENTS: '14 - Examiners Comments', FINAL_COMPLIANCE: '15 - Final Compliance', DONE: STAGE_COMPLETE };
+  COMMENTS: '14 - External Examination', FINAL_COMPLIANCE: '15 - Final Compliance', DONE: STAGE_COMPLETE };
 
 /** Stage assigned to every new student (public registration, Add Student and CSV import). The session now begins at
  *  supervisor allocation; stages 1-2 remain in the journey list for historical records only. */
@@ -2925,7 +2925,7 @@ function api_assignSupervisors() {
 /** 10b exists only for PhD students; everyone else skips it between the first internal exam and stage 11. */
 function assertStageAllowedForStudent_(student, stage) {
   if (stage === S_.SECOND_INTERNAL && !isPhd_(student.programme))
-    throw new Error('The second internal examination is a PhD-only stage. ' + (student.fullName || student.regNumber) + ' is on ' + (student.programme || 'a non-PhD') + ' programme.');
+    throw new Error('Internal Examination II is a PhD-only stage. ' + (student.fullName || student.regNumber) + ' is on ' + (student.programme || 'a non-PhD') + ' programme.');
 }
 function api_updateStudentStage_locked_(token, regNumber, stage) {
   var user = requireUser_(token);
@@ -4705,7 +4705,7 @@ function api_requestStageChange_l(token, stage, note) {
   var user = requireUser_(token); assertRole_(user, ['Student'], 'Only students can request a stage update.');
   stage = String(stage || '');
   if (CFG.JOURNEY_STAGES.indexOf(stage) === -1) throw new Error('Choose a valid stage.');
-  if (stage === S_.SECOND_INTERNAL) throw new Error('The second internal examination is recorded by the PG Coordinator after the examination; it cannot be requested here.');
+  if (stage === S_.SECOND_INTERNAL) throw new Error('Internal Examination II is recorded by the PG Coordinator after the examination; it cannot be requested here.');
   var stu = studentByReg_(user.regNumber);
   if (!stu) throw new Error('Student profile not found.');
   if (stu.currentStage === stage) throw new Error('That is already your current stage.');
@@ -6651,12 +6651,11 @@ function onOpen() {
 
 /* =========================== 16. EXAMINATION WORKFLOW (v2) =========================== */
 /* Journey: 4 Title Approval -> 5 Proposal -> 6 Defence Readiness -> 7 Proposal Defence -> 8 Progress Report Intent ->
- * 9 Internal Examiner Assignment -> 10 Progress Presentation (PPTX, the first internal examination) ->
- * 10b Second Internal Examination (PhD only; the PG Coordinator records the outcome) ->
- * 11 Final Examination Intent -> 12 Thesis Submission -> 13 External Examiner Assignment -> 14 Examiners Comments ->
+ * 9 Internal Examiner Assignment -> 10 Progress Presentation/Internal Examination I (PPTX) ->
+ * 10b Internal Examination II (PhD only; the PG Coordinator records the outcome) ->
+ * 11 Final Examination Intent -> 12 Thesis Submission -> 13 External Examiner Assignment -> 14 External Examination ->
  * 15 Final Compliance -> 16 Signed Copies and Completion.
- * Existing students keep their stored stage labels: 10b was inserted without renumbering 11-16, so no data migration
- * is required for this change. migrateJourneyStagesV2() remains the run-once migration from the older 15-stage list. */
+ * migrateJourneyStagesV2() remains the run-once migration from the older 15-stage list. */
 
 var RESTRICTED_TYPES = ['Proposal Defence Presentation (PPTX)', 'Progress Presentation (PPTX)', 'Progress Presentation (PPTX) (Second Internal)'];  // student + PG Coordinator + HoD + Submission Inspector only
 var PAYMENT_TYPES = ['Receipt of Fees', 'Evidence of Payment for Examination'];   // student + PG Coordinator + HoD only
@@ -6781,7 +6780,7 @@ function stageEntered_(stu, stage) {
   } else if (stage === S_.DEFENCE) {
     notifyCoordinators_('Proposal defence \u2014 ' + stu.regNumber, who + ' is cleared for the proposal defence. Record the outcome after the defence.', who + ' is cleared for the proposal defence. Record the outcome in Overview & Reports \u2192 Pipeline.');
   } else if (stage === S_.SECOND_INTERNAL) {
-    notifyCoordinators_('Second internal examination \u2014 ' + stu.regNumber, who + ' has completed the first internal examination and is waiting for the PhD-only second internal examination. Record the outcome in the coordinator dashboard.', who + ' is waiting for the PhD-only second internal examination. Record the outcome in the PG Coordinator dashboard.');
+    notifyCoordinators_('Internal Examination II \u2014 ' + stu.regNumber, who + ' has completed the first internal examination and is waiting for the PhD-only Internal Examination II. Record the outcome in the coordinator dashboard.', who + ' is waiting for the PhD-only Internal Examination II. Record the outcome in the PG Coordinator dashboard.');
   }
 }
 
@@ -6873,21 +6872,21 @@ function api_recordProposalDefence_l(token, reg, outcome, note) {
 }
 function api_recordProposalDefence() { return L_(api_recordProposalDefence_l, arguments); }
 
-/* ---- Second internal examination outcome (PhD only, PG Coordinator) ----
- *  Stage 10b is a PhD-only gate between the shared first internal examination (stage 10) and stage 11.
+/* ---- Internal Examination II outcome (PhD only, PG Coordinator) ----
+ *  Stage 10b is a PhD-only gate between Progress Presentation/Internal Examination I (stage 10) and stage 11.
  *  MSc/MPhil students never enter it: approving their progress presentation moves them straight to stage 11. */
 function api_recordSecondInternal_l(token, reg, outcome, note) {
-  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can record the second internal examination outcome.');
+  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can record the Internal Examination II outcome.');
   if (['Passed', 'Passed with corrections', 'Not passed'].indexOf(outcome) === -1) throw new Error('Choose an outcome.');
   var stu = studentByReg_(reg); if (!stu) throw new Error('Student not found.');
-  if (!isPhd_(stu.programme)) throw new Error('The second internal examination is a PhD-only stage.');
-  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at the Second Internal Examination stage.');
+  if (!isPhd_(stu.programme)) throw new Error('Internal Examination II is a PhD-only stage.');
+  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at Internal Examination II.');
   note = String(note || '').trim().slice(0, 800);
   if (outcome !== 'Passed' && !note) throw new Error('Add a note (corrections required, or reason).');
-  var moved = outcome === 'Not passed' ? '' : advanceStageTo_(stu, S_.FINAL_INTENT, 'second internal examination ' + outcome.toLowerCase());
+  var moved = outcome === 'Not passed' ? '' : advanceStageTo_(stu, S_.FINAL_INTENT, 'Internal Examination II ' + outcome.toLowerCase());
   logAudit_(user.id, user.regNumber, 'SECOND_INTERNAL', reg, outcome + (note ? ': ' + note : ''));
-  notifyStudent_(reg, 'Second internal examination outcome: ' + outcome, 'The PG Coordinator recorded your PhD second internal examination as \u201C' + outcome + '\u201D.' + (note ? '\n' + note : '') + (moved ? '\nYour stage is now: ' + moved + '.' : '\nYou remain at the Second Internal Examination stage.'));
-  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Second internal examination ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
+  notifyStudent_(reg, 'Internal Examination II outcome: ' + outcome, 'The PG Coordinator recorded your PhD Internal Examination II as \u201C' + outcome + '\u201D.' + (note ? '\n' + note : '') + (moved ? '\nYour stage is now: ' + moved + '.' : '\nYou remain at Internal Examination II.'));
+  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Internal Examination II ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
   return { ok: true, stage: moved || stu.currentStage };
 }
 function api_recordSecondInternal() { return L_(api_recordSecondInternal_l, arguments); }
@@ -7053,10 +7052,10 @@ function deactivateExaminerIfUnused_(loginId) {
 /** PhD second internal cycle: a separate assessment row (no new sheet columns) for the same Internal Examiner.
  *  It is created only at stage 10b and only after a first Internal Examiner assignment exists. */
 function api_assignSecondInternal_l(token, reg) {
-  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can open the second internal examination.');
+  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can open Internal Examination II.');
   var stu = studentByReg_(reg); if (!stu) throw new Error('Student not found.');
-  if (!isPhd_(stu.programme)) throw new Error('The second internal examination is PhD-only.');
-  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at the second internal examination stage.');
+  if (!isPhd_(stu.programme)) throw new Error('Internal Examination II is PhD-only.');
+  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at Internal Examination II.');
   var existing = findWhere_('Examiners', function (x) { return String(x.regNumber) === String(stu.regNumber) && x.type === 'Internal (Second)' && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; });
   if (existing) throw new Error('The second internal examiner has already been assigned.');
   var first = readTable_('Examiners').filter(function (x) { return String(x.regNumber) === String(stu.regNumber) && x.type === 'Internal' && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; })
@@ -7069,8 +7068,8 @@ function api_assignSecondInternal_l(token, reg) {
     recommendation: '', scores: '', reportUrl: '', submittedAt: '', profileUrl: ''
   });
   examinerEachFileId_(r, function (id) { try { grantFileRole_(id, first.email, 'reader'); } catch (e) { Logger.log('second examiner share: ' + e); } });
-  notifyStudent_(stu.regNumber, 'Second internal examiner assigned', 'An Internal Examiner has been assigned for your PhD second internal examination. Examiner identities are kept confidential. The second progress report is now available on your examiner\u2019s dashboard.');
-  addNote_(first.examLogin, 'You have been assigned a PhD second internal examination for ' + fullNameOf_(stu) + ' (' + stu.regNumber + '). Open My Assignments to submit your assessment.');
+  notifyStudent_(stu.regNumber, 'Second internal examiner assigned', 'An Internal Examiner has been assigned for your PhD Internal Examination II. Examiner identities are kept confidential. The second progress report is now available on your examiner\u2019s dashboard.');
+  addNote_(first.examLogin, 'You have been assigned a PhD Internal Examination II for ' + fullNameOf_(stu) + ' (' + stu.regNumber + '). Open My Assignments to submit your assessment.');
   logAudit_(user.id, user.regNumber, 'ASSIGN_SECOND_INTERNAL', stu.regNumber, 'Cycle 2 opened from first internal assignment ' + first.id);
   return { id: r.id, loginId: first.examLogin };
 }
@@ -7241,7 +7240,7 @@ function api_getPipeline(token) {
       else if (s.currentStage === S_.EXT_EXAM && !myEx.some(function (e) { return e.type === 'External'; })) waiting = 'Coordinator / HoD: assign External Examiner';
       else if (s.currentStage === S_.EXT_EXAM) waiting = 'External Examiner (assessment)';
       else if (s.currentStage === S_.DEFENCE) waiting = 'PG Coordinator: record defence outcome';
-      else if (s.currentStage === S_.SECOND_INTERNAL) waiting = myEx.some(function (e) { return e.type === 'Internal (Second)'; }) ? 'PG Coordinator: record second internal examination outcome' : 'PG Coordinator: assign second internal examiner';
+      else if (s.currentStage === S_.SECOND_INTERNAL) waiting = myEx.some(function (e) { return e.type === 'Internal (Second)'; }) ? 'PG Coordinator: record Internal Examination II outcome' : 'PG Coordinator: assign second internal examiner';
       else if (s.currentStage === S_.PRESENT) waiting = 'Student: upload progress presentation (PPTX)';
       else if (s.currentStage === S_.COMMENTS) waiting = 'Student: comments file, response and final correction';
       else waiting = 'Student';
@@ -7257,8 +7256,8 @@ function api_getPipeline(token) {
 /* ---- one-off maintenance (run from the Apps Script editor) ---- */
 /** Maps every student's stage from the old 15-stage list to the new 16-stage list. Safe to run twice. */
 var OLD_STAGE_MAP_ = { '4 - Proposal Submission': '5 - Proposal Submission', '5 - Proposal Defence Form': '6 - Defence Readiness', '6 - Proposal Defence': '7 - Proposal Defence',
-  '7 - Progression Clearance': '8 - Progress Report Intent', '8 - Progress Report': '8 - Progress Report Intent', '9 - Compliance Inspection': '10 - Progress Presentation',
-  '10 - Plagiarism Check': '11 - Final Examination Intent', '11 - External Defence': '12 - Thesis Submission', '12 - Examiners Comments': '14 - Examiners Comments',
+  '7 - Progression Clearance': '8 - Progress Report Intent', '8 - Progress Report': '8 - Progress Report Intent', '9 - Compliance Inspection': '10 - Progress Presentation/Internal Examination I',
+  '10 - Plagiarism Check': '11 - Final Examination Intent', '11 - External Defence': '12 - Thesis Submission', '12 - Examiners Comments': '14 - External Examination',
   '13 - Final Compliance': '15 - Final Compliance', '14 - Signed Copies': '16 - Signed Copies and Completion', '15 - Completion': '16 - Signed Copies and Completion' };
 /** Turns an old 15-stage name into its 16-stage equivalent; new-list names pass through unchanged. */
 function normStage_(name) { name = String(name || '').trim(); return CFG.JOURNEY_STAGES.indexOf(name) !== -1 ? name : (OLD_STAGE_MAP_[name] || name); }

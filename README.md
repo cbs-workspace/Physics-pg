@@ -238,7 +238,7 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 | Role | Can Do |
 |------|--------|
 | **Student** | Register (pending approval), dashboard: profile + photo update, supervisors, 17-stage journey bar (Step 10b is PhD-only), announcements, templates, new submissions; view own submissions |
-| **PG_Coordinator** | Approve/reject registrations, add/import/remove students, correct a student's registration number (cascades to every linked record), assign main + co-supervisor, record the Proposal Defence and PhD-only Second Internal Examination outcomes (Passed / Passed with corrections / Not passed), manage staff list, post announcements, export CSV |
+| **PG_Coordinator** | Approve/reject registrations, add/import/remove students, correct a student's registration number (cascades to every linked record), assign main + co-supervisor, record the Proposal Defence and PhD-only Internal Examination II outcomes (Passed / Passed with corrections / Not passed), manage staff list, post announcements, export CSV |
 | **HoD** | Read-only: stats, programme/status breakdowns, all submissions |
 | **Staff** | See students they supervise, add supervisory notes on submissions |
 | **Submission_Inspector** | Review queue: Approve / Reject / Request Changes / Under Review (comments mandatory for Reject & Request Changes) — emails student via branded `sendPortalMail_` |
@@ -291,12 +291,12 @@ outcome (a pass advances to stage 11, "Not passed" keeps the student at 10b).
 | # | Stage | | # | Stage |
 |---|-------|-|---|-------|
 | 1 | Admission | | 9 | Internal Examiner Assignment |
-| 2 | Lecture Attendance (MSc only) | | 10 | Progress Presentation (first internal examination) ← gate |
-| 3 | Supervisor Allocation | | 10b | Second Internal Examination (PhD only) ← gate, Coordinator records outcome |
+| 2 | Lecture Attendance (MSc only) | | 10 | Progress Presentation/Internal Examination I ← gate |
+| 3 | Supervisor Allocation | | 10b | Internal Examination II (PhD only) ← gate, Coordinator records outcome |
 | 4 | Title Approval | | 11 | Final Examination Intent |
 | 5 | Proposal Submission | | 12 | Thesis Submission ← gate |
 | 6 | Defence Readiness | | 13 | External Examiner Assignment ← gate |
-| 7 | Proposal Defence ← gate | | 14 | Examiners Comments |
+| 7 | Proposal Defence ← gate | | 14 | External Examination |
 | 8 | Progress Report Intent | | 15 | Final Compliance ← gate |
 | | | | 16 | Signed Copies and Completion |
 
