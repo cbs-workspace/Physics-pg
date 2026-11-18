@@ -36,7 +36,7 @@ var CFG = {
   LOGIN_MAX_FAILURES: 5,
   LOGIN_LOCKOUT_SECONDS: 900,
   DEFAULT_PASSWORD: 'PhysicsPG2026!',
-  UPLOAD_MAX_BYTES: 1024 * 1024,
+  UPLOAD_MAX_BYTES: 5 * 1024 * 1024,
   SUBMISSION_MAX_BYTES: 50 * 1024 * 1024,   // PDF / Word submissions
   SMALL_UPLOAD_BYTES: 10 * 1024 * 1024,     // single-call path; bigger files use the chunked path
   SHEETS: {
@@ -48,17 +48,20 @@ var CFG = {
   PROGRAMMES: ['MPhil', 'MSc', 'PhD'],
   SPECIALISATIONS: ['Experimental Solid-State Physics', 'Theoretical Solid-State Physics', 'Nuclear Physics', 'Solar Physics', 'Applied Geophysics'],
   SUBMISSION_TYPES: ['Research Plan Form', 'Seminar Presentation', 'Research Proposal', 'Progress Report', 'Final Thesis/Dissertation',
-    'Internal Examiner and Other Observations', 'Final Correction',
-    'Comment-by-Comment Response (External Examiner)', 'Comment-by-Comment Response (Internal Examiner)',
-    'Signed Proposal Defence Form', 'Progress Presentation (PPTX)', 'External Examiner Comments',
-    'Receipt of Fees', 'Evidence of Payment for Examination', 'Plagiarism Certificate'],
+    'Final Correction', 'Comment-by-Comment Response (External Examiner)', 'Comment-by-Comment Response (Internal Examiner)',
+    'Signed Proposal Defence Form', 'Proposal Defence Presentation (PPTX)', 'Progress Presentation (PPTX)',
+    'Receipt of Fees', 'Evidence of Payment for Examination', 'Plagiarism Certificate',
+    /* PhD-only second internal cycle (items 5-9 repeated at stage 10b) and the internal clean copy (item 9). */
+    'Progress Report (Second Internal)', 'Progress Presentation (PPTX) (Second Internal)',
+    'Comment-by-Comment Response (Internal Examiner) (Second Internal)',
+    'Corrected Clean Copy (Internal Examiner)', 'Corrected Clean Copy (Internal Examiner) (Second Internal)'],
   SUBMISSION_STATUSES: ['Draft', 'Submitted', 'Under Review', 'Changes Requested', 'Approved', 'Rejected'],
   USER_STATUSES: ['Pending', 'Approved', 'Rejected'],
   JOURNEY_STAGES: [
     '1 - Admission', '2 - Lecture Attendance', '3 - Supervisor Allocation',
     '4 - Title Approval', '5 - Proposal Submission', '6 - Defence Readiness',
     '7 - Proposal Defence', '8 - Progress Report Intent', '9 - Internal Examiner Assignment',
-    '10 - Progress Presentation', '11 - Final Examination Intent', '12 - Thesis Submission',
+    '10 - Progress Presentation', '10b - Second Internal Examination (PhD)', '11 - Final Examination Intent', '12 - Thesis Submission',
     '13 - External Examiner Assignment', '14 - Examiners Comments', '15 - Final Compliance',
     '16 - Signed Copies and Completion'
   ],
@@ -67,19 +70,298 @@ var CFG = {
     'PG Journey Roadmap': '1ToBmrpIYu-5hvRHy3SVTxxgHSOnIMBp1',
     'Seminar Template': '1e1Ep8-LvFlxXP8VBLPiWnP-lVqCq_lFH',
     'Proposal Defence Form': '',     // set Config key TEMPLATE_PROPOSAL_DEFENCE_FORM to the Drive file id
-    'Progress Presentation Template': ''   // set Config key TEMPLATE_PROGRESS_PPTX (falls back to the Seminar Template)
+    'Progress Presentation Template': ''   // set Config key TEMPLATE_PROGRESS_PPTX; Downloads never falls back silently
   }
 };
 var STAGE_COMPLETE = '16 - Signed Copies and Completion';
 var S_ = { TITLE: '4 - Title Approval', PROPOSAL: '5 - Proposal Submission', READY: '6 - Defence Readiness', DEFENCE: '7 - Proposal Defence',
   PROG_INTENT: '8 - Progress Report Intent', INT_EXAM: '9 - Internal Examiner Assignment', PRESENT: '10 - Progress Presentation',
+  SECOND_INTERNAL: '10b - Second Internal Examination (PhD)',
   FINAL_INTENT: '11 - Final Examination Intent', THESIS: '12 - Thesis Submission', EXT_EXAM: '13 - External Examiner Assignment',
   COMMENTS: '14 - Examiners Comments', FINAL_COMPLIANCE: '15 - Final Compliance', DONE: STAGE_COMPLETE };
 
+/** Stage assigned to every new student (public registration, Add Student and CSV import). The session now begins at
+ *  supervisor allocation; stages 1-2 remain in the journey list for historical records only. */
+var START_STAGE_ = '3 - Supervisor Allocation';
+
+/** Document groups used by the upload rules and the student dashboard tracker. */
+var SECOND_INTERNAL_TYPES = ['Progress Report (Second Internal)', 'Progress Presentation (PPTX) (Second Internal)',
+  'Internal Examiner and Other Observations (Second Internal)',
+  'Comment-by-Comment Response (Internal Examiner) (Second Internal)',
+  'Corrected Clean Copy (Internal Examiner) (Second Internal)'];
+var INTERNAL_RESPONSE_TYPES = ['Comment-by-Comment Response (Internal Examiner)', 'Corrected Clean Copy (Internal Examiner)'];
+
+/** Central document catalogue. This is the single source of truth for upload fields, formats, roles,
+ *  stage availability and downloadable resources. The client renders its dashboards from api_getDocumentCatalog_()
+ *  output; never hardcode another document field in index.html. */
+var DOCUMENT_CONFIG = [
+  { id: 'passport', name: 'Passport Photograph', section: 'Registration and Admission', stage: 'registration',
+    description: 'A recent passport photograph. JPG, JPEG or PNG; resized automatically if large.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Student account creation / admission registration', uploader: 'Student', formats: ['jpg', 'jpeg', 'png'],
+    required: true, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD'], resubmit: true, type: '__passport__' },
+  { id: 'admission', name: 'Admission Letter', section: 'Registration and Admission', stage: 'registration',
+    description: 'Your official admission letter, uploaded as a PDF.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Student account creation / admission registration', uploader: 'Student', formats: ['pdf'],
+    required: false, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD'], resubmit: true, type: '__admission__' },
+  { id: 'research-proposal', name: 'Research Proposal', section: 'Supervisor Allocation and Title Approval', stage: S_.PROPOSAL,
+    description: 'The full research proposal, approved for submission by your supervisors. MS Word only.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Supervisor allocation and title approval', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff'], resubmit: true, type: 'Research Proposal' },
+  { id: 'defence-form', name: 'Signed Proposal Defence Form', section: 'Supervisor Allocation and Title Approval', stage: S_.READY,
+    description: 'Route A: the proposal defence form signed by both supervisors, as a PDF.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Defence readiness', uploader: 'Student', formats: ['pdf'],
+    required: false, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff'], resubmit: true, type: 'Signed Proposal Defence Form' },
+  { id: 'defence-slides', name: 'Proposal Defence Presentation', section: 'Supervisor Allocation and Title Approval', stage: S_.PROPOSAL,
+    description: 'Your proposal defence slides. PowerPoint (.pptx) only; use the official template from Downloads.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Research proposal submitted (stage 5)', uploader: 'Student', formats: ['pptx'],
+    required: true, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Submission_Inspector'], resubmit: true, type: 'Proposal Defence Presentation (PPTX)' },
+  { id: 'progress-report', name: 'Progress Report', section: 'Progress Report Intent', stage: S_.PROG_INTENT,
+    description: 'The first progress report. MS Word only. Your assigned Internal Examiner can open it before the Internal Defence.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Progress Report Intent approved', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, awaitsFeedback: 'internal', viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Examiner'], resubmit: true, type: 'Progress Report' },
+  { id: 'progress-slides', name: 'Progress Report Presentation', section: 'Progress Report Intent', stage: S_.PRESENT,
+    description: 'The first progress presentation slides. PowerPoint (.pptx) only.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Internal Examiner assigned / stage 10', uploader: 'Student', formats: ['pptx'],
+    required: true, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Submission_Inspector'], resubmit: true, type: 'Progress Presentation (PPTX)' },
+  { id: 'internal-report', name: 'Internal Examiner\u2019s Report / Comments', section: 'After first Progress Presentation', stage: S_.PRESENT,
+    description: 'The Internal Examiner may upload a Word report; entering comments in the assessment field is an alternative.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'First progress presentation completed', uploader: 'Internal Examiner', formats: ['doc', 'docx'],
+    required: false, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Examiner'], resubmit: false, type: '__internal1__' },
+  { id: 'internal-response', name: 'Response to Internal Examiner\u2019s Comments', section: 'After first Progress Presentation', stage: S_.PRESENT,
+    description: 'A point-by-point response to every Internal Examiner comment. MS Word only.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Internal Examiner feedback received', unlock: 'feedback', feedbackCycle: 'internal', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff'], resubmit: true, type: 'Comment-by-Comment Response (Internal Examiner)' },
+  { id: 'internal-clean', name: 'Corrected Clean Copy after Internal Comments', section: 'After first Progress Presentation', stage: S_.PRESENT,
+    description: 'The clean corrected version following the Internal Examiner\u2019s comments. MS Word only.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Internal Examiner feedback received', unlock: 'feedback', feedbackCycle: 'internal', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff'], resubmit: true, type: 'Corrected Clean Copy (Internal Examiner)' },
+  { id: 'progress-report-2', name: 'Second Progress Report', section: 'Second Progress Presentation (PhD only)', stage: S_.SECOND_INTERNAL,
+    description: 'The second progress report for the PhD-only internal examination. MS Word only.', programmes: ['PhD'],
+    trigger: 'PhD student reaches stage 10b', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, awaitsFeedback: 'internal2', viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Examiner'], resubmit: true, type: 'Progress Report (Second Internal)' },
+  { id: 'progress-slides-2', name: 'Second Progress Report Presentation', section: 'Second Progress Presentation (PhD only)', stage: S_.SECOND_INTERNAL,
+    description: 'The second progress presentation slides. PowerPoint (.pptx) only.', programmes: ['PhD'],
+    trigger: 'PhD student reaches stage 10b', uploader: 'Student', formats: ['pptx'],
+    required: true, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Submission_Inspector'], resubmit: true, type: 'Progress Presentation (PPTX) (Second Internal)' },
+  { id: 'internal-report-2', name: 'Second Internal Examiner\u2019s Report / Comments', section: 'Second Progress Presentation (PhD only)', stage: S_.SECOND_INTERNAL,
+    description: 'The second-cycle Internal Examiner report (Word upload) or the comments entered in the second assessment.', programmes: ['PhD'],
+    trigger: 'Second internal examination', uploader: 'Internal Examiner (Second)', formats: ['doc', 'docx'],
+    required: false, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Examiner'], resubmit: false, type: '__internal2__' },
+  { id: 'internal-response-2', name: 'Second Response to Internal Examiner\u2019s Comments', section: 'Second Progress Presentation (PhD only)', stage: S_.SECOND_INTERNAL,
+    description: 'Point-by-point response to the second internal comments. MS Word only.', programmes: ['PhD'],
+    trigger: 'Second internal feedback received', unlock: 'feedback', feedbackCycle: 'internal2', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff'], resubmit: true, type: 'Comment-by-Comment Response (Internal Examiner) (Second Internal)' },
+  { id: 'internal-clean-2', name: 'Second Corrected Clean Copy after Internal Comments', section: 'Second Progress Presentation (PhD only)', stage: S_.SECOND_INTERNAL,
+    description: 'Clean corrected version following the second internal comments. MS Word only.', programmes: ['PhD'],
+    trigger: 'Second internal feedback received', unlock: 'feedback', feedbackCycle: 'internal2', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff'], resubmit: true, type: 'Corrected Clean Copy (Internal Examiner) (Second Internal)' },
+  { id: 'fee-receipt', name: 'School Fees Payment Receipt', section: 'Final Examination Intent', stage: S_.FINAL_INTENT,
+    description: 'Proof of school fees payment. PDF only; visible to authorised postgraduate administrators.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Final Examination Intent submitted', closesAt: S_.COMMENTS, uploader: 'Student', formats: ['pdf'],
+    required: true, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD'], resubmit: true, type: 'Receipt of Fees' },
+  { id: 'exam-fee', name: 'External Examination Fee Payment Receipt', section: 'Final Examination Intent', stage: S_.FINAL_INTENT,
+    description: 'Proof of payment for the external examination. PDF only; authorised administrators only.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Final Examination Intent submitted', closesAt: S_.COMMENTS, uploader: 'Student', formats: ['pdf'],
+    required: true, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD'], resubmit: true, type: 'Evidence of Payment for Examination' },
+  { id: 'plagiarism', name: 'Plagiarism Certificate / Report', section: 'Final Examination Intent', stage: S_.FINAL_INTENT,
+    description: 'The similarity / plagiarism report. PDF only; visible to authorised postgraduate administrators.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Final Examination Intent submitted', closesAt: S_.COMMENTS, uploader: 'Student', formats: ['pdf'],
+    required: true, requiresExaminer: false, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Submission_Inspector'], resubmit: true, type: 'Plagiarism Certificate' },
+  { id: 'thesis', name: 'Final Dissertation / Thesis', section: 'Final Examination Intent', stage: S_.THESIS,
+    description: 'The final dissertation/thesis. MS Word only. The assigned External Examiner can open it before the External Defence.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'Thesis Submission stage', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, awaitsFeedback: 'external', viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Submission_Inspector', 'Examiner'], resubmit: true, type: 'Final Thesis/Dissertation' },
+  { id: 'external-report', name: 'External Examiner\u2019s Report / Comments', section: 'After External Defence', stage: S_.COMMENTS,
+    description: 'The External Examiner may upload a Word report or enter comments directly in the assessment field.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'External examination completed', uploader: 'External Examiner', formats: ['doc', 'docx'],
+    required: false, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Examiner'], resubmit: false, type: '__external__' },
+  { id: 'external-response', name: 'Response to External Examiner\u2019s Comments', section: 'After External Defence', stage: S_.COMMENTS,
+    description: 'A point-by-point response to every External Examiner comment. MS Word only.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'External Examiner feedback received', unlock: 'feedback', feedbackCycle: 'external', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff'], resubmit: true, type: 'Comment-by-Comment Response (External Examiner)' },
+  { id: 'external-clean', name: 'Corrected Clean Copy after External Comments', section: 'After External Defence', stage: S_.COMMENTS,
+    description: 'The final corrected clean copy following the External Examiner\u2019s comments. MS Word only.', programmes: ['MPhil', 'MSc', 'PhD'],
+    trigger: 'External Examiner feedback received', unlock: 'feedback', feedbackCycle: 'external', uploader: 'Student', formats: ['doc', 'docx'],
+    required: true, requiresExaminer: true, viewers: ['Student', 'PG_Coordinator', 'HoD', 'Staff'], resubmit: true, type: 'Final Correction' }
+];
+
+/** Downloadable resources. The actual file id comes from a Config-sheet key, so administrators replace the
+ *  template in the sheet without touching code. Downloads are never student submissions. */
+var DOWNLOAD_CONFIG = [
+  { id: 'pg-presentation-template', name: 'Postgraduate Presentation Template',
+    description: 'Official departmental PowerPoint template for proposal and progress presentations.',
+    format: 'PPTX', configKey: 'TEMPLATE_PROGRESS_PPTX' },
+  { id: 'proposal-defence-form', name: 'Proposal Defence Form',
+    description: 'Official form for Route A: signed by both supervisors and uploaded as a PDF.',
+    format: 'PDF', configKey: 'TEMPLATE_PROPOSAL_DEFENCE_FORM' }
+];
+
+var DOCUMENT_STATUS_LABELS = {
+  unavailable: 'Not Yet Available', pending: 'Pending Submission', submitted: 'Submitted',
+  review: 'Under Review', correction: 'Correction Required', approved: 'Approved/Accepted',
+  awaitingExaminer: 'Awaiting examiner feedback', feedback: 'Feedback received'
+};
+
+/** Inspector checklists live with the document definitions, keyed by catalogue id, so the catalogue remains
+ *  the single source of truth for requirements as well as for the student-facing fields. */
+var DOCUMENT_CHECKLISTS = {
+  passport: ['Recent photograph', 'Face and shoulders visible', 'Plain background'],
+  admission: ['Letter is legible', 'Student name and registration number are shown', 'Issued by the University of Abuja'],
+  'research-proposal': ['Formatting meets the SFRRP template', 'References complete and consistent (APA 6th)', 'Similarity / plagiarism within allowed limit', 'Supervisor endorsement attached'],
+  'defence-form': ['Signed by the Main Supervisor', 'Signed by the Co-Supervisor where applicable', 'Registration number and title are shown'],
+  'defence-slides': ['Official PowerPoint template used', 'Problem, objectives, methodology and timeline are clear', 'References and slide numbers are present'],
+  'progress-report': ['Formatting meets the SFRRP template', 'Progress against objectives is clear', 'References complete and consistent (APA 6th)', 'Supervisor endorsement attached'],
+  'progress-slides': ['Official PowerPoint template used', 'Progress and results to date are clear', 'References and slide numbers are present'],
+  'internal-report': ['Report is legible', 'Findings and recommendation are stated', 'Examiner and date are identified'],
+  'internal-response': ['Every examiner comment has a response', 'Each response states where the work was changed', 'Supervisor endorsement attached'],
+  'internal-clean': ['Formatting meets the SFRRP template', 'Preliminary pages and abstract meet the template', 'Every internal correction has been applied', 'Supervisor endorsement attached'],
+  'progress-report-2': ['Second-cycle report is complete and legible', 'Progress since the first internal examination is clear', 'References complete and consistent (APA 6th)', 'Supervisor endorsement attached'],
+  'progress-slides-2': ['Official PowerPoint template used', 'Second-cycle progress and results are clear', 'References and slide numbers are present'],
+  'internal-report-2': ['Second-cycle report is legible', 'Findings and recommendation are stated', 'Examiner and date are identified'],
+  'internal-response-2': ['Every second internal comment has a separate response', 'Each response states where the work was changed', 'Supervisor endorsement attached'],
+  'internal-clean-2': ['Formatting meets the SFRRP template', 'Every second internal correction has been applied', 'Supervisor endorsement attached'],
+  'fee-receipt': ['Receipt is complete and legible', 'Student name / registration number and amount are shown'],
+  'exam-fee': ['Receipt is complete and legible', 'Student name / registration number and amount are shown'],
+  plagiarism: ['Certificate is complete and legible', 'Student name and similarity percentage are shown', 'Similarity is within the allowed limit'],
+  thesis: ['Formatting meets the SFRRP template', 'Preliminary pages and abstract meet the template', 'References complete and consistent (APA 6th)', 'Similarity / plagiarism within allowed limit', 'Supervisor endorsement attached'],
+  'external-report': ['Report is legible', 'Findings and recommendation are stated', 'Examiner and date are identified'],
+  'external-response': ['Every examiner comment has a response', 'Each response states where the work was changed', 'Supervisor endorsement attached'],
+  'external-clean': ['Formatting meets the SFRRP template', 'Preliminary pages and abstract meet the template', 'References complete and consistent (APA 6th)', 'Examiners\u2019 corrections addressed', 'Supervisor endorsement attached']
+};
+var DOCUMENT_BY_ID_ = (function () { var m = {}; DOCUMENT_CONFIG.forEach(function (d) { m[d.id] = d; }); return m; })();
+var DOCUMENT_BY_TYPE_ = (function () { var m = {}; DOCUMENT_CONFIG.forEach(function (d) { if (d.type && String(d.type).charAt(0) !== '_') m[d.type] = d; }); return m; })();
+
+/* ---- central catalogue helpers. Every dashboard field is derived from these; no per-document UI code. ---- */
+function documentById_(id) { return DOCUMENT_BY_ID_[String(id || '')] || null; }
+function documentByType_(type) { return DOCUMENT_BY_TYPE_[String(type || '')] || null; }
+function documentFeedbackKey_(doc) { return doc && doc.unlock === 'feedback' ? String(doc.feedbackCycle || '') : ''; }
+function feedbackReceived_(fb, key) {
+  if (!key || !fb || !fb[key]) return false;
+  return !!(fb[key].submittedAt || fb[key].status === 'Feedback received');
+}
+function docAvailableForStudent_(doc, stu, fb) {
+  if (!doc) return true;
+  if (!docAppliesTo_(doc, stu)) return false;
+  if (doc.stage === 'registration') return true;
+  var idx = stageIdx_(stu && stu.currentStage), need = CFG.JOURNEY_STAGES.indexOf(String(doc.stage || ''));
+  if (need < 0) return false;   // an unknown/unmapped stage must never unlock a document
+  if (idx < need) return false;
+  var key = documentFeedbackKey_(doc);
+  if (key && !feedbackReceived_(fb, key)) return false;
+  if (doc.closesAt) { var end = stageIdx_(doc.closesAt); if (end >= 0 && idx >= end) return false; }
+  return true;
+}
+
+function documentCatalogPayload_() {
+  return { documents: DOCUMENT_CONFIG, downloads: DOWNLOAD_CONFIG, statuses: DOCUMENT_STATUS_LABELS };
+}
+/** Configuration is public to signed-in users; it contains no student data. */
+function api_getDocumentCatalog(token) { requireUser_(token); return documentCatalogPayload_(); }
+
+function docProgrammeOf_(programme) {
+  var p = String(programme || '');
+  return /phd/i.test(p) ? 'PhD' : /mphil/i.test(p) ? 'MPhil' : 'MSc';
+}
+function docAppliesTo_(doc, stu) {
+  var p = docProgrammeOf_(stu && stu.programme);
+  return (doc.programmes || []).indexOf(p) !== -1;
+}
+function docStatusKey_(sub) {
+  if (!sub) return 'pending';
+  var s = String(sub.status || '');
+  if (s === 'Draft') return 'pending';
+  if (s === 'Under Review') return 'review';
+  if (s === 'Changes Requested' || s === 'Rejected') return 'correction';
+  if (s === 'Approved') return 'approved';
+  return 'submitted';
+}
+/** Examiner feedback is returned without any examiner identity (the owner chose not to disclose it). */
+function examinerFeedbackForStudent_(reg) {
+  var rows = readTable_('Examiners').filter(function (x) {
+    return String(x.regNumber) === String(reg) && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1;
+  });
+  function pick(type) {
+    return rows.filter(function (x) { return String(x.type) === type; })
+      .sort(function (a, b) { return String(b.submittedAt || b.createdAt).localeCompare(String(a.submittedAt || a.createdAt)); })[0] || null;
+  }
+  function view(x) {
+    return x ? { comments: x.comments || '', reportUrl: x.reportUrl || '', submittedAt: x.submittedAt || '',
+      recommendation: x.recommendation || '', status: String(x.status || '') === 'Scored' ? 'Feedback received' : 'Assigned' } : null;
+  }
+  return { internal: view(pick('Internal')), internal2: view(pick('Internal (Second)')), external: view(pick('External')) };
+}
+/** Fully resolved document rows for one student: availability, status, history and access are all server decisions. */
+function documentsForStudent_(user, stu) {
+  var out = [];
+  var subs = filterWhere_('Submissions', function (s) { return String(s.regNumber) === String(user.regNumber); })
+    .sort(function (a, b) { return String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)); });
+  var fb = examinerFeedbackForStudent_(stu.regNumber);
+  function latest(type) {
+    /* latest() already includes drafts — there is no separate draft lookup. Equal timestamps keep the
+     * most recently appended row, so a replacement's cached filename wins on the dashboard. */
+    var best = null, bestAt = '', bestIdx = -1;
+    subs.forEach(function (s, i) {
+      if (String(s.type) !== type) return;
+      var at = String(s.updatedAt || s.createdAt || '');
+      if (!best || at > bestAt || (at === bestAt && i > bestIdx)) { best = s; bestAt = at; bestIdx = i; }
+    });
+    return best;
+  }
+  function row(doc, available, sub, extra) {
+    var key = sub ? docStatusKey_(sub) : (available ? 'pending' : 'unavailable');
+    if (doc.requiresExaminer && doc.awaitsFeedback && sub && key === 'submitted' && !feedbackReceived_(fb, doc.awaitsFeedback)) key = 'awaitingExaminer';
+    var o = {
+      id: doc.id, name: doc.name, section: doc.section, description: doc.description, stage: doc.stage, type: doc.type,
+      trigger: doc.trigger, uploader: doc.uploader, formats: doc.formats, required: !!doc.required,
+      resubmit: !!doc.resubmit, viewers: doc.viewers, accept: '.' + (doc.formats || []).join(',.'),
+      available: !!available, status: key, statusLabel: DOCUMENT_STATUS_LABELS[key],
+      submissionId: sub ? sub.id : '', fileName: submissionFileName_(sub), uploadedAt: sub ? (sub.updatedAt || sub.createdAt) : '',
+      inspectorComments: sub ? (sub.inspectorComments || '') : '', canUpload: !!available && (!sub || !!doc.resubmit || key === 'pending'),
+      canView: !!sub && String(sub.status) !== 'Draft', canReplace: !!sub && !!doc.resubmit && !!available
+    };
+    o.fileId = fileIdsFromUrls_(sub ? sub.driveFileUrls : '')[0] || '';
+    if (extra) { o.fileName = extra.fileName; o.uploadedAt = extra.uploadedAt; o.canUpload = !!available; o.canView = !!extra.fileId; o.submissionId = ''; o.fileId = extra.fileId || o.fileId; }
+    return o;
+  }
+  DOCUMENT_CONFIG.forEach(function (doc) {
+    if (doc.uploader !== 'Student' || !docAppliesTo_(doc, stu)) return;
+    var available = docAvailableForStudent_(doc, stu, fb);
+    if (doc.type === '__passport__' || doc.type === '__admission__') {
+      var isPass = doc.type === '__passport__';
+      var url = isPass ? stu.passportUrl : stu.admissionLetterUrl;
+      var id = isPass ? stu.passportFileId : (fileIdsFromUrls_(url)[0] || '');
+      out.push(row(doc, available, null, { fileName: isPass ? 'Passport photograph' : 'Admission letter', uploadedAt: stu.updatedAt || '', fileId: id }));
+      return;
+    }
+    out.push(row(doc, available, latest(doc.type)));
+  });
+  return out;
+}
+/** Admin-controlled downloads: the file id is returned, never a public-looking Drive download URL. */
+function downloadFileId_(d) { return String(getSetting_(d.configKey, '') || '').trim(); }
+function downloadsForStudent_() {
+  return DOWNLOAD_CONFIG.map(function (d) {
+    var id = downloadFileId_(d);
+    return { id: d.id, name: d.name, description: d.description, format: d.format,
+      available: !!id, fileId: id, url: '', configKey: d.configKey };
+  });
+}
+function downloadForFileId_(id) {
+  for (var i = 0; i < DOWNLOAD_CONFIG.length; i++) {
+    var d = DOWNLOAD_CONFIG[i];
+    if (downloadFileId_(d) === String(id)) return d;
+  }
+  return null;
+}
+
+/** Users and Students are keyed by the registration number (staff ID for staff logins). They have NO 'id' column in the sheet:
+ *  readTableFromSheet_ gives every row a virtual `id` equal to its regNumber, so findById_ / updateRow_ keep working. */
+var REGNUM_KEYED_ = { Users: 1, Students: 1 };
+
 /** Sheet tabs and their column order (fields). Order is authoritative. */
 var HEADERS = {
-  Users: ['id', 'regNumber', 'email', 'passwordHash', 'salt', 'role', 'fullName', 'firstLogin', 'active', 'status', 'createdAt', 'emailPref'],
-  Students: ['id', 'regNumber', 'surname', 'firstName', 'otherNames', 'gender', 'phoneNumber', 'email', 'faculty', 'department', 'programme', 'specialisation', 'passportFileId', 'passportUrl', 'mainSupervisorId', 'coSupervisorId', 'currentStage', 'yearOfAdmission', 'createdAt', 'updatedAt', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt', 'admissionLetterUrl', 'lastNudgeAt', 'File - Research Plan Form', 'File - Seminar Presentation', 'File - Research Proposal', 'File - Progress Report', 'File - Final Thesis or Dissertation', 'File - Internal Examiner Observations', 'File - Final Correction', 'File - Response to External Examiner', 'File - Response to Internal Examiner', 'Latest Upload Date', 'Latest Upload Type'],
+  Users: ['regNumber', 'email', 'passwordHash', 'salt', 'role', 'fullName', 'firstLogin', 'active', 'status', 'createdAt', 'emailPref'],
+  Students: ['regNumber', 'surname', 'firstName', 'otherNames', 'gender', 'phoneNumber', 'email', 'faculty', 'department', 'programme', 'specialisation', 'passportFileId', 'passportUrl', 'mainSupervisorId', 'coSupervisorId', 'currentStage', 'yearOfAdmission', 'createdAt', 'updatedAt', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt', 'admissionLetterUrl', 'lastNudgeAt', 'File - Research Plan Form', 'File - Seminar Presentation', 'File - Research Proposal', 'File - Progress Report', 'File - Final Thesis or Dissertation', 'File - Internal Examiner Observations', 'File - Final Correction', 'File - Response to External Examiner', 'File - Response to Internal Examiner', 'File - Signed Proposal Defence Form', 'File - External Examiner Comments', 'Latest Upload Date', 'Latest Upload Type'],
   Staff: ['id', 'fullName', 'email', 'rank', 'specialisation', 'active', 'createdAt', 'role'],
   Submissions: ['id', 'regNumber', 'type', 'driveFileUrls', 'status', 'inspectorComments', 'supervisorNotes', 'createdBy', 'createdAt', 'updatedAt', 'reviewedBy', 'reviewedAt', 'checklist', 'endorsedBy', 'assignedTo', 'history', 'compliance', 'similarity', 'similarityUrl', 'similarityBy', 'similarityAt', 'lastRemindedAt'],
   Announcements: ['id', 'title', 'body', 'active', 'createdBy', 'createdAt', 'audience'],
@@ -99,13 +381,15 @@ var HEADERS = {
   Seminars: ['id', 'title', 'date', 'venue', 'presenters', 'attendees', 'createdBy', 'createdAt'],
   ProgrammeSessions: ['id', 'month', 'kind', 'title', 'date', 'startTime', 'endTime', 'venue', 'notes', 'status', 'createdBy', 'createdAt', 'updatedAt'],
   Examiners: ['id', 'regNumber', 'examinerName', 'type', 'email', 'score', 'comments', 'status', 'createdAt',
-    'submissionId', 'institution', 'department', 'rank', 'examLogin', 'assignedBy', 'dueDate', 'recommendation', 'scores', 'reportUrl', 'submittedAt', 'profileUrl'],
+    'submissionId', 'institution', 'department', 'rank', 'examLogin', 'assignedBy', 'dueDate', 'recommendation', 'scores', 'reportUrl', 'submittedAt', 'profileUrl',
+    'revokedAt', 'revokedBy', 'revokedByReg', 'replacedById', 'replacesId',
+    'extendedAccess', 'extendedBy', 'extendedByReg', 'extendedAt', 'extendedNote', 'extendedEndedAt', 'extendedEndedBy'],
   Actions: ['id', 'regNumber', 'text', 'owner', 'ownerName', 'ownerReg', 'dueDate', 'status', 'meetingId', 'createdBy', 'createdAt', 'doneAt', 'lastRemindedAt'],
   Reviews: ['id', 'regNumber', 'period', 'rating', 'recommendation', 'comments', 'createdBy', 'createdAt'],
   Concerns: ['id', 'regNumber', 'category', 'text', 'status', 'createdBy', 'createdByReg', 'createdAt', 'resolvedBy', 'resolvedAt', 'note'],
   CheckIns: ['id', 'regNumber', 'month', 'status', 'note', 'createdAt'],
   SubComments: ['id', 'submissionId', 'regNumber', 'byName', 'byRole', 'text', 'createdAt'],
-  AuditLog: ['id', 'at', 'actorId', 'actorUsername', 'action', 'target', 'detail']
+  AuditLog: ['id', 'at', 'actorId', 'actorUsername', 'action', 'target', 'detail', 'studentReg']
 };
 
 /** Upload/link columns: the sheet cell shows a clickable label; the real URL lives in the cell's hyperlink.
@@ -183,8 +467,8 @@ function cellSafe_(v) {
   if (/^=/.test(v) || (/^[+\-@][A-Za-z(]/.test(v))) return "'" + v;
   if (/^0\d{10}$/.test(v)) return "'" + v;   // phone numbers: stay text so the leading 0 survives
   if (/^\d{9,10}$/.test(v)) return "'" + v;   // plain matric numbers (e.g. 1750806006): stay text so a leading 0 survives
-  if (/^\d{4}-\d{2}$/.test(v)) return "'" + v;   // month patterns like 2026-11: stay text
-  if (/^\d{1,2}:\d{2}$/.test(v)) return "'" + v;   // time patterns like 10:00: stay text
+  if (/^\d{4}-\d{2}$/.test(v)) return "'" + v;   // YYYY-MM periods stay text (Sheets would turn them into dates)
+  if (/^\d{1,2}:\d{2}$/.test(v)) return "'" + v;   // HH:MM times stay text
   return v;
 }
 function fullNameOf_(rec) { return [rec.firstName, rec.otherNames, rec.surname].filter(Boolean).join(' '); }
@@ -202,6 +486,7 @@ function lockRelease_() {
   if (__lockDepth === 0) return;
   __lockDepth--;
   if (__lockDepth === 0 && __lockObj) { try { __lockObj.releaseLock(); } catch (e) {} __lockObj = null; }
+  if (__lockDepth === 0 && __mailQueue.length) flushMailQueue_();   // P3: mail queued while the lock was held goes out now, after other users can write again
 }
 function withScriptLock_(fn, timeoutMs) {
   if (!lockAcquire_(timeoutMs || 20000)) throw new Error('The portal is busy. Please try again in a moment.');
@@ -230,6 +515,8 @@ function hashPasswordRaw_(password, salt, iterations) {
   return 'pbkdf2$' + iterations + '$' + bytesToHex_(u);
 }
 function hashPassword_(password, salt) { return hashPasswordRaw_(password, salt, HASH_ITERATIONS); }
+/** Fresh per-account password salt. Any stable string works; two UUIDs give ample entropy. */
+function makeSalt_() { return uuid_().replace(/-/g, '') + uuid_().replace(/-/g, ''); }
 function needsRehash_(stored) { return !/^pbkdf2\$\d+\$[0-9a-f]+$/i.test(String(stored || '')); }
 function safeEqual_(a, b) {
   a = String(a); b = String(b);
@@ -286,7 +573,7 @@ function notifyStaffLogin_(email, name, id, role, pw) {
     '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:14px"><tr><td style="padding:6px 8px;border:1px solid #e2e8e4;background:#f4f7f5;color:#14532d"><strong>Staff ID</strong></td><td style="padding:6px 8px;border:1px solid #e2e8e4">' + escHtml_(id) + '</td></tr>' +
     '<tr><td style="padding:6px 8px;border:1px solid #e2e8e4;background:#f4f7f5;color:#14532d"><strong>One-time password</strong></td><td style="padding:6px 8px;border:1px solid #e2e8e4;font-family:monospace">' + escHtml_(pw) + '</td></tr></table>' +
     '<p style="color:#66756f;font-size:13px;margin-top:12px">You will be asked to choose a new password at first sign-in.</p>';
-  try { return sendPortalMail_({ to: email, subject: 'Portal login created — ' + id, body: text, htmlBody: html }); } catch (e) { Logger.log('notifyStaffLogin_ ' + id + ': ' + e); return false; }
+  try { return sendPortalMail_({ to: email, subject: 'Portal login created — ' + id, body: text, htmlBody: html, immediate: true }); } catch (e) { Logger.log('notifyStaffLogin_ ' + id + ': ' + e); return false; }
 }
 /** RUN ONCE (optional): accounts that still use the old shared default password (never changed) get a random one-time password by email.
  *  Run with dryRun = true first to see how many accounts would change. */
@@ -414,6 +701,7 @@ function readTableFromSheet_(name) {
       if (values[i].join('').toString().trim() === '') continue;
       var obj = { _row: i + 1 };
       for (var c = 0; c < headers.length; c++) obj[headers[c]] = sheetCellValue_(values[i][c]);
+      if (REGNUM_KEYED_[name] && (obj.id === undefined || obj.id === null || String(obj.id).trim() === '')) obj.id = String(obj.regNumber === undefined || obj.regNumber === null ? '' : obj.regNumber).trim();
       rows.push(obj);
     }
     // Link columns: the cell shows a label, so recover the real URL(s) from the hyperlink.
@@ -485,7 +773,7 @@ function readTable_(name) {
   }
   if (!rows) {
     rows = readTableFromSheet_(name);
-    if (chunk) { if (__lockDepth === 0) chunkedCachePut_(name, chunk.ver, rows); }   // reads made inside a write lock are about to be outdated: do not cache them
+    if (chunk) { if (__lockDepth === 0 && !chunk.skip) chunkedCachePut_(name, chunk.ver, rows); }   // reads made inside a write lock are about to be outdated: do not cache them
     else if (cache) { try { var js = JSON.stringify(rows); if (js.length < 90000) cache.put(tableCacheKey_(name), js, TABLE_CACHE_TTL); } catch (e) {} }
   }
   __tables[name] = rows;
@@ -500,7 +788,8 @@ var TABLE_CACHE_TTL = 90;                       // seconds; only for small, read
 var TABLE_CACHED = { Staff: 1, Config: 1 };
 /* S2: large tables are cached in several chunks (one cache value is capped at 100 KB). A per-table version key names the chunks;
    every write helper calls invalidateTable_, which bumps the version and so orphans the old chunks at once. */
-var TABLE_CHUNKED = { Students: 1, Submissions: 1, Messages: 1 };
+var TABLE_CHUNKED = { Students: 1, Submissions: 1, Messages: 1,
+  Users: 1, Requests: 1, Inquiries: 1, Examiners: 1, PresentationIntents: 1, Meetings: 1 };   // P1: read on most dashboards; every write helper already calls invalidateTable_
 var TABLE_CHUNK_TTL = 180;           // seconds; a hand edit made directly in the sheet shows within this time
 var TABLE_CHUNK_CHARS = 30000;       // characters per chunk: stays under 100 KB even if every character takes 3 bytes
 var TABLE_CHUNK_MAX = 40;            // tables larger than about 1.2 M characters are not cached and keep reading from the sheet
@@ -517,7 +806,9 @@ function chunkedCacheGet_(name) {
     var cache = CacheService.getScriptCache();
     ver = cache.get(tableVerKey_(name));
     if (!ver) { ver = newCacheVersion_(); cache.put(tableVerKey_(name), ver, 21600); return { rows: null, ver: ver }; }
-    var n = parseInt(cache.get(tableMetaKey_(name, ver)), 10);
+    var meta = cache.get(tableMetaKey_(name, ver));
+    if (meta === 'big') return { rows: null, ver: ver, skip: true };   // known to exceed TABLE_CHUNK_MAX: do not serialise it again
+    var n = parseInt(meta, 10);
     if (!n) return { rows: null, ver: ver };
     var keys = [], i;
     for (i = 0; i < n; i++) keys.push(tableChunkKey_(name, ver, i));
@@ -534,7 +825,7 @@ function chunkedCachePut_(name, ver, rows) {
       var end = Math.min(js.length, pos + TABLE_CHUNK_CHARS);
       if (end < js.length) { var c = js.charCodeAt(end - 1); if (c >= 0xD800 && c <= 0xDBFF) end--; }   // never split an emoji across two chunks
       parts.push(js.substring(pos, end)); pos = end;
-      if (parts.length > TABLE_CHUNK_MAX) return;
+      if (parts.length > TABLE_CHUNK_MAX) { CacheService.getScriptCache().put(tableMetaKey_(name, ver), 'big', TABLE_CHUNK_TTL); return; }
     }
     if (!parts.length) parts.push('[]');
     var obj = {};
@@ -546,13 +837,13 @@ function chunkedCachePut_(name, ver, rows) {
 function tableCacheKey_(name) { return 'tbl_' + name; }
 function clearTableCache_(name) { try { CacheService.getScriptCache().remove(tableCacheKey_(name)); } catch (e) {} }
 /** Run from the editor after hand-editing the Staff or Config tab if you want the change to show immediately (otherwise it shows within ~90 s). */
-function clearTableCaches() { Object.keys(TABLE_CACHED).forEach(clearTableCache_); Object.keys(TABLE_CHUNKED).forEach(bumpTableVersion_); Logger.log('Table caches cleared.'); }
+function clearTableCaches() { try { CacheService.getScriptCache().remove('avgdays_v1'); } catch (e) {} Object.keys(TABLE_CACHED).forEach(clearTableCache_); Object.keys(TABLE_CHUNKED).forEach(bumpTableVersion_); Logger.log('Table caches cleared.'); }
 function invalidateTable_(name) {
   delete __tables[name]; delete __headers[name];
   Object.keys(__idx).forEach(function (k) { if (k.indexOf(name + '|') === 0) delete __idx[k]; });
   if (TABLE_CACHED[name]) clearTableCache_(name);
   if (TABLE_CHUNKED[name]) bumpTableVersion_(name);
-  if (name === 'Users') bumpUserCacheVersion_();
+  if (name === 'Users') { bumpUserCacheVersion_(); __ruMemo = null; }
 }
 /* S1: per-user record cache. Any write to Users bumps a global version, which orphans every cached user record. */
 var USER_CACHE_TTL = 120;
@@ -590,7 +881,11 @@ function userByRegExact_(reg) { return indexBy_('Users', 'regNumber')[String(reg
 function appendRow_(name, obj) {
   assertWritable_();
   return withScriptLock_(function () {
-    if (ID_PREFIXES[name] && (!obj.id || UUID_RE.test(String(obj.id)))) obj.id = nextId_(name);
+    if (REGNUM_KEYED_[name]) {
+      if (!String(obj.regNumber || '').trim()) throw new Error('A registration number (or staff ID) is required to add a row to ' + name + '.');
+      obj.id = String(obj.regNumber).trim();   // virtual: there is no id column in this tab
+    }
+    else if (ID_PREFIXES[name] && (!obj.id || UUID_RE.test(String(obj.id)))) obj.id = nextId_(name);
     var headers = sheetHeaders_(name), sheet = getSheet_(name);
     var lc = LINK_COLUMNS[name] || {};
     sheet.appendRow(headers.map(function (h) {
@@ -612,7 +907,7 @@ function updateRowByField_(name, keyField, keyValue, patch) {
     for (var i = 0; i < rows.length; i++) if (String(rows[i][keyField]) === String(keyValue)) { target = rows[i]; break; }
     if (!target) return false;
     var sheet = getSheet_(name), headers = sheetHeaders_(name), keyCol = headers.indexOf(keyField);
-    if (keyCol < 0) throw new Error('Column "' + keyField + '" is missing from ' + name + '.');
+    if (keyCol < 0 && !(keyField === 'id' && REGNUM_KEYED_[name])) throw new Error('Column "' + keyField + '" is missing from ' + name + '.');
     writeRowPatch_(sheet, headers, target._row, patch);
     invalidateTable_(name);
     return true;
@@ -678,13 +973,33 @@ function assertWritable_() {
 }
 var IMPERSONATION_TTL = 3600;   // seconds
 var PREVIEW_TTL = 1200;   // seconds — read-only preview sessions are shorter-lived than full impersonation
+var AUDIT_RECORD_TABLES_ = { Sub: 'Submissions', Pnt: 'PresentationIntents', Req: 'Requests', Inq: 'Inquiries', Mtg: 'Meetings',
+  Exm: 'Examiners', Act: 'Actions', Con: 'Concerns', Rev: 'Reviews', Cmt: 'SubComments', Chk: 'CheckIns', Msg: 'Messages', Ntf: 'Notifications' };
+/** Which student does an audit entry concern? Returns the student's regNumber, or ''. */
+function auditStudentReg_(actorUsername, target) {
+  var asStudent = function (v) {
+    var k = normReg_(v); if (!k) return '';
+    var s = indexBy_('Students', 'regNumber', normReg_)[k];
+    return s ? String(s.regNumber).trim() : '';
+  };
+  var t = String(target === undefined || target === null ? '' : target).trim(), hit = asStudent(t);
+  if (hit) return hit;
+  var m = /^([A-Z][a-z]{2})\d+$/.exec(t);
+  if (m && AUDIT_RECORD_TABLES_[m[1]]) {
+    var rec = findById_(AUDIT_RECORD_TABLES_[m[1]], t);
+    if (rec && rec.regNumber) { hit = asStudent(rec.regNumber); if (hit) return hit; }
+  }
+  return asStudent(String(actorUsername || '').replace(/\s*\(SuperAdmin.*$/i, '').trim());
+}
 function logAudit_(actorId, actorUsername, action, target, detail) {
+  var studentReg = '';
+  try { studentReg = auditStudentReg_(actorUsername, target); } catch (e) {}
   if (__actor) {   // always record who is really behind an impersonated action
     detail = '[via SuperAdmin ' + __actor.regNumber + ' ' + (__actor.fullName || '') + '] ' + (detail || '');
     actorUsername = String(actorUsername) + ' (SuperAdmin ' + __actor.regNumber + ')';
   }
   try {
-    appendRow_('AuditLog', { id: uuid_(), at: nowIso_(), actorId: actorId, actorUsername: actorUsername, action: action, target: target, detail: detail });
+    appendRow_('AuditLog', { id: uuid_(), at: nowIso_(), actorId: actorId, actorUsername: actorUsername, action: action, target: target, detail: detail, studentReg: studentReg });
   } catch (e) { Logger.log('logAudit_ failed: ' + e); }
 }
 
@@ -721,7 +1036,20 @@ function mailTextFooter_(contact) {
   return '\n\n—\nThis is an automated message — please do not reply.\nFor enquiries, contact ' + (contact && contact.label ? contact.label + ' at ' : '') + ((contact && contact.email) || mailEnquiriesAddress()) + '.';
 }
 function mailEnquiriesAddress() { return mailEnquiriesAddress_(); }
+/* P3: email is slow (about 0.3-1 s each) and the script lock is global. While the lock is held, sendPortalMail_ only queues the message
+   (and reports success); the queue is sent as soon as the lock is released. Mail whose delivery result matters to the caller
+   (one-time passwords, reset codes) passes immediate:true and is still sent on the spot. */
+var __mailQueue = [];
 function sendPortalMail_(opts) {
+  opts = opts || {};
+  if (__lockDepth > 0 && !opts.immediate) { if (!opts.to) return false; __mailQueue.push(opts); return true; }
+  return sendPortalMailNow_(opts);
+}
+function flushMailQueue_() {
+  var q = __mailQueue; __mailQueue = [];
+  q.forEach(function (o) { try { sendPortalMailNow_(o); } catch (e) { Logger.log('queued mail to ' + o.to + ' failed: ' + e); } });
+}
+function sendPortalMailNow_(opts) {
   opts = opts || {};
   if (!opts.to) return false;
   try { if (MailApp.getRemainingDailyQuota() < 1) { Logger.log('Mail quota exhausted; not sent: ' + opts.subject); return false; } } catch (qe) {}
@@ -765,6 +1093,7 @@ function sessionEpoch_(userId) {
   return v ? String(v) : '0';
 }
 function bumpSessionEpoch_(userId) {
+  __ruMemo = null;
   try { CacheService.getScriptCache().put('ue_' + userId, String(new Date().getTime()), SESSION_EPOCH_TTL); } catch (e) {}
 }
 function isLoginLocked_(key) {
@@ -789,7 +1118,14 @@ function notifyLockout_(key) {
   } catch (e) { Logger.log('notifyLockout_: ' + e); }
 }
 function clearLoginFailures_(key) { CacheService.getScriptCache().remove('lck_' + key); }
+/* P2: requireUser_ is called by api_bootstrap and again by every api_ function inside it. The first call validates the session
+   (several cache reads); later calls with the same token in the same execution reuse the result. The memo is dropped whenever the
+   Users table, a session epoch or a session is changed, so it can never outlive a password change, logout or role edit. */
+var __ruMemo = null;
+var SESSION_SLIDE_MIN_MS = 10 * 60 * 1000;   // the session TTL is renewed at most this often (it was renewed on every request)
 function requireUser_(token) {
+  if (__ruMemo && token && __ruMemo.token === token) { __actor = __ruMemo.actor; __previewReadOnly = __ruMemo.ro; return __ruMemo.user; }
+  __ruMemo = null;
   __actor = null;
   if (!token) throw new Error('Please sign in to continue.');
   var raw = CacheService.getScriptCache().get('sess_' + token);
@@ -813,8 +1149,20 @@ function requireUser_(token) {
   /* Phase 4 (sliding session): every validated request refreshes the session TTL, so an
      active user slides forward instead of holding a fixed 6 h from sign-in. The epoch check
      above still ends the session on a password change / temp-password issue. */
-  try { CacheService.getScriptCache().put('sess_' + token, raw, CFG.SESSION_TTL_SECONDS); } catch (e) {}
+  try {
+    var nowMs = Date.now();
+    if (!sess.ts || nowMs - Number(sess.ts) > SESSION_SLIDE_MIN_MS) { sess.ts = nowMs; CacheService.getScriptCache().put('sess_' + token, JSON.stringify(sess), CFG.SESSION_TTL_SECONDS); }
+  } catch (e) {}
+  __ruMemo = { token: token, user: user, actor: __actor, ro: __previewReadOnly };
   return user;
+}
+/** Forces the session TTL to slide now (used by the "Stay signed in" heartbeat, which must not be throttled). */
+function touchSession_(token) {
+  try {
+    var cache = CacheService.getScriptCache(), raw = cache.get('sess_' + token); if (!raw) return;
+    var sess = {}; try { sess = JSON.parse(raw); } catch (e) { sess = { id: raw }; }
+    sess.ts = Date.now(); cache.put('sess_' + token, JSON.stringify(sess), CFG.SESSION_TTL_SECONDS);
+  } catch (e) {}
 }
 function hasRole_(user, roles) { if (!user) return false; return roles.indexOf(user.role) !== -1; }
 function assertRole_(user, roles, message) { if (!hasRole_(user, roles)) throw new Error(message || 'You do not have permission to do that.'); }
@@ -840,7 +1188,7 @@ function api_login(regNumber, password) {
   CacheService.getScriptCache().put('sess_' + token, JSON.stringify({ id: user.id, epoch: sessionEpoch_(user.id) }), CFG.SESSION_TTL_SECONDS);
   return { token: token, user: publicUser_(user) };
 }
-function api_logout(token) { if (token) CacheService.getScriptCache().remove('sess_' + token); return true; }
+function api_logout(token) { __ruMemo = null; if (token) CacheService.getScriptCache().remove('sess_' + token); return true; }
 function api_me(token) {
   var u = publicUser_(requireUser_(token));
   if (__actor) u.impersonator = { regNumber: __actor.regNumber, fullName: __actor.fullName };
@@ -850,7 +1198,7 @@ function api_me(token) {
 /** Phase 4: sliding-session heartbeat — the client calls this from the "Stay signed in"
  *  action of the session-expiry toast; requireUser_ slides the TTL forward as a side effect. */
 function api_heartbeat(token) {
-  var u = requireUser_(token);
+  var u = requireUser_(token); touchSession_(token);
   return { ok: true, expiresAt: new Date(Date.now() + CFG.SESSION_TTL_SECONDS * 1000).toISOString() };
 }
 
@@ -896,6 +1244,7 @@ function api_impersonate(token, regNumber) {
   return { token: tok, user: u, impersonator: { regNumber: admin.regNumber, fullName: admin.fullName }, expiresInSeconds: IMPERSONATION_TTL };
 }
 function api_stopImpersonating(token) {
+  __ruMemo = null;
   if (!token) return true;
   var cache = CacheService.getScriptCache(), raw = cache.get('sess_' + token), sess = null;
   try { sess = raw ? JSON.parse(raw) : null; } catch (e) {}
@@ -947,7 +1296,8 @@ function createSuperAdmin(regNumber, fullName, email, password, forceConvert) {
 }
 
 /** RUN ONCE from the Apps Script editor to repair the Super Admin ACA8888 without changing its password:
- *  it re-activates the login, restores the SuperAdmin role and Approved status, and clears any login lockout. */
+ *  it re-activates the login, restores the SuperAdmin role and Approved status, and clears any login lockout.
+ *  If the password has also been lost, run fixSuperAdminACA8888() instead (or afterwards). */
 function restoreSuperAdmin(regNumber) {
   var reg = String(regNumber || 'ACA8888').trim().toUpperCase();
   var u = findWhere_('Users', function (x) { return normReg_(x.regNumber) === reg; });
@@ -957,6 +1307,64 @@ function restoreSuperAdmin(regNumber) {
   clearLoginFailures_(reg);
   logAudit_('system', 'setup', 'RESTORE_SUPERADMIN', reg, 'Role, active and status restored');
   Logger.log('Super Admin restored: ' + reg + ' (password unchanged)');
+}
+
+/** RUN ONCE from the Apps Script editor when a Super Admin login no longer works:
+ *    fixSuperAdminACA8888()
+ *  Restores the exact SuperAdmin role, active + Approved status and normalised ID, clears any login lockout,
+ *  invalidates existing sessions, then sets a fresh one-time password and emails it to the address in the Users
+ *  row. If mail cannot be sent, the one-time password is printed in the Execution log. Sign in with it once;
+ *  the portal will force a password change. To set a known password instead, pass it as the second argument:
+ *    fixSuperAdminACA8888('ACA8888', 'A-Strong-Passw0rd')
+ */
+function fixSuperAdminACA8888(regNumber, password) {
+  var reg = String(regNumber || 'ACA8888').trim().toUpperCase();
+  return withScriptLock_(function () {
+    var u = findWhere_('Users', function (x) { return normReg_(x.regNumber) === reg; });
+    if (!u) throw new Error(reg + ' was not found in the Users sheet. Run createSuperAdmin(\'' + reg + '\', \'Your Name\', \'you@example.com\', \'A-Strong-Passw0rd\') instead.');
+    var supplied = String(password || '');
+    var salt = makeSalt_(), tempPw = '';
+    if (supplied) {
+      assertStrongPassword_(supplied, reg);
+      updateRow_('Users', u.id, { regNumber: reg, role: 'SuperAdmin', active: true, status: 'Approved',
+        passwordHash: hashPassword_(supplied, salt), salt: salt, firstLogin: true });
+    } else {
+      tempPw = genTempPassword_();
+      updateRow_('Users', u.id, { regNumber: reg, role: 'SuperAdmin', active: true, status: 'Approved',
+        passwordHash: hashPassword_(tempPw, salt), salt: salt, firstLogin: true });
+    }
+    bumpSessionEpoch_(u.id);
+    clearLoginFailures_(reg);
+    logAudit_('system', 'setup', 'FIX_SUPERADMIN', reg, 'Role, status, active, lockout and password repaired');
+    var emailed = false;
+    if (!supplied && validateEmail_(cleanEmail_(u.email))) {
+      try {
+        emailed = notifyStaffLogin_(u.email, u.fullName || u.regNumber, reg, 'SuperAdmin', tempPw) === true;
+      } catch (e) { Logger.log('fixSuperAdminACA8888 mail failed for ' + reg + ': ' + e); }
+    }
+    Logger.log('Super Admin repaired: ' + reg + '. Sign in with ' + (supplied ? 'the password you supplied' : (emailed ? 'the one-time password emailed to ' + (u.email || '') : 'the one-time password below')) + ', then choose a new password when prompted.');
+    if (!supplied && !emailed) Logger.log('One-time password for ' + reg + ': ' + tempPw);
+    return { ok: true, regNumber: reg, emailed: emailed, tempPassword: (!supplied && !emailed) ? tempPw : '' };
+  }, 30000);
+}
+/** Generic alias so another Super Admin ID can be repaired the same way. */
+function repairSuperAdmin(regNumber, password) { return fixSuperAdminACA8888(regNumber, password); }
+
+/** RUN ONCE from the Apps Script editor with NO arguments. Use this if the function dropdown is easier than passing arguments.
+ *  Repairs ACA8888 when the row already exists; creates it when the row is missing. The email defaults to the editor account,
+ *  then to the portal enquiries address. A generated one-time password is logged (and emailed when mail is available). */
+function setupSuperAdminACA8888() {
+  var reg = 'ACA8888', email = '';
+  try { email = cleanEmail_(Session.getActiveUser().getEmail() || ''); } catch (e) {}
+  if (!validateEmail_(email)) email = mailEnquiriesAddress_();
+  var existing = findWhere_('Users', function (u) { return normReg_(u.regNumber) === reg; });
+  if (existing) return fixSuperAdminACA8888(reg);
+  var pw = genTempPassword_();
+  createSuperAdmin(reg, 'Super Admin', email, pw);
+  var emailed = false;
+  try { emailed = notifyStaffLogin_(email, 'Super Admin', reg, 'SuperAdmin', pw) === true; } catch (e) { Logger.log('setupSuperAdminACA8888 mail failed: ' + e); }
+  Logger.log('Created Super Admin ' + reg + ' for ' + email + '. One-time password: ' + pw + (emailed ? ' (also emailed)' : '') + '. Sign in and change it when prompted.');
+  return { ok: true, created: true, regNumber: reg, email: email, emailed: emailed, tempPassword: pw };
 }
 
 /* =========================== 5. SETUP / SEED =========================== */
@@ -1157,7 +1565,7 @@ function api_register_locked_(payload) {
     admissionLetterUrl: letterInfo ? letterInfo.url : '',
     mainSupervisorId: '',
     coSupervisorId: '',
-    currentStage: '1 - Admission',
+    currentStage: START_STAGE_,
     yearOfAdmission: academicYearFromReg_(reg) || new Date().getFullYear(),
     createdAt: now,
     updatedAt: now
@@ -1251,7 +1659,7 @@ function notifyRegistrationDecision_(target, status, reason, tempPassword) {
       return '<tr><td style="padding:6px 8px;border:1px solid #e2e8e4;background:#f4f7f5;color:#14532d;white-space:nowrap"><strong>' + escHtml_(r[0]) + '</strong></td><td style="padding:6px 8px;border:1px solid #e2e8e4' + (approved && i === 1 ? ';font-family:monospace' : '') + '">' + escHtml_(r[1]) + '</td></tr>';
     }).join('') + '</table>' +
     '<p style="color:#66756f;font-size:13px;margin-top:12px">' + (approved ? 'You will be asked to choose a new password at your first sign-in.' : 'For clarification, contact the PG Coordinator at ' + escHtml_(mailEnquiriesAddress_()) + '.') + '</p>';
-  return sendPortalMail_({ to: target.email, subject: head + ' — ' + target.regNumber + ' (' + CFG.APP_NAME + ')', body: text, htmlBody: html });
+  return sendPortalMail_({ to: target.email, subject: head + ' — ' + target.regNumber + ' (' + CFG.APP_NAME + ')', body: text, htmlBody: html, immediate: approved });
 }
 
 /** Branded account-created email (coordinator added a student directly). */
@@ -1273,7 +1681,7 @@ function notifyStudentAccountCreated_(p) {
       return '<tr><td style="padding:6px 8px;border:1px solid #e2e8e4;background:#f4f7f5;color:#14532d;white-space:nowrap"><strong>' + escHtml_(r[0]) + '</strong></td><td style="padding:6px 8px;border:1px solid #e2e8e4' + (i === 2 ? ';font-family:monospace' : '') + '">' + escHtml_(String(r[1] || '—')) + '</td></tr>';
     }).join('') +
     '</table><p style="color:#66756f;font-size:13px;margin-top:12px">For your security you will be asked to choose a new password at first sign-in. Open the portal Login page to sign in.</p>';
-  return sendPortalMail_({ to: p.email, subject: 'Portal account created — ' + p.regNumber + ' (' + CFG.APP_NAME + ')', body: text, htmlBody: html });
+  return sendPortalMail_({ to: p.email, subject: 'Portal account created — ' + p.regNumber + ' (' + CFG.APP_NAME + ')', body: text, htmlBody: html, immediate: true });
 }
 
 /**
@@ -1328,12 +1736,13 @@ function formatLinkColumns() {
 }
 
 
-/** Optional admission letter (PDF/JPG/PNG, up to 3 MB). Not public: only the PG Coordinator(s) and HoD get view access in Drive. */
+/** Optional admission letter (PDF only, up to 3 MB). Not public: only the PG Coordinator(s) and HoD get view access in Drive. */
 function saveAdmissionLetter_(filePayload, regNumber) {
   var parts = String(filePayload.dataUrl).split(','), mm = parts[0].match(/data:(.*?);/), mime = mm ? mm[1] : '';
-  var ext = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' }[mime];
-  if (!ext) throw new Error('The admission letter must be a PDF, JPG or PNG file.');
+  var ext = { 'application/pdf': 'pdf' }[mime];
+  if (!ext) throw new Error('The admission letter must be a PDF file.');
   var bytes = Utilities.base64Decode(parts[1] || '');
+  assertMagicBytes_(ext, bytes);
   if (bytes.length > 3 * 1024 * 1024) throw new Error('The admission letter must be under 3 MB.');
   try {
     var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Admission Letters');
@@ -1347,6 +1756,16 @@ function saveAdmissionLetter_(filePayload, regNumber) {
     Logger.log('saveAdmissionLetter_ failed: ' + e);
     throw new Error('Could not save the admission letter. Please try again, or register without it and give it to the PG Coordinator.');
   }
+}
+/** Stage 1 document from the config-driven dashboard. Uses the same private storage as the registration form. */
+function api_uploadAdmissionLetter(token, p) {
+  var user = requireUser_(token); assertWritable_(); assertRole_(user, ['Student'], 'Only students can upload an admission letter.');
+  var stu = studentByReg_(user.regNumber); if (!stu) throw new Error('Student profile not found.');
+  var info = saveAdmissionLetter_(p, user.regNumber);
+  try { lockFile_(DriveApp.getFileById(info.id)); } catch (e) { Logger.log('admission lock: ' + e); }
+  updateRow_('Students', stu.id, { admissionLetterUrl: info.url, updatedAt: nowIso_() });
+  logAudit_(user.id, user.regNumber, 'UPLOAD_ADMISSION_LETTER', user.regNumber, info.id);
+  return { url: info.url, id: info.id };
 }
 /** Possible duplicates among registered students: same phone number, or the same first name + surname. */
 function dupFlags_(stu, all) {
@@ -1366,7 +1785,7 @@ function dupFlags_(stu, all) {
  * through api_getPhotos to the student, their supervisors and the Coordinator / HoD / Super Admin.
  * PASSPORT_PRIVACY in the Config tab is kept for older sheets but is no longer read. */
 function passportPrivate_() { return true; }
-function api_getPhotos(token, ids) {
+function api_getPhotos(token, ids, size) {
   var user = requireUser_(token), want = (ids || []).slice(0, 8).map(String), allowed = {};
   readTable_('Students').forEach(function (st) {
     if (!st.passportFileId) return;
@@ -1374,13 +1793,20 @@ function api_getPhotos(token, ids) {
       : user.role === 'Staff' ? supOf_(user, st) : ['PG_Coordinator', 'HoD', 'SuperAdmin'].indexOf(user.role) > -1;
     if (ok) allowed[String(st.passportFileId)] = 1;
   });
-  var out = {}, cache = CacheService.getScriptCache();
-  want.forEach(function (id) {
-    if (!allowed[id]) return;
-    var hit = cache.get('ph_' + id); if (hit) { out[id] = hit; return; }
+  /* P4: size === 'thumb' serves Drive's small generated thumbnail (a few KB), which fits the script cache and is shared by every user for
+     6 hours. The full photo (often over the 100 KB cache limit) was re-read from Drive on every page open. Falls back to the full photo
+     when Drive has no thumbnail yet. */
+  var thumb = String(size || '') === 'thumb', pre = thumb ? 'pht_' : 'ph_', out = {}, cache = CacheService.getScriptCache();
+  var okIds = want.filter(function (id) { return allowed[id]; });
+  if (!okIds.length) return out;
+  var hits = {}; try { hits = cache.getAll(okIds.map(function (id) { return pre + id; })) || {}; } catch (e) {}
+  okIds.forEach(function (id) {
+    var hit = hits[pre + id]; if (hit) { out[id] = hit; return; }
     try {
-      var blob = DriveApp.getFileById(id).getBlob(), data = 'data:' + blob.getContentType() + ';base64,' + Utilities.base64Encode(blob.getBytes());
-      out[id] = data; if (data.length < 95000) cache.put('ph_' + id, data, 21600);
+      var f = DriveApp.getFileById(id), blob = thumb ? f.getThumbnail() : null;
+      if (!blob) blob = f.getBlob();
+      var data = 'data:' + blob.getContentType() + ';base64,' + Utilities.base64Encode(blob.getBytes());
+      out[id] = data; if (data.length < 95000) cache.put(pre + id, data, 21600);
     } catch (e) { Logger.log('photo ' + id + ': ' + e); }
   });
   return out;
@@ -1460,10 +1886,12 @@ function savePassportPhoto_(filePayload, regNumber) {
   var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
   // Phase 4: HEIC (phone cameras) is accepted here and stored as JPG — the browser normally
   // converts to JPEG via the resize step before the upload, so this is a tolerance, not a path.
-  if (['image/jpeg', 'image/png', 'image/heic', 'image/heif'].indexOf(mime) === -1) throw new Error('Passport must be a photo (JPG, PNG or HEIC).');
+  if (mime === 'image/jpg' || mime === 'image/pjpeg') mime = 'image/jpeg';
+  if (['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/gif', 'image/bmp'].indexOf(mime) === -1) throw new Error('Passport must be a photo (JPG, PNG, WEBP or HEIC).');
   var bytes = Utilities.base64Decode(parts[1]);
-  if (bytes.length > CFG.UPLOAD_MAX_BYTES) throw new Error('Passport photo must be under 1 MB.');
-  var ext = mime === 'image/png' ? 'png' : 'jpg';
+  var ext = ({ 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/bmp': 'bmp', 'image/heic': 'heic', 'image/heif': 'heif' })[mime] || 'jpg';
+  if (ext === 'jpg' || ext === 'png') assertMagicBytes_(ext, bytes);
+  if (bytes.length > CFG.UPLOAD_MAX_BYTES) throw new Error('Passport photo must be under 5 MB.');
   var blob = Utilities.newBlob(bytes, mime, regNumber.replace(/[\/\\]/g, '-') + '_passport_' + new Date().getTime() + '.' + ext);
   try {
     var folderId = getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID);
@@ -1535,6 +1963,375 @@ function api_saveStaff_locked_(token, payload) {
   return { id: row.id };
 }
 function api_saveStaff() { var a = arguments; return withScriptLock_(function () { return api_saveStaff_locked_.apply(null, a); }, 30000); }
+
+/* ==================== CORRECT A STUDENT'S REGISTRATION NUMBER ====================
+ *  changeRegNumber('OLD/NUMBER', 'NEW/NUMBER')          -> DRY RUN (default): lists every cell that would change
+ *  changeRegNumber('OLD/NUMBER', 'NEW/NUMBER', false)   -> applies the change
+ *
+ *  The registration number is the key of Users and Students, so it must never be edited by hand in the sheet: the
+ *  student's rows in the other tabs would stop matching. This function renames it everywhere in one locked step:
+ *  Users, Students, and every cell that holds it (regNumber, ownerReg, createdBy, createdByReg ... in Submissions,
+ *  Meetings, Notifications, Messages, Inquiries, Requests, PresentationIntents, Examiners, Actions, Reviews, Concerns,
+ *  CheckIns, SubComments, plus the reg lists in Seminars, Meetings.seenBy and Messages.readBy). yearOfAdmission is
+ *  recalculated from the new number. The student keeps the same password and must sign in again with the NEW number.
+ *  Not changed: the AuditLog (history stays as it was; one CHANGE_REG_NUMBER entry is added), free text and history
+ *  notes, and Drive file names. Refuses when the new number is invalid or already in use, or when the old one is not a
+ *  student (staff IDs are linked to the Staff tab and are not handled here). */
+var REG_CASCADE_SKIP_ = { Config: 1, Staff: 1, Templates: 1, Announcements: 1, Deadlines: 1, ProgrammeSessions: 1, AuditLog: 1 };
+var REG_LIST_COLS_ = { seenBy: 1, readBy: 1, presenters: 1, attendees: 1 };
+
+function changeRegNumber(oldReg, newReg, dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var ss = getSpreadsheet_();
+  var oldIn = String(oldReg || '').trim(), nw = String(newReg || '').trim();
+  if (!oldIn || !nw) throw new Error('Usage: changeRegNumber("OLD", "NEW"). Both numbers are required.');
+  var acct = findUserByReg_(oldIn);
+  var stu = findWhere_('Students', function (r) { return normReg_(r.regNumber) === normReg_(oldIn); });
+  if (!acct || !stu) throw new Error('No registered student with number "' + oldIn + '".');
+  if (String(acct.role) !== 'Student') throw new Error(oldIn + ' is a ' + acct.role + ' login, not a student. This function only corrects student numbers.');
+  if (!validateRegNumber_(nw)) throw new Error('"' + nw + '" is not a valid registration number format.');
+  if (normReg_(nw) === normReg_(oldIn) && nw === String(acct.regNumber).trim()) throw new Error('The new number is the same as the old one.');
+  var clash = findUserByReg_(nw) || findWhere_('Students', function (r) { return normReg_(r.regNumber) === normReg_(nw); });
+  if (clash && normReg_(nw) !== normReg_(oldIn)) throw new Error('"' + nw + '" is already registered to another account. Nothing was changed.');
+  var key = normReg_(oldIn), report = { dryRun: !!dryRun, from: String(acct.regNumber).trim(), to: nw, cells: {}, total: 0 };
+
+  var hitsByTab = {};
+  Object.keys(HEADERS).filter(function (n) { return !REG_CASCADE_SKIP_[n]; }).forEach(function (name) {
+    var sheet = ss.getSheetByName(name);
+    if (!sheet || sheet.getLastRow() < 2) return;
+    var vals = sheet.getDataRange().getValues(), heads = vals[0].map(function (h) { return String(h).trim(); }), hits = [];
+    for (var r = 1; r < vals.length; r++) for (var c = 0; c < heads.length; c++) {
+      var v = vals[r][c];
+      if (v === '' || v === null || v === undefined) continue;
+      if (REG_LIST_COLS_[heads[c]]) {
+        var s = String(v), out = s.split(/([,|]\s*)/).map(function (t) { return normReg_(t) === key ? nw : t; }).join('');
+        if (out !== s) hits.push({ r: r + 1, c: c + 1, v: out });
+      } else if (normReg_(v) === key) hits.push({ r: r + 1, c: c + 1, v: nw });
+    }
+    if (hits.length) { hitsByTab[name] = { sheet: sheet, hits: hits }; report.cells[name] = hits.length; report.total += hits.length; }
+  });
+
+  if (!dryRun) {
+    withScriptLock_(function () {
+      Object.keys(hitsByTab).forEach(function (name) {
+        var t = hitsByTab[name];
+        t.hits.forEach(function (h) { t.sheet.getRange(h.r, h.c).setValue(cellSafe_(h.v)); });
+        invalidateTable_(name);
+      });
+      invalidateTable_('Users'); invalidateTable_('Students');
+      var yr = academicYearFromReg_(nw);
+      if (yr) updateRow_('Students', nw, { yearOfAdmission: yr, updatedAt: nowIso_() });
+      else updateRow_('Students', nw, { updatedAt: nowIso_() });
+      try { clearTableCaches(); } catch (e) {}
+      try { clearLoginFailures_(normReg_(oldIn)); clearLoginFailures_(normReg_(nw)); } catch (e) {}
+    }, 60000);
+    try { notifyStudent_(nw, 'Registration number updated', 'Your registration number has been corrected to ' + nw + '. Please use it to sign in. Your password is unchanged.'); } catch (e) { Logger.log(e); }
+    try { logAudit_('system', 'editor', 'CHANGE_REG_NUMBER', nw, report.from + ' -> ' + nw + ' (' + report.total + ' cells)'); } catch (e) {}
+  }
+  var msg = 'changeRegNumber ' + report.from + ' -> ' + nw + (dryRun ? ' (DRY RUN - nothing changed)' : '') + '\n' +
+    'Cells ' + (dryRun ? 'to update' : 'updated') + ': ' + report.total + ' ' + JSON.stringify(report.cells);
+  Logger.log(msg);
+  return report;
+}
+
+/* ==================== ONE-TIME MIGRATION: REMOVE THE "id" COLUMN FROM Users AND Students ====================
+ *  removeIdColumns()        -> DRY RUN (default): checks every row and reports, changes nothing
+ *  removeIdColumns(false)   -> deletes the "id" column from Users and Students
+ *
+ *  Users and Students are now keyed by the registration number (staff ID for staff logins): the code gives each row a
+ *  virtual id equal to its regNumber, so nothing else changes. The column is only deleted when, in every row, id equals
+ *  regNumber (otherwise other tabs could point at an id that would vanish). Any mismatch is listed and nothing is deleted.
+ *  Safe to re-run; a tab that has no id column is skipped. Take a backup copy of the spreadsheet first. */
+function removeIdColumns(dryRun) {
+  if (dryRun === undefined) dryRun = true;
+  var report = { dryRun: !!dryRun, tabs: {}, mismatches: [] };
+  var plan = [];
+  Object.keys(REGNUM_KEYED_).forEach(function (name) {
+    var sheet = getSpreadsheet_().getSheetByName(name);
+    if (!sheet || sheet.getLastColumn() < 1) { report.tabs[name] = 'tab not found - skipped'; return; }
+    var heads = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+    var idCol = heads.indexOf('id') + 1, regCol = heads.indexOf('regNumber') + 1;
+    if (!regCol) { report.mismatches.push(name + ': no regNumber column - cannot continue'); return; }
+    if (!idCol) { report.tabs[name] = 'no id column - already done'; return; }
+    var n = Math.max(0, sheet.getLastRow() - 1), bad = 0;
+    if (n) {
+      var ids = sheet.getRange(2, idCol, n, 1).getValues(), regs = sheet.getRange(2, regCol, n, 1).getValues();
+      for (var i = 0; i < n; i++) {
+        var idv = String(ids[i][0]).trim(), rg = String(regs[i][0]).trim();
+        if (idv !== '' && idv !== rg) { bad++; report.mismatches.push(name + ' row ' + (i + 2) + ': id "' + idv + '" differs from regNumber "' + rg + '"'); }
+      }
+    }
+    report.tabs[name] = (bad ? bad + ' mismatch(es) - ' : 'ok - ') + n + ' row(s); id column ' + (dryRun ? 'would be' : 'will be') + ' deleted';
+    plan.push({ sheet: sheet, idCol: idCol, name: name, bad: bad });
+  });
+  var blocked = report.mismatches.length > 0;
+  if (!dryRun && !blocked) {
+    withScriptLock_(function () {
+      plan.forEach(function (p) { p.sheet.deleteColumn(p.idCol); report.tabs[p.name] = 'id column deleted'; });
+      Object.keys(REGNUM_KEYED_).forEach(function (name) { try { invalidateTable_(name); } catch (e) {} });
+      try { clearTableCaches(); } catch (e) {}
+    }, 60000);
+    try { logAudit_('system', 'migration', 'REMOVE_ID_COLUMNS', 'Users,Students', JSON.stringify(report.tabs)); } catch (e) {}
+  }
+  var msg = 'removeIdColumns' + (dryRun ? ' (DRY RUN - nothing changed)' : '') + '\n' +
+    Object.keys(report.tabs).map(function (k) { return k + ': ' + report.tabs[k]; }).join('\n') +
+    (blocked ? '\nBLOCKED - nothing was deleted. Fix these first:\n  ' + report.mismatches.join('\n  ') : '');
+  Logger.log(msg);
+  return report;
+}
+
+/* ==================== TRAINING RESET ====================
+ *  resetForTraining()               -> DRY RUN: nothing is changed, the report shows what WOULD be removed (default)
+ *  resetForTraining(false)          -> performs the reset
+ *  resetForTraining(false, true)    -> also clears Announcements, Deadlines and Seminars
+ *
+ *  Removes: every Student (and Examiner) login in Users, all rows of Students and of the student-generated tabs
+ *  (Submissions, Meetings, Messages, Inquiries, Requests, Notifications, AuditLog ...), and the uploaded files in Drive
+ *  (passports, submissions, admission letters, attachments, examination notices).
+ *  Keeps: header rows, the Staff tab, every staff / HoD / PG Coordinator / Inspector / SuperAdmin login in Users,
+ *  Templates, ProgrammeSessions, Config (only the letter reference counter is reset), the Backups folder, and every
+ *  Drive file that Config or Script Properties points to (logos, letter templates).
+ *  Refuses to run if it would leave no active SuperAdmin or PG Coordinator able to sign in.
+ *
+ *  IDs: Users and Students rows always take the registration number as their id (appendRow_), so fresh registrations
+ *  get reg-number ids. The other tabs (Submissions, Meetings ...) hold many rows per student, so they keep their
+ *  prefixed sequence (Sub01, Mtg01 ...). Those counters read the sheet, so they restart at 01 once the tabs are empty.
+ *  Safe to re-run: if the Drive clean-up stops at the time limit, run it again to finish. */
+var TRAINING_WIPE_TABS_ = ['Students', 'Submissions', 'SubComments', 'Meetings', 'Actions', 'Messages', 'Inquiries', 'Requests',
+  'PresentationIntents', 'Examiners', 'Reviews', 'Concerns', 'CheckIns', 'Notifications', 'AuditLog'];
+var TRAINING_CALENDAR_TABS_ = ['Announcements', 'Deadlines', 'Seminars'];
+var TRAINING_WIPE_ROLES_ = ['student', 'examiner'];
+var TRAINING_DRIVE_FOLDERS_ = ['Submissions', 'Admission Letters', 'Attachments', 'Examination Notices'];
+
+/** Drive file ids that must never be trashed: anything named in Config, Script Properties or the default logo URLs. */
+function trainingProtectedIds_() {
+  var ids = {};
+  var add = function (s) { (String(s || '').match(/[-\w]{25,}/g) || []).forEach(function (m) { ids[m] = 1; }); };
+  readTableSafe_('Config').forEach(function (r) { add(r.value); });
+  add(CFG.DEFAULT_LOGO_URL); add(CFG.DEFAULT_CBS_LOGO_URL);
+  try { var p = PropertiesService.getScriptProperties().getProperties(); Object.keys(p).forEach(function (k) { add(p[k]); }); } catch (e) {}
+  return ids;
+}
+
+/** Delete the given 1-based row numbers, merging neighbours into single deleteRows calls (bottom-up so numbers stay valid). */
+function trainingDeleteRows_(sheet, rows) {
+  rows = rows.slice().sort(function (a, b) { return b - a; });
+  var i = 0;
+  while (i < rows.length) {
+    var start = rows[i], n = 1;
+    while (i + n < rows.length && rows[i + n] === start - n) n++;
+    sheet.deleteRows(start - n + 1, n);
+    i += n;
+  }
+}
+
+/** Remove every data row of a tab but keep the header. Returns the number of rows removed. */
+function trainingWipeTab_(ss, name) {
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) return 0;
+  var last = sheet.getLastRow();
+  if (last < 2) return 0;
+  var n = last - 1;
+  if (sheet.getMaxRows() <= last) sheet.insertRowsAfter(last, 1);   // Sheets refuses to delete every non-frozen row
+  sheet.deleteRows(2, n);
+  return n;
+}
+
+function resetForTraining(dryRun, clearCalendar) {
+  if (dryRun === undefined) dryRun = true;
+  var t0 = Date.now(), BUDGET_MS = 270000;
+  var ss = getSpreadsheet_();
+  var rep = { dryRun: !!dryRun, usersRemoved: [], usersKept: [], tabs: {}, driveTrashed: 0, driveSkippedProtected: 0, driveErrors: 0, drivePartial: false, idWarnings: [] };
+
+  /* ---- 1. Users: split into students/examiners (go) and everyone else (stays) ---- */
+  var users = readTableSafe_('Users'), drop = [], keep = [];
+  users.forEach(function (u) {
+    (TRAINING_WIPE_ROLES_.indexOf(String(u.role || '').trim().toLowerCase()) > -1 ? drop : keep).push(u);
+  });
+  var canSignIn = keep.some(function (u) {
+    return ['SuperAdmin', 'PG_Coordinator'].indexOf(String(u.role || '').trim()) > -1 && toBool_(u.active) && String(u.status) === 'Approved';
+  });
+  if (!canSignIn) throw new Error('Reset cancelled: it would leave no active, approved SuperAdmin or PG Coordinator in Users. Nothing was changed.');
+  rep.usersRemoved = drop.map(function (u) { return u.regNumber + ' (' + u.role + ')'; });
+  rep.usersKept = keep.map(function (u) { return u.regNumber + ' (' + u.role + ')'; });
+  keep.forEach(function (u) {
+    if (String(u.id || '') !== String(u.regNumber || '').trim()) rep.idWarnings.push('Users: id "' + u.id + '" differs from regNumber "' + u.regNumber + '"');
+  });
+
+  /* ---- 2. Count what each tab would lose ---- */
+  var tabs = TRAINING_WIPE_TABS_.concat(clearCalendar ? TRAINING_CALENDAR_TABS_ : []);
+  tabs.forEach(function (name) { var sh = ss.getSheetByName(name); rep.tabs[name] = sh ? Math.max(0, sh.getLastRow() - 1) : 0; });
+
+  /* ---- 3. Facts needed for the Drive step, read BEFORE the sheets are emptied ---- */
+  var passportIds = {};
+  readTableSafe_('Students').forEach(function (s) { if (s.passportFileId) passportIds[String(s.passportFileId)] = 1; });
+  var protectedIds = trainingProtectedIds_();
+
+  /* ---- 4. Sheets ---- */
+  if (!dryRun) {
+    withScriptLock_(function () {
+      trainingDeleteRows_(getSheet_('Users'), drop.map(function (u) { return u._row; }));
+      tabs.forEach(function (name) { trainingWipeTab_(ss, name); });
+      try { setSetting_('LETTER_REF_SERIAL', '0'); setSetting_('LETTER_REF_YEAR', ''); } catch (e) { Logger.log('letter counter reset: ' + e); }
+      Object.keys(HEADERS).forEach(function (name) { try { invalidateTable_(name); } catch (e) {} });
+      clearTableCaches();
+    }, 60000);
+  }
+
+  /* ---- 5. Drive: trash uploaded files, keep the folders and Backups ---- */
+  var root = null;
+  try { root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)); } catch (e) { rep.driveError = 'Drive folder not reachable: ' + e; }
+  var handle = function (f, allowed) {
+    if (Date.now() - t0 > BUDGET_MS) { rep.drivePartial = true; return false; }
+    var id = f.getId();
+    if (protectedIds[id]) { rep.driveSkippedProtected++; return true; }
+    if (!allowed(f, id)) return true;
+    if (!dryRun) { try { f.setTrashed(true); } catch (e) { rep.driveErrors++; return true; } }
+    rep.driveTrashed++;
+    return true;
+  };
+  var walk = function (folder) {
+    var files = folder.getFiles();
+    while (files.hasNext()) { if (!handle(files.next(), function () { return true; })) return; }
+    var subs = folder.getFolders();
+    while (subs.hasNext() && !rep.drivePartial) walk(subs.next());
+  };
+  if (root) {
+    // loose files in the root: only passport photos (known id, or the reg_passport_<time>.<ext> name the portal gives them)
+    var rootFiles = root.getFiles();
+    while (rootFiles.hasNext()) {
+      if (!handle(rootFiles.next(), function (f, id) { return !!passportIds[id] || /_passport_\d+\.\w+$/i.test(f.getName()); })) break;
+    }
+    TRAINING_DRIVE_FOLDERS_.forEach(function (n) {
+      if (rep.drivePartial) return;
+      var it = root.getFoldersByName(n);
+      if (it.hasNext()) walk(it.next());
+    });
+  }
+
+  /* ---- 6. Record it and report ---- */
+  if (!dryRun) logAudit_('', 'training-reset', 'TRAINING_RESET', 'ALL', 'Removed ' + drop.length + ' login(s), cleared ' + tabs.length + ' tab(s), trashed ' + rep.driveTrashed + ' file(s)');
+  var msg = 'resetForTraining' + (dryRun ? ' (DRY RUN — nothing changed)' : '') + '\n' +
+    'Logins removed (' + rep.usersRemoved.length + '): ' + (rep.usersRemoved.join(', ') || 'none') + '\n' +
+    'Logins kept (' + rep.usersKept.length + '): ' + (rep.usersKept.join(', ') || 'none') + '\n' +
+    'Rows ' + (dryRun ? 'to clear' : 'cleared') + ': ' + Object.keys(rep.tabs).map(function (k) { return k + '=' + rep.tabs[k]; }).join(', ') + '\n' +
+    'Drive files ' + (dryRun ? 'to trash' : 'trashed') + ': ' + rep.driveTrashed + ' (protected, skipped: ' + rep.driveSkippedProtected + ', errors: ' + rep.driveErrors + ')' +
+    (rep.drivePartial ? '\nDrive clean-up stopped at the time limit — run resetForTraining(false) again to finish.' : '') +
+    (rep.driveError ? '\n' + rep.driveError : '') +
+    (rep.idWarnings.length ? '\nID warnings: ' + rep.idWarnings.join('; ') : '');
+  Logger.log(msg);
+  return rep;
+}
+
+/* ==================== TRAINING RESET - KEEP REGISTERED STUDENTS ====================
+ *  resetKeepingStudents()               -> DRY RUN (default): changes nothing, reports what WOULD happen
+ *  resetKeepingStudents(false)          -> performs it
+ *  resetKeepingStudents(false, true)    -> also clears Announcements, Deadlines and Seminars
+ *
+ *  For a session that starts at SUPERVISOR ALLOCATION. Every student keeps their login (Users row, password, email),
+ *  their Students profile, passport photo and admission letter. For each student it then:
+ *    - removes the main / co-supervisor and sets the stage back to "3 - Supervisor Allocation"
+ *    - clears the thesis title and its approval, the nudge date, every "File - ..." column and the latest-upload fields
+ *  It empties the tabs that hold work done after allocation (Submissions, SubComments, Meetings, Actions, Messages,
+ *  Inquiries, Requests, PresentationIntents, Examiners, Reviews, Concerns, CheckIns, Notifications, AuditLog), removes
+ *  Examiner logins, and trashes the uploaded files in Drive's Submissions, Attachments and Examination Notices folders.
+ *  Keeps: Staff, all other logins, Templates, ProgrammeSessions, Config (including the letter counter), the Backups folder,
+ *  the passport photos and the Admission Letters folder. Refuses to run if no active SuperAdmin / PG Coordinator would remain. */
+var TRAINING_KEEP_WIPE_TABS_ = ['Submissions', 'SubComments', 'Meetings', 'Actions', 'Messages', 'Inquiries', 'Requests',
+  'PresentationIntents', 'Examiners', 'Reviews', 'Concerns', 'CheckIns', 'Notifications', 'AuditLog'];
+var TRAINING_KEEP_DRIVE_FOLDERS_ = ['Submissions', 'Attachments', 'Examination Notices'];
+var TRAINING_START_STAGE_ = START_STAGE_;   // the training reset keeps students at the same starting stage
+
+/** Put every Students row back to the allocation stage with nothing allocated. Returns {students, withSupervisor}. */
+function trainingResetStudentRows_(ss, dryRun) {
+  var sheet = ss.getSheetByName('Students'), out = { students: 0, withSupervisor: 0 };
+  if (!sheet || sheet.getLastRow() < 2) return out;
+  var n = sheet.getLastRow() - 1, lastCol = sheet.getLastColumn();
+  var heads = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); });
+  var col = function (name) { return heads.indexOf(name) + 1; };
+  out.students = n;
+  var mainCol = col('mainSupervisorId'), coCol = col('coSupervisorId');
+  if (mainCol || coCol) {
+    var mains = mainCol ? sheet.getRange(2, mainCol, n, 1).getValues() : [], cos = coCol ? sheet.getRange(2, coCol, n, 1).getValues() : [];
+    for (var i = 0; i < n; i++) if ((mains[i] && String(mains[i][0]).trim()) || (cos[i] && String(cos[i][0]).trim())) out.withSupervisor++;
+  }
+  if (dryRun) return out;
+  var blank = ['mainSupervisorId', 'coSupervisorId', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt',
+    'lastNudgeAt', 'Latest Upload Date', 'Latest Upload Type'];
+  heads.forEach(function (h) { if (h.indexOf('File - ') === 0) blank.push(h); });
+  blank.forEach(function (h) { var c = col(h); if (c) sheet.getRange(2, c, n, 1).clearContent(); });
+  var sc = col('currentStage');
+  if (sc) { var vals = []; for (var k = 0; k < n; k++) vals.push([TRAINING_START_STAGE_]); sheet.getRange(2, sc, n, 1).setValues(vals); }
+  var uc = col('updatedAt');
+  if (uc) { var now = nowIso_(), u = []; for (var m = 0; m < n; m++) u.push([now]); sheet.getRange(2, uc, n, 1).setValues(u); }
+  return out;
+}
+
+function resetKeepingStudents(dryRun, clearCalendar) {
+  if (dryRun === undefined) dryRun = true;
+  var t0 = Date.now(), BUDGET_MS = 270000;
+  var ss = getSpreadsheet_();
+  var rep = { dryRun: !!dryRun, examinersRemoved: [], tabs: {}, students: 0, studentsWithSupervisor: 0, driveTrashed: 0, driveSkippedProtected: 0, driveErrors: 0, drivePartial: false };
+
+  /* 1. Users: only Examiner logins go; students and staff keep their logins */
+  var users = readTableSafe_('Users'), drop = [], keep = [];
+  users.forEach(function (u) { (String(u.role || '').trim().toLowerCase() === 'examiner' ? drop : keep).push(u); });
+  var canSignIn = keep.some(function (u) {
+    return ['SuperAdmin', 'PG_Coordinator'].indexOf(String(u.role || '').trim()) > -1 && toBool_(u.active) && String(u.status) === 'Approved';
+  });
+  if (!canSignIn) throw new Error('Reset cancelled: it would leave no active, approved SuperAdmin or PG Coordinator in Users. Nothing was changed.');
+  rep.examinersRemoved = drop.map(function (u) { return u.regNumber; });
+
+  /* 2. Counts */
+  var tabs = TRAINING_KEEP_WIPE_TABS_.concat(clearCalendar ? TRAINING_CALENDAR_TABS_ : []);
+  tabs.forEach(function (name) { var sh = ss.getSheetByName(name); rep.tabs[name] = sh ? Math.max(0, sh.getLastRow() - 1) : 0; });
+  var protectedIds = trainingProtectedIds_();
+
+  /* 3. Sheets */
+  var st = { students: 0, withSupervisor: 0 };
+  if (dryRun) st = trainingResetStudentRows_(ss, true);
+  else withScriptLock_(function () {
+    trainingDeleteRows_(getSheet_('Users'), drop.map(function (u) { return u._row; }));
+    st = trainingResetStudentRows_(ss, false);
+    tabs.forEach(function (name) { trainingWipeTab_(ss, name); });
+    Object.keys(HEADERS).forEach(function (name) { try { invalidateTable_(name); } catch (e) {} });
+    clearTableCaches();
+  }, 60000);
+  rep.students = st.students; rep.studentsWithSupervisor = st.withSupervisor;
+
+  /* 4. Drive: submissions, attachments and notices only (passports and admission letters stay) */
+  var root = null;
+  try { root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)); } catch (e) { rep.driveError = 'Drive folder not reachable: ' + e; }
+  var walk = function (folder) {
+    var files = folder.getFiles();
+    while (files.hasNext()) {
+      if (Date.now() - t0 > BUDGET_MS) { rep.drivePartial = true; return; }
+      var f = files.next();
+      if (protectedIds[f.getId()]) { rep.driveSkippedProtected++; continue; }
+      if (!dryRun) { try { f.setTrashed(true); } catch (e) { rep.driveErrors++; continue; } }
+      rep.driveTrashed++;
+    }
+    var subs = folder.getFolders();
+    while (subs.hasNext() && !rep.drivePartial) walk(subs.next());
+  };
+  if (root) TRAINING_KEEP_DRIVE_FOLDERS_.forEach(function (n) {
+    if (rep.drivePartial) return;
+    var it = root.getFoldersByName(n);
+    if (it.hasNext()) walk(it.next());
+  });
+
+  /* 5. Record + report */
+  if (!dryRun) logAudit_('', 'training-reset', 'TRAINING_RESET_KEEP_STUDENTS', 'ALL', 'Reset ' + rep.students + ' student(s) to allocation stage, cleared ' + tabs.length + ' tab(s), trashed ' + rep.driveTrashed + ' file(s)');
+  var msg = 'resetKeepingStudents' + (dryRun ? ' (DRY RUN — nothing changed)' : '') + '\n' +
+    'Students kept with their logins: ' + rep.students + ' (' + rep.studentsWithSupervisor + ' currently have a supervisor, which ' + (dryRun ? 'would be' : 'was') + ' removed)\n' +
+    'Examiner logins ' + (dryRun ? 'to remove' : 'removed') + ': ' + (rep.examinersRemoved.join(', ') || 'none') + '\n' +
+    'Rows ' + (dryRun ? 'to clear' : 'cleared') + ': ' + Object.keys(rep.tabs).map(function (k) { return k + '=' + rep.tabs[k]; }).join(', ') + '\n' +
+    'Drive files ' + (dryRun ? 'to trash' : 'trashed') + ': ' + rep.driveTrashed + ' (protected, skipped: ' + rep.driveSkippedProtected + ', errors: ' + rep.driveErrors + ')' +
+    (rep.drivePartial ? '\nDrive clean-up stopped at the time limit — run resetKeepingStudents(false) again to finish.' : '') +
+    (rep.driveError ? '\n' + rep.driveError : '');
+  Logger.log(msg);
+  return rep;
+}
 
 /* ==================== 7b. COORDINATOR: ADD/REMOVE STAFF & STUDENTS + IMPORT ==================== */
 
@@ -1615,7 +2412,7 @@ function createStudentAccount_(actor, payload, auditNote) {
     regNumber: reg, surname: String(payload.surname).trim(), firstName: String(payload.firstName).trim(), otherNames: String(payload.otherNames || '').trim(),
     gender: payload.gender, phoneNumber: phone, email: email, faculty: fd.faculty, department: fd.department,
     programme: payload.programme, specialisation: payload.specialisation, passportFileId: '', passportUrl: '',
-    mainSupervisorId: '', coSupervisorId: '', currentStage: '1 - Admission', yearOfAdmission: year, createdAt: now, updatedAt: now
+    mainSupervisorId: '', coSupervisorId: '', currentStage: START_STAGE_, yearOfAdmission: year, createdAt: now, updatedAt: now
   });
   appendRow_('Users', {
     regNumber: reg, email: email, passwordHash: hashPassword_(pw, salt), salt: salt, role: 'Student',
@@ -1721,6 +2518,20 @@ function api_removeStudent_locked_(token, regNumber) {
   return { ok: true, message: name + ' removed.' };
 }
 function api_removeStudent() { var a = arguments; return withScriptLock_(function () { return api_removeStudent_locked_.apply(null, a); }, 30000); }
+
+/* ---- Coordinator: correct a student's registration number from the dashboard ----
+ *  changeRegNumber() earlier in this file is the single source of truth for the cascade across Users, Students and
+ *  every linked tab. This endpoint only adds authentication, the coordinator role check, a read-only-preview guard
+ *  and the 30-second lock. It always applies the change (dryRun = false); the dashboard confirms first and then
+ *  shows the returned cell counts. */
+function api_changeStudentRegNumber_l(token, oldReg, newReg) {
+  var user = requireUser_(token);
+  assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can change registration numbers.');
+  assertWritable_();
+  var report = changeRegNumber(oldReg, newReg, false);
+  return { ok: true, from: report.from, to: report.to, total: report.total, cells: report.cells };
+}
+function api_changeStudentRegNumber() { return L_(api_changeStudentRegNumber_l, arguments); }
 
 /* ---- Sheet-driven staff import — the Staff tab is the source of truth ----
  * Paste the roster (e.g. an exported staff list) into the Staff tab and run
@@ -2111,12 +2922,18 @@ function api_assignSupervisors() {
   return { ok: true };
 }
 
+/** 10b exists only for PhD students; everyone else skips it between the first internal exam and stage 11. */
+function assertStageAllowedForStudent_(student, stage) {
+  if (stage === S_.SECOND_INTERNAL && !isPhd_(student.programme))
+    throw new Error('The second internal examination is a PhD-only stage. ' + (student.fullName || student.regNumber) + ' is on ' + (student.programme || 'a non-PhD') + ' programme.');
+}
 function api_updateStudentStage_locked_(token, regNumber, stage) {
   var user = requireUser_(token);
   assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can update the stage.');
   if (CFG.JOURNEY_STAGES.indexOf(stage) === -1) throw new Error('Invalid stage.');
   var student = studentByReg_(regNumber);
   if (!student) throw new Error('Student not found.');
+  assertStageAllowedForStudent_(student, stage);
   updateRow_('Students', student.id, { currentStage: stage, updatedAt: nowIso_() });
   logAudit_(user.id, user.regNumber, 'UPDATE_STAGE', regNumber, stage);
   notifyStudent_(regNumber, 'Journey stage updated', 'Your postgraduate journey stage is now: ' + stage + '.');
@@ -2174,6 +2991,7 @@ function api_updateStudentStage() { var a = arguments; return withScriptLock_(fu
 
 function api_updateProfilePhoto(token, filePayload) {
   var user = requireUser_(token);
+  assertWritable_();
   var student = studentByReg_(user.regNumber);
   if (!student) throw new Error('Student profile not found.');
   var fileInfo = savePassportPhoto_(filePayload, user.regNumber);
@@ -2228,6 +3046,10 @@ function api_getStudentDashboardBase_(token) {
     templates: templatesFor_(),
     examiners: studentExaminers_(student.regNumber),
     examinerReport: externalReportFor_(student.regNumber),
+    examinerFeedback: examinerFeedbackForStudent_(student.regNumber),
+    documents: documentsForStudent_(user, student),
+    downloads: downloadsForStudent_(),
+    documentCatalog: documentCatalogPayload_(),
     finalPackage: finalPackageStatus_(student.regNumber),
     stages: CFG.JOURNEY_STAGES,
     timeInfo: timeInfo_(student)
@@ -2236,45 +3058,46 @@ function api_getStudentDashboardBase_(token) {
 
 /* =========================== 11. SUBMISSIONS =========================== */
 
-/** Stage policy for examiner documents. Stage 11 is the External Defence/final presentation stage. */
+/** Stage, programme, feedback trigger and closing stage all come from the one catalogue entry. */
 function validateSubmissionStage_(stu, type) {
-  var idx = stu ? CFG.JOURNEY_STAGES.indexOf(String(stu.currentStage || '')) : -1;
+  var doc = documentByType_(type);
+  if (!doc || doc.uploader !== 'Student') throw new Error('That document type is no longer student-uploadable. Use the new document sections.');
+  var idx = stageIdx_(stu && stu.currentStage);
   if (idx < 0) throw new Error('Your current journey stage is not set. Ask the PG Coordinator to update it before submitting.');
-  var needs = { 'Research Proposal': S_.PROPOSAL, 'Signed Proposal Defence Form': S_.READY, 'Progress Report': S_.PROG_INTENT,
-    'Progress Presentation (PPTX)': S_.PRESENT, 'Final Thesis/Dissertation': S_.THESIS, 'External Examiner Comments': S_.COMMENTS,
-    'Comment-by-Comment Response (External Examiner)': S_.COMMENTS, 'Comment-by-Comment Response (Internal Examiner)': S_.COMMENTS, 'Final Correction': S_.COMMENTS };
-  var need = needs[type];
-  if (need && idx < CFG.JOURNEY_STAGES.indexOf(need))
-    throw new Error('\u201C' + type + '\u201D opens at stage \u201C' + need + '\u201D. Complete the earlier steps first, or request a stage update if your stage is wrong.');
-  if (type === 'Internal Examiner and Other Observations' && idx >= CFG.JOURNEY_STAGES.indexOf(S_.THESIS))
-    throw new Error('Internal Examiner and Other Observations must be submitted before the thesis goes for external examination.');
-  if (isPaymentType_(type) || type === 'Plagiarism Certificate') {   // fees receipt, proof of payment and plagiarism certificate: from Final Examination Intent until the external examination is under way
-    if (idx < CFG.JOURNEY_STAGES.indexOf(S_.FINAL_INTENT))
-      throw new Error('\u201C' + type + '\u201D opens at stage \u201C' + S_.FINAL_INTENT + '\u201D. Complete the earlier steps first, or request a stage update if your stage is wrong.');
-    if (idx >= CFG.JOURNEY_STAGES.indexOf(S_.COMMENTS))
-      throw new Error('\u201C' + type + '\u201D must be uploaded before the external examination (up to stage \u201C' + S_.EXT_EXAM + '\u201D).');
-  }
+  if (!docAppliesTo_(doc, stu)) throw new Error('\u201C' + doc.name + '\u201D is not available for your programme.');
+  var fbNow = examinerFeedbackForStudent_(stu.regNumber);
+  if (docAvailableForStudent_(doc, stu, fbNow)) return;
+  var key = documentFeedbackKey_(doc);
+  if (key && !feedbackReceived_(fbNow, key))
+    throw new Error('\u201C' + doc.name + '\u201D opens when examiner feedback has been received. Check Examiner Feedback on your dashboard.');
+  if (doc.closesAt && idx >= stageIdx_(doc.closesAt))
+    throw new Error('\u201C' + doc.name + '\u201D must be uploaded before stage \u201C' + doc.closesAt + '\u201D.');
+  throw new Error('\u201C' + doc.name + '\u201D opens at stage \u201C' + doc.stage + '\u201D. Complete the earlier steps first, or request a stage update if your stage is wrong.');
 }
 
 function api_createSubmission_locked_(token, payload) {
   var user = requireUser_(token);
   assertRole_(user, ['Student'], 'Only students can submit documents.');
-  if (!payload || !payload.type || CFG.SUBMISSION_TYPES.indexOf(payload.type) === -1) throw new Error('Invalid submission type.');
+  var doc = payload && documentByType_(payload.type);
+  if (!doc || doc.uploader !== 'Student') throw new Error('Invalid submission type.');
   var asDraft = payload.asDraft === true || String(payload.asDraft) === 'true';
   var stuForStage = studentByReg_(user.regNumber);
   if (!asDraft) validateSubmissionStage_(stuForStage, payload.type);   // stage rules apply when the draft is submitted
   if (!payload.driveFileUrls) throw new Error('Drive file URL is required.');
+  assertUploadLinkKind_(payload.type, payload.driveFileUrls);
   var now = nowIso_();
+  var url = String(payload.driveFileUrls).trim();
   var row = appendRow_('Submissions', {
     regNumber: user.regNumber,
     type: payload.type,
-    driveFileUrls: String(payload.driveFileUrls).trim(),
+    driveFileUrls: url,
     status: asDraft ? 'Draft' : 'Submitted',
     inspectorComments: '',
     supervisorNotes: '',
     createdBy: user.id,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    history: pushFileHistory_(null, asDraft ? 'Draft saved' : 'Uploaded', url, payload.fileName, '', user.fullName)
   });
   if (!asDraft) { renameSubmissionFiles_(user.regNumber, payload.type, payload.driveFileUrls); syncStudentFileLink_(user.regNumber, payload.type, payload.driveFileUrls, now); }
   logAudit_(user.id, user.regNumber, asDraft ? 'SAVE_DRAFT' : 'CREATE_SUBMISSION', row.id, 'Type: ' + payload.type);
@@ -2377,7 +3200,7 @@ function api_updateSubmissionStatus() { var a = arguments; return withScriptLock
 
 function api_addSupervisoryNote_locked_(token, submissionId, note) {
   var user = requireUser_(token);
-  assertRole_(user, ['Staff', 'PG_Coordinator'], 'You cannot add supervisory notes.');
+  assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot add supervisory notes.');
   if (!String(note || '').trim()) throw new Error('Note text is required.');
   var sub = findById_('Submissions', submissionId);
   if (!sub) throw new Error('Submission not found.');
@@ -2501,8 +3324,9 @@ function api_submitDraft_l(token, id, url) {
   validateSubmissionStage_(studentByReg_(user.regNumber), sub.type);
   var link = String(url || '').trim() || String(sub.driveFileUrls || '');
   if (!urlsFromText_(link).length) throw new Error('A valid file link is required.');
+  assertUploadLinkKind_(sub.type, link);
   var now = nowIso_();
-  updateRow_('Submissions', id, { driveFileUrls: link, status: 'Submitted', createdAt: now, updatedAt: now, compliance: '', history: pushHistory_(sub, { at: now, by: user.fullName, status: 'Submitted', comments: 'Submitted from draft' }) });
+  updateRow_('Submissions', id, { driveFileUrls: link, status: 'Submitted', createdAt: now, updatedAt: now, compliance: '', history: pushFileHistory_(sub, 'Submitted from draft', link, '', '', user.fullName) });
   renameSubmissionFiles_(user.regNumber, sub.type, link); syncStudentFileLink_(user.regNumber, sub.type, link, now);
   logAudit_(user.id, user.regNumber, 'CREATE_SUBMISSION', id, 'Type: ' + sub.type + ' (from draft)');
   return { ok: true, id: id };
@@ -2699,6 +3523,38 @@ function api_confirmThesisTitle_l(token, regNumber) {
 }
 function api_confirmThesisTitle() { return L_(api_confirmThesisTitle_l, arguments); }
 
+/** PG Coordinator enters or edits a student's thesis/dissertation title directly (any stage, confirmed or not).
+ *  The title goes through the same formatting as every other title (toTitleText_). confirmNow = true marks it Confirmed;
+ *  otherwise a title that was already Confirmed stays Confirmed and any other stays Pending. */
+function api_setThesisTitleByCoordinator_l(token, regNumber, title, confirmNow) {
+  var user = requireUser_(token);
+  assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can enter or edit a student’s title.');
+  var stu = studentByReg_(regNumber);
+  if (!stu) throw new Error('Student not found.');
+  var t = toTitleText_(title);
+  if (t.length < 10) throw new Error('Please enter the full title (at least 10 characters).');
+  if (t.length > 400) throw new Error('The title must be 400 characters or fewer.');
+  var oldT = String(stu.thesisTitle || '').trim();
+  var wasConfirmed = titleState_(stu).status === 'Confirmed';
+  if (t === oldT && (!confirmNow || wasConfirmed)) throw new Error('That is the same as the current title.');
+  var now = nowIso_(), confirmed = !!confirmNow || (wasConfirmed && !!oldT);
+  var patch = { thesisTitle: t, titleUpdatedAt: now };
+  if (confirmed) { patch.titleStatus = 'Confirmed'; patch.titleConfirmedBy = user.fullName; patch.titleConfirmedAt = now; }
+  else { patch.titleStatus = 'Pending'; patch.titleConfirmedBy = ''; patch.titleConfirmedAt = ''; }
+  updateRow_('Students', stu.id, patch);
+  // keep any Title Approval request in step with the record
+  try {
+    readTable_('PresentationIntents').forEach(function (r) {
+      if (String(r.regNumber) === String(stu.regNumber) && r.kind === 'Title Approval' && String(r.title || '').trim() === oldT && oldT) updateRow_('PresentationIntents', r.id, { title: t });
+    });
+  } catch (e) { Logger.log('title intent sync: ' + e); }
+  logAudit_(user.id, user.regNumber, oldT ? 'COORD_EDIT_THESIS_TITLE' : 'COORD_ENTER_THESIS_TITLE', stu.regNumber, ((oldT ? oldT + ' -> ' : '') + t).slice(0, 220));
+  notifyStudent_(stu.regNumber, oldT ? 'Thesis title updated' : 'Thesis title entered',
+    user.fullName + ' ' + (oldT ? 'updated' : 'entered') + ' your thesis/dissertation title:\n' + t + (confirmed ? '\nIt is confirmed and locked until the thesis stage.' : '\nIt is awaiting confirmation.'));
+  return { ok: true, title: t, status: confirmed ? 'Confirmed' : 'Pending' };
+}
+function api_setThesisTitleByCoordinator() { return L_(api_setThesisTitleByCoordinator_l, arguments); }
+
 /* =========================== 13. HoD (read-only) =========================== */
 
 function api_getHoDStatsBase_(token) {
@@ -2870,10 +3726,22 @@ function notifyStudent_(reg, subject, text) {
     if (u && (u.emailPref || 'instant') === 'instant' && EMAIL_RE.test(String(u.email || ''))) sendPortalMail_({ to: u.email, subject: subject + ' — ' + reg, body: 'Dear ' + (u.fullName || 'Student') + ',\n\n' + text + '\n\n' + CFG.APP_NAME });
   } catch (e) { Logger.log('notifyStudent_ failed: ' + e); }
 }
+/** The stage a student is put at when this document type is approved (null when approval does not move the stage). */
+function stageAfterApproval_(type, stu) {
+  var target = STAGE_ON_APPROVAL[type]; if (!target) return null;
+  if (type === 'Progress Presentation (PPTX)') target = isPhd_(stu && stu.programme) ? S_.SECOND_INTERNAL : '11 - Final Examination Intent';
+  return target;
+}
 function autoAdvance_(sub) {
   var target = STAGE_ON_APPROVAL[sub.type]; if (!target) return;
   var stu = studentByReg_(sub.regNumber);
-  if (!stu || CFG.JOURNEY_STAGES.indexOf(target) <= CFG.JOURNEY_STAGES.indexOf(stu.currentStage)) return;
+  if (!stu) return;
+  if (sub.type === 'Progress Presentation (PPTX)') {
+    // The progress presentation is the first internal examination for everyone. Only PhD students then
+    // enter the extra 10b gate; MSc/MPhil go straight to Final Examination Intent as before.
+    target = isPhd_(stu.programme) ? S_.SECOND_INTERNAL : '11 - Final Examination Intent';
+  }
+  if (CFG.JOURNEY_STAGES.indexOf(target) <= CFG.JOURNEY_STAGES.indexOf(stu.currentStage)) return;
   updateRow_('Students', stu.id, { currentStage: target, updatedAt: nowIso_() });
   stu.currentStage = target; try { stageEntered_(stu, target); } catch (e) { Logger.log('stageEntered_: ' + e); }
   logAudit_('system', 'auto', 'AUTO_STAGE', sub.regNumber, target);
@@ -3088,7 +3956,7 @@ function api_deleteProgrammeSession_l(token, id) {
 }
 function api_deleteProgrammeSession() { return L_(api_deleteProgrammeSession_l, arguments); }
 function api_addMeeting_l(token, reg, date, notes, actions) {
-  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator'], 'You cannot log meetings.');
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot log meetings.');
   var stu = studentByReg_(reg);
   if (!stu) throw new Error('Student not found.');
   if (user.role === 'Staff' && !supOf_(user, stu)) throw new Error('Not your student.');
@@ -3104,7 +3972,7 @@ function meetingAccess_(user, m) {
   var stu = studentByReg_(m.regNumber);
   if (!stu) throw new Error('Student not found.');
   if (user.role === 'Staff' && !supOf_(user, stu)) throw new Error('Not your student.');
-  if (['Staff', 'PG_Coordinator'].indexOf(user.role) === -1) throw new Error('You cannot manage meetings.');
+  if (['Staff', 'PG_Coordinator', 'HoD'].indexOf(user.role) === -1) throw new Error('You cannot manage meetings.');
   return stu;
 }
 function icsEsc_(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
@@ -3117,7 +3985,7 @@ function meetingIcs_(m, stuName) {
     'SUMMARY:' + icsEsc_('Supervision meeting \u2014 ' + stuName), 'LOCATION:' + icsEsc_(m.venue), 'DESCRIPTION:' + icsEsc_(m.notes), 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
 }
 function api_scheduleMeeting_l(token, reg, date, time, venue, agenda) {
-  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator'], 'You cannot schedule meetings.');
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot schedule meetings.');
   var stu = studentByReg_(reg);
   if (!stu) throw new Error('Student not found.');
   if (user.role === 'Staff' && !supOf_(user, stu)) throw new Error('Not your student.');
@@ -3178,13 +4046,54 @@ function api_resubmit_l(token, id, url) {
   var stuForStage = studentByReg_(user.regNumber);
   validateSubmissionStage_(stuForStage, sub.type);
   if (!urlsFromText_(url).length) throw new Error('A valid link is required.');
-  updateRow_('Submissions', id, { history: pushHistory_(sub, { at: nowIso_(), by: user.fullName, status: 'Resubmitted', comments: 'New file: ' + String(url).trim() }), driveFileUrls: String(url).trim(), status: 'Submitted', supervisorNotes: String(sub.supervisorNotes || ''), updatedAt: nowIso_(), compliance: '' });
+  assertUploadLinkKind_(sub.type, url);
+  updateRow_('Submissions', id, { history: pushFileHistory_(sub, 'Resubmitted', url, '', 'After: ' + String(sub.status || ''), user.fullName), driveFileUrls: String(url).trim(), status: 'Submitted', supervisorNotes: String(sub.supervisorNotes || ''), updatedAt: nowIso_(), compliance: '', endorsedBy: '', checklist: '', similarity: '', similarityUrl: '', similarityBy: '', similarityAt: '', reviewedBy: '', reviewedAt: '', lastRemindedAt: '' });
   syncStudentFileLink_(user.regNumber, sub.type, String(url).trim(), nowIso_());
   logAudit_(user.id, user.regNumber, 'RESUBMIT', id, 'After: ' + sub.status + ' / ' + String(sub.inspectorComments || '').slice(0, 80)); return { ok: true };
 }
 function api_resubmit() {
   var res = L_(api_resubmit_l, arguments);
   try { var sub = findById_('Submissions', arguments[1]); if (sub) { shareSubmissionFiles_(sub); afterSubmissionSent_(sub); } } catch (e) { Logger.log('share after resubmit: ' + e); }
+  return res;
+}
+/** Config-driven replace: any document whose catalogue entry allows resubmission may be replaced while its
+ *  stage is open. The old file stays in Drive and the change is recorded in the submission history. */
+function api_replaceSubmission_l(token, id, url) {
+  var user = requireUser_(token); assertRole_(user, ['Student'], 'Only students can replace their documents.');
+  var sub = findById_('Submissions', id);
+  if (!sub || String(sub.regNumber) !== String(user.regNumber)) throw new Error('Submission not found.');
+  var doc = documentByType_(sub.type);
+  if (!doc || !doc.resubmit || doc.uploader !== 'Student') throw new Error('This document cannot be replaced.');
+  var wasDraft = String(sub.status) === 'Draft', wasApproved = String(sub.status) === 'Approved';
+  if (!wasDraft) validateSubmissionStage_(studentByReg_(user.regNumber), sub.type);
+  assertUploadLinkKind_(sub.type, url);
+  var now = nowIso_(), newUrl = String(url).trim(), note = wasDraft ? 'Draft file replaced' : 'Replacement uploaded', reverted = '';
+  if (wasApproved) {
+    var stu = studentByReg_(user.regNumber), approvalStage = stageAfterApproval_(sub.type, stu);
+    /* Revert only when this document's approval is what moved the student, and they are still exactly there.
+     * Receipts, certificates and other non-advancing documents never move the stage; a student who has moved
+     * on past the approval stage is not pulled back. */
+    if (stu && approvalStage && doc.stage && doc.stage !== 'registration' && stageIdx_(stu.currentStage) === stageIdx_(approvalStage) && stageIdx_(doc.stage) < stageIdx_(approvalStage)) {
+      updateRow_('Students', stu.id, { currentStage: doc.stage, updatedAt: now });
+      stu.currentStage = doc.stage;
+      reverted = doc.stage;
+      note += '; stage reverted to ' + doc.stage;
+      logAudit_('system', 'auto', 'AUTO_STAGE_REVERT', stu.regNumber, doc.stage + ' (approved ' + sub.type + ' replaced)');
+      notifyStudent_(stu.regNumber, 'Journey stage updated', 'You replaced your approved ' + sub.type + ', so it needs to be reviewed again. Your stage is now: ' + doc.stage + '.');
+    }
+  }
+  updateRow_('Submissions', id, {
+    history: pushFileHistory_(sub, 'Replaced', newUrl, '', note, user.fullName),
+    driveFileUrls: newUrl, status: wasDraft ? 'Draft' : 'Submitted',
+    inspectorComments: '', compliance: '', updatedAt: now, endorsedBy: '', checklist: '', similarity: '', similarityUrl: '', similarityBy: '', similarityAt: '', reviewedBy: '', reviewedAt: '', lastRemindedAt: ''
+  });
+  syncStudentFileLink_(user.regNumber, sub.type, newUrl, now);
+  logAudit_(user.id, user.regNumber, 'REPLACE_SUBMISSION', id, sub.type + ': replacement uploaded' + (reverted ? '; stage reverted to ' + reverted : ''));
+  return { ok: true, draft: wasDraft, stageReverted: reverted };
+}
+function api_replaceSubmission() {
+  var res = L_(api_replaceSubmission_l, arguments);
+  try { var sub = findById_('Submissions', arguments[1]); if (sub && String(sub.status) !== 'Draft') { shareSubmissionFiles_(sub); afterSubmissionSent_(sub); } } catch (e) { Logger.log('share after replace: ' + e); }
   return res;
 }
 function api_resetStudentPassword_l(token, reg) {
@@ -3195,7 +4104,7 @@ function api_resetStudentPassword_l(token, reg) {
   logAudit_(user.id, user.regNumber, 'RESET_PASSWORD', reg, 'Reset to a new one-time password');
   addNote_(reg, 'Your password was reset by the PG Coordinator. Check your email for the one-time password.');
   try {
-    sent = sendPortalMail_({ to: u.email, subject: 'Password reset — ' + reg, body: 'Dear ' + (u.fullName || 'Student') + ',\n\nYour password was reset by the PG Coordinator.\nOne-time password: ' + pw + '\n\nSign in with it and you will be asked to choose a new password.\n\n' + CFG.APP_NAME,
+    sent = sendPortalMail_({ immediate: true, to: u.email, subject: 'Password reset — ' + reg, body: 'Dear ' + (u.fullName || 'Student') + ',\n\nYour password was reset by the PG Coordinator.\nOne-time password: ' + pw + '\n\nSign in with it and you will be asked to choose a new password.\n\n' + CFG.APP_NAME,
       htmlBody: '<p style="margin:0 0 12px">Dear <strong>' + escHtml_(u.fullName || 'Student') + '</strong>, your password was reset by the PG Coordinator.</p><p style="margin:0 0 12px">One-time password: <strong style="font-family:monospace">' + escHtml_(pw) + '</strong></p><p style="color:#66756f;font-size:13px">Sign in with it and you will be asked to choose a new password.</p>' });
   } catch (e) { Logger.log('reset mail failed: ' + e); }
   return sent ? { ok: true, emailed: true } : { ok: true, emailed: false, tempPassword: pw };   // only revealed to the Coordinator when the email could not be sent
@@ -3203,7 +4112,7 @@ function api_resetStudentPassword_l(token, reg) {
 function api_resetStudentPassword() { return L_(api_resetStudentPassword_l, arguments); }
 function api_getAuditLog(token) {
   var user = requireUser_(token); assertRole_(user, ['PG_Coordinator', 'HoD', 'SuperAdmin'], 'Access denied.');
-  return readTableTail_('AuditLog', 300).reverse().map(function (r) { return { at: r.at, actor: r.actorUsername, action: r.action, target: r.target, detail: r.detail }; });
+  return readTableTail_('AuditLog', 300).reverse().map(function (r) { return { at: r.at, actor: r.actorUsername, action: r.action, target: r.target, detail: r.detail, student: r.studentReg || '' }; });
 }
 
 /* =========================== 15c. RESET, UPLOAD, BELL, MESSAGES, CHECKLIST =========================== */
@@ -3213,11 +4122,14 @@ function supOf_(user, s) {
   if (canSupervise_(user)) { if (user.__sid === undefined) { try { user.__sid = presentationStaffId_(user) || ''; } catch (e) { user.__sid = ''; } } if (user.__sid) ids.push(String(user.__sid)); }
   return ids.indexOf(String(s.mainSupervisorId)) > -1 || ids.indexOf(String(s.coSupervisorId)) > -1; }
 function checklistFor_(type) {
+  var doc = documentByType_(type);
+  if (doc && DOCUMENT_CHECKLISTS[doc.id]) return DOCUMENT_CHECKLISTS[doc.id].slice();
   if (isPaymentType_(type)) return ['Document is complete and legible', 'Student name / registration number and amount are shown'];
   if (type === 'Plagiarism Certificate') return ['Certificate is complete and legible', 'Student name and similarity percentage are shown', 'Similarity is within the allowed limit'];
-  if (type === 'Internal Examiner and Other Observations') return ['Document is complete and legible', 'Examiner(s) clearly identified'];
-  if (type === 'Comment-by-Comment Response (External Examiner)' || type === 'Comment-by-Comment Response (Internal Examiner)')
-    return ['Every examiner comment has a response', 'Each response states where the thesis was changed', 'Supervisor endorsement attached'];
+  if (type === 'Internal Examiner and Other Observations' || type === 'Internal Examiner and Other Observations (Second Internal)')
+    return ['Document is complete and legible', 'Examiner(s) clearly identified'];
+  if (type === 'Comment-by-Comment Response (External Examiner)' || INTERNAL_RESPONSE_TYPES.indexOf(type) !== -1 || SECOND_INTERNAL_TYPES.indexOf(type) !== -1)
+    return ['Every examiner comment has a response', 'Each response states where the work was changed', 'Supervisor endorsement attached'];
   var FMT = 'Formatting meets the SFRRP template (margins, font, spacing, page numbers)', PRE = 'Preliminary pages and abstract meet the template';
   if (type === 'Final Correction')
     return [FMT, PRE, 'References complete and consistent (APA 6th)', 'Examiners\u2019 corrections addressed', 'Supervisor endorsement attached'];
@@ -3274,7 +4186,7 @@ function api_requestReset(regNumber) {
     var code = genResetCode_(), sent = false;
     cache.put('rst_' + key, hashCode_(code + ':' + key), 1800); cache.remove('rsta_' + key);
     try {
-      sent = sendPortalMail_({ to: u.email, subject: 'Password reset code — ' + u.regNumber,
+      sent = sendPortalMail_({ immediate: true, to: u.email, subject: 'Password reset code — ' + u.regNumber,
         body: 'Your password reset code is ' + code + '. It expires in 30 minutes. If you did not request this, ignore this email.',
         htmlBody: '<p style="margin:0 0 12px">Your password reset code is:</p><p style="font-size:24px;letter-spacing:4px;font-family:monospace;margin:0 0 12px"><strong>' + escHtml_(code) + '</strong></p><p style="color:#66756f;font-size:13px">It expires in 30 minutes. If you did not request this, ignore this email.</p>' });
     } catch (mailErr) { Logger.log('Reset code email error for ' + u.regNumber + ': ' + (mailErr && mailErr.message ? mailErr.message : mailErr)); }
@@ -3319,7 +4231,7 @@ function fileLinkLabel_(type, when) {
   return type + ' \u2013 uploaded ' + d;
 }
 function typeSlug_(type) {
-  return CFG.SUBMISSION_TYPES.indexOf(type) === -1 ? 'document' : String(type).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return !documentByType_(type) ? 'document' : String(type).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 /** Puts the latest file link for this document type on the student's row (best effort: never blocks a submission). */
 function syncStudentFileLink_(regNumber, type, urls, when, skipLatest) {
@@ -3371,23 +4283,49 @@ function submissionsFolder_() {
 
 /** Small files (up to SMALL_UPLOAD_BYTES): one call. Larger files use api_beginLargeUpload / api_uploadLargeChunk. */
 function api_uploadSubmissionFile(token, p) {
-  var user = requireUser_(token); assertRole_(user, ['Student'], 'Only students can upload.');
+  var user = requireUser_(token); assertWritable_(); assertRole_(user, ['Student'], 'Only students can upload.');
   var parts = String((p && p.dataUrl) || '').split(','), mm = parts[0].match(/data:(.*?);/), mime = mm ? mm[1] : '';
   var ok = { 'application/pdf': 'pdf', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx', 'image/jpeg': 'jpg', 'image/png': 'png' };
   if (!ok[mime]) throw new Error('Upload a PDF, DOC, DOCX, PPTX, JPG or PNG file.');
   checkUploadKind_(p && p.type, ok[mime]);
   var bytes = Utilities.base64Decode(parts[1]);
+  assertMagicBytes_(ok[mime], bytes);
+  assertOfficePackage_(ok[mime], bytes);
   if (bytes.length > CFG.SMALL_UPLOAD_BYTES) throw new Error('Use the large-file upload for files over 10 MB.');
   var file = submissionsFolder_().createFile(Utilities.newBlob(bytes, mime, String(user.regNumber).replace(/[\/\\]/g, '-') + '_' + typeSlug_(p && p.type) + '_' + new Date().getTime() + '.' + ok[mime]));
   lockFile_(file);
-  return { url: file.getUrl(), id: file.getId() };
+  return { url: file.getUrl(), id: file.getId(), name: file.getName() };
+}
+
+/** Direct examiner report upload. The file is private in Drive and is attached to the examiner's own
+ *  assignment row (reportUrl), so the existing access checker and assessment validation still apply. */
+function api_uploadExaminerReport(token, p) {
+  var user = requireUser_(token); assertWritable_(); assertRole_(user, ['Examiner'], 'Only examiners can upload a report.');
+  p = p || {};
+  var ex = findById_('Examiners', p.assignmentId);
+  if (!ex || String(ex.examLogin) !== String(user.regNumber)) throw new Error('Assignment not found.');
+  if (String(ex.status) !== 'Assigned') throw new Error('This assessment has already been submitted or withdrawn.');
+  var parts = String(p.dataUrl || '').split(','), mm = parts[0].match(/data:(.*?);/), mime = mm ? mm[1] : '';
+  var ok = { 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' };
+  if (!ok[mime]) throw new Error('Upload a Word (.doc or .docx) report.');
+  checkUploadKind_('Examiner Report', ok[mime]);
+  var bytes = Utilities.base64Decode(parts[1]);
+  assertMagicBytes_(ok[mime], bytes);
+  assertOfficePackage_(ok[mime], bytes);
+  if (bytes.length > CFG.SMALL_UPLOAD_BYTES) throw new Error('The report must be under 10 MB. Split large reports across the assessment comments field, or contact the PG Coordinator.');
+  var file = submissionsFolder_().createFile(Utilities.newBlob(bytes, mime, String(ex.regNumber).replace(/[\/\\]/g, '-') + '_' + typeSlug_(ex.type) + '_report_' + new Date().getTime() + '.' + ok[mime]));
+  lockFile_(file);
+  var url = file.getUrl();
+  updateRow_('Examiners', ex.id, { reportUrl: url });
+  logAudit_(user.id, user.regNumber, 'EXAMINER_REPORT_UPLOAD', ex.regNumber, ex.type + ': ' + file.getName());
+  return { url: url, id: file.getId(), name: file.getName() };
 }
 
 /** Large files (up to 50 MB): the browser sends the file in 3 MB pieces; the server relays each piece into a
  *  Drive resumable-upload session, so the whole file is never held in memory.
  *  Requires the Drive API service to be enabled for the script project (see notes in the deployment steps). */
 function api_beginLargeUpload(token, meta) {
-  var user = requireUser_(token); assertRole_(user, ['Student'], 'Only students can upload.');
+  var user = requireUser_(token); assertWritable_(); assertRole_(user, ['Student'], 'Only students can upload.');
   var name = String((meta && meta.name) || ''), ext = (name.split('.').pop() || '').toLowerCase(), mime = SUB_MIME_BY_EXT[ext];
   if (!mime) throw new Error('Upload a PDF, DOC, DOCX, PPTX, JPG or PNG file.');
   checkUploadKind_(meta && meta.type, ext);
@@ -3408,11 +4346,11 @@ function api_beginLargeUpload(token, meta) {
     throw new Error('Large-file upload is not available right now. Please upload a file under 10 MB, or contact ' + mailEnquiriesAddress_() + '.');
   }
   var uploadId = uuid_();
-  CacheService.getScriptCache().put('upl_' + uploadId, JSON.stringify({ reg: String(user.regNumber), loc: String(loc), size: size, mime: mime, next: 0, type: String((meta && meta.type) || '') }), 21600);
+  CacheService.getScriptCache().put('upl_' + uploadId, JSON.stringify({ reg: String(user.regNumber), loc: String(loc), size: size, mime: mime, ext: ext, next: 0, type: String((meta && meta.type) || '') }), 21600);
   return { uploadId: uploadId, chunkBytes: 3 * 1024 * 1024 };
 }
 function api_uploadLargeChunk(token, uploadId, start, b64) {
-  var user = requireUser_(token); assertRole_(user, ['Student'], 'Only students can upload.');
+  var user = requireUser_(token); assertWritable_(); assertRole_(user, ['Student'], 'Only students can upload.');
   var cache = CacheService.getScriptCache(), raw = cache.get('upl_' + String(uploadId));
   if (!raw) throw new Error('This upload expired. Please start it again.');
   var st = JSON.parse(raw);
@@ -3421,6 +4359,7 @@ function api_uploadLargeChunk(token, uploadId, start, b64) {
   if (start !== st.next) throw new Error('The upload got out of sequence. Please start it again.');
   var bytes = Utilities.base64Decode(String(b64 || ''));
   if (!bytes.length) throw new Error('Empty upload piece.');
+  if (start === 0) assertMagicBytes_(st.ext, bytes);
   var end = start + bytes.length - 1;
   if (end >= st.size) throw new Error('Upload is larger than declared.');
   var last = end === st.size - 1;
@@ -3536,7 +4475,7 @@ function api_listInquiries(token) {
 /** Only Google Drive / Docs links produced by the portal's own upload are accepted as attachments. */
 function cleanAttachUrl_(u) { u = String(u || '').trim(); return /^https:\/\/(drive|docs)\.google\.com\/[^\s]+$/.test(u) ? u : ''; }
 function api_uploadInquiryFile(token, p) {
-  var user = requireUser_(token); assertRole_(user, ['Student', 'PG_Coordinator', 'HoD'], 'You cannot attach files here.');
+  var user = requireUser_(token); assertWritable_(); assertRole_(user, ['Student', 'PG_Coordinator', 'HoD'], 'You cannot attach files here.');
   var parts = String((p && p.dataUrl) || '').split(','), mm = parts[0].match(/data:(.*?);/), mime = mm ? mm[1] : '';
   var ok = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' };
   if (!ok[mime]) throw new Error('Attach a PDF, Word document, PNG or JPG.');
@@ -3766,6 +4705,7 @@ function api_requestStageChange_l(token, stage, note) {
   var user = requireUser_(token); assertRole_(user, ['Student'], 'Only students can request a stage update.');
   stage = String(stage || '');
   if (CFG.JOURNEY_STAGES.indexOf(stage) === -1) throw new Error('Choose a valid stage.');
+  if (stage === S_.SECOND_INTERNAL) throw new Error('The second internal examination is recorded by the PG Coordinator after the examination; it cannot be requested here.');
   var stu = studentByReg_(user.regNumber);
   if (!stu) throw new Error('Student profile not found.');
   if (stu.currentStage === stage) throw new Error('That is already your current stage.');
@@ -3808,6 +4748,7 @@ function api_decideRequest_l(token, id, decision, note) {
     if (CFG.JOURNEY_STAGES.indexOf(newStage) === -1) throw new Error('The requested stage is not valid.');
     var stuRow = studentByReg_(r.regNumber);
     if (!stuRow) throw new Error('Student not found.');
+    assertStageAllowedForStudent_(stuRow, newStage);
     updateRow_('Students', stuRow.id, { currentStage: newStage, updatedAt: nowIso_() });
     logAudit_(user.id, user.regNumber, 'UPDATE_STAGE', r.regNumber, newStage + ' (approved student request)');
   }
@@ -4125,7 +5066,22 @@ function api_withdrawPresentationIntent() { return L_(api_withdrawPresentationIn
 
 /* =========================== 15e. ADVANCED FEATURES =========================== */
 function parseHist_(v) { try { var a = JSON.parse(v || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
-function pushHistory_(sub, e) { var a = parseHist_(sub.history); a.push(e); return JSON.stringify(a.slice(-20)); }
+function pushHistory_(sub, e) { var a = parseHist_(sub && sub.history); a.push(e); return JSON.stringify(a.slice(-20)); }
+/** Upload metadata is cached in the submission history, so the dashboard never needs one DriveApp call per row. */
+function submissionFileName_(sub) {
+  var a = parseHist_(sub && sub.history);
+  for (var i = a.length - 1; i >= 0; i--) if (a[i] && a[i].fileName) return String(a[i].fileName);
+  return '';
+}
+/** Every version keeps both ends of the change: the previous URL, the new URL and the original file name. */
+function pushFileHistory_(sub, status, url, fileName, comments, by) {
+  var newUrl = String(url || '').trim(), name = String(fileName || '').trim(), id = parseDriveFileId_(newUrl);
+  if (!name && id) { try { name = DriveApp.getFileById(id).getName(); } catch (e) {} }
+  var e = { at: nowIso_(), by: by || '', status: status, comments: comments || '',
+    previousUrl: String((sub && sub.driveFileUrls) || ''), fileUrl: newUrl };
+  if (name) e.fileName = name;
+  return pushHistory_(sub, e);
+}
 function numberIssues_(c) { return String(c || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l, i) { return (i + 1) + '. ' + l.replace(/^\d+[.)]\s*/, ''); }).join('\n'); }
 function overdue_(s) {
   if (['Submitted', 'Under Review'].indexOf(s.status) === -1) return false;
@@ -4148,7 +5104,7 @@ function api_assignInspector_l(token, subId, insReg) {
 function api_assignInspector() { return L_(api_assignInspector_l, arguments); }
 function api_getTimeline(token, reg) {
   var user = requireUser_(token), stu = threadStudent_(user, reg), r = String(stu.regNumber), ev = [];
-  readTable_('AuditLog').forEach(function (a) { if (String(a.target) === r && !(user.role === 'Student' && /EXAMINER/i.test(String(a.action)))) ev.push({ at: String(a.at), text: String(a.action).replace(/_/g, ' ').toLowerCase() + (a.detail ? ': ' + String(a.detail).slice(0, 100) : '') }); });
+  readTable_('AuditLog').forEach(function (a) { if (String(a.target) === r && !(user.role === 'Student' && /EXAMINER|CONCERN/i.test(String(a.action)))) ev.push({ at: String(a.at), text: String(a.action).replace(/_/g, ' ').toLowerCase() + (a.detail ? ': ' + String(a.detail).slice(0, 100) : '') }); });
   readTable_('Submissions').forEach(function (s) { if (String(s.regNumber) === r) ev.push({ at: String(s.createdAt), text: 'Submitted ' + s.type + ' (now ' + s.status + ')' }); });
   readTable_('Meetings').forEach(function (m) { if (String(m.regNumber) === r) ev.push({ at: String(m.createdAt), text: 'Meeting ' + m.date + ': ' + String(m.notes).slice(0, 100) }); });
   readTable_('Requests').forEach(function (q) { if (String(q.regNumber) === r) ev.push({ at: String(q.createdAt), text: q.type + ' request (' + q.status + ')' }); });
@@ -4160,7 +5116,7 @@ function api_setEmailPref(token, pref) {
   updateRow_('Users', user.id, { emailPref: pref }); return { ok: true };
 }
 function api_uploadMessageFile(token, p, reg) {
-  var user = requireUser_(token); threadStudent_(user, reg);
+  var user = requireUser_(token); assertWritable_(); threadStudent_(user, reg);
   var parts = String((p && p.dataUrl) || '').split(','), mm = parts[0].match(/data:(.*?);/), mime = mm ? mm[1] : '';
   var ok = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' };
   if (!ok[mime]) throw new Error('Attach a PDF, Word document, PNG or JPG.');
@@ -4248,13 +5204,18 @@ function graduation_(students) {
   var o = {}; students.forEach(function (s) { var p = s.programme || 'Unknown'; o[p] = o[p] || { total: 0, completed: 0 }; o[p].total++; if (s.currentStage === STAGE_COMPLETE) o[p].completed++; }); return o;
 }
 function avgStageDays_() {
+  /* P5: this scans the whole AuditLog, which only grows. The averages move slowly, so the result is kept for 6 hours (clearTableCaches() drops it). */
+  var cache = CacheService.getScriptCache();
+  try { var hit = cache.get('avgdays_v1'); if (hit) return JSON.parse(hit); } catch (e) {}
   var by = {}, last = {};
   readTable_('Students').forEach(function (s) { last[s.regNumber] = new Date(String(s.createdAt).replace(' ', 'T')).getTime(); });
   readTable_('AuditLog').filter(function (r) { return r.action === 'UPDATE_STAGE' || r.action === 'AUTO_STAGE'; }).forEach(function (r) {
     var t = new Date(String(r.at).replace(' ', 'T')).getTime(), prev = last[r.target]; if (!prev || !t) return;
     var st = String(r.detail); (by[st] = by[st] || []).push((t - prev) / 864e5); last[r.target] = t;
   });
-  var out = {}; Object.keys(by).forEach(function (k) { out[k] = Math.round(by[k].reduce(function (a, b) { return a + b; }, 0) / by[k].length); }); return out;
+  var out = {}; Object.keys(by).forEach(function (k) { out[k] = Math.round(by[k].reduce(function (a, b) { return a + b; }, 0) / by[k].length); });
+  try { cache.put('avgdays_v1', JSON.stringify(out), 21600); } catch (e) {}
+  return out;
 }
 /* ---- staff logins (role management) ---- */
 function api_saveStaffLogin_l(token, p) {
@@ -4514,9 +5475,11 @@ function bootPart_(fn, fallback) { try { return fn(); } catch (e) { Logger.log('
 var BOOT_VIEWS_ = {
   dashboard:   function (t, d) { d.dashboard = api_getStudentDashboard(t); },
   submissions: function (t, d) { d.submissions = api_listSubmissions(t); },
-  coordinator: function (t, d, u) { d.coordinator = api_getCoordinatorDashboard(t); d.facdep = bootPart_(readFacDep_, null); d.recipients = bootRecipients_(t, u); },
-  hod:         function (t, d, u) {
-    d.hod = api_getHoDStats(t); d.recipients = bootRecipients_(t, u);
+  coordinator: function (t, d, u, defer) { d.coordinator = api_getCoordinatorDashboard(t); d.facdep = bootPart_(readFacDep_, null); if (!defer) d.recipients = bootRecipients_(t, u); },
+  hod:         function (t, d, u, defer) {
+    d.hod = api_getHoDStats(t);
+    if (defer) return;
+    d.recipients = bootRecipients_(t, u);
     d.pipeline = bootPart_(function () { return api_getPipeline(t); }, []);
     d.examQueue = bootPart_(function () { return api_listExaminerQueue(t); }, { internal: [], external: [] });
     d.examNotice = bootPart_(function () { return api_listExamNoticeCandidates(t); }, { groups: [] });
@@ -4525,27 +5488,53 @@ var BOOT_VIEWS_ = {
   inbox:       function (t, d) { d.inq = api_listInquiries(t); },
   superadmin:  function (t, d) { d.impUsers = api_listImpersonatable(t); },
   audit:       function (t, d) { d.audit = api_getAuditLog(t); },
-  staffdash:   function (t, d, u) { d.staff = api_getStaffDashboard(t); d.recipients = bootRecipients_(t, u); },
+  staffdash:   function (t, d, u, defer) { d.staff = api_getStaffDashboard(t); if (!defer) d.recipients = bootRecipients_(t, u); },
   inspector:   function (t, d) { d.inspector = api_listSubmissions(t); d.annc = bootPart_(function () { return api_getMyAnnouncements(t); }, []); },
   calendar:    function (t, d) { d.calendar = api_getProgrammeCalendar(t); }
+};
+/* P5: parts that are not needed for the first paint. A client that passes have.defer gets only the main data from api_bootstrap
+   (response.deferred = true) and then calls api_bootstrapExtras, which returns these parts plus the side data (menu counts,
+   notifications, templates). The two calls run in parallel, so the page no longer waits for them. */
+var BOOT_EXTRAS_ = {
+  coordinator: function (t, d, u) { d.recipients = bootRecipients_(t, u); },
+  hod:         function (t, d, u) {
+    d.recipients = bootRecipients_(t, u);
+    d.pipeline = bootPart_(function () { return api_getPipeline(t); }, []);
+    d.examQueue = bootPart_(function () { return api_listExaminerQueue(t); }, { internal: [], external: [] });
+    d.examNotice = bootPart_(function () { return api_listExamNoticeCandidates(t); }, { groups: [] });
+  },
+  staffdash:   function (t, d, u) { d.recipients = bootRecipients_(t, u); }
 };
 function bootRecipients_(token, user) {
   if (BOOT_MSG_ROLES_.indexOf(user.role) === -1) return [];
   return bootPart_(function () { return api_listMessageRecipients(token); }, []);
 }
-/** view: a client view key; have: { facdep, templates } flags for static lists the browser already holds. */
-function api_bootstrap(token, view, have) {
-  var user = requireUser_(token), v = String(view || '');
-  have = have || {};
-  if (!Object.prototype.hasOwnProperty.call(BOOT_VIEWS_, v)) throw new Error('Unknown view.');
-  var data = {};
-  BOOT_VIEWS_[v](token, data, user);            // the main data: a failure here (permission, expired session) is the caller's error
-  if (have.facdep) delete data.facdep;
+function bootSide_(token, user, have) {
   var side = {};
   if (user.role !== 'SuperAdmin') side.navCounts = bootPart_(function () { return api_getNavCounts(token); }, null);
   side.notes = bootPart_(function () { return api_getNotifications(token); }, null);
   if (!have.templates && BOOT_TPL_ROLES_.indexOf(user.role) !== -1) side.templates = bootPart_(function () { return api_listTemplates(token); }, null);
-  return { view: v, data: data, side: side };
+  return side;
+}
+/** view: a client view key; have: { facdep, templates } flags for static lists the browser already holds; have.defer = send only the main data. */
+function api_bootstrap(token, view, have) {
+  var user = requireUser_(token), v = String(view || '');
+  have = have || {};
+  if (!Object.prototype.hasOwnProperty.call(BOOT_VIEWS_, v)) throw new Error('Unknown view.');
+  var data = {}, defer = have.defer === true;
+  BOOT_VIEWS_[v](token, data, user, defer);     // the main data: a failure here (permission, expired session) is the caller's error
+  if (have.facdep) delete data.facdep;
+  if (defer) return { view: v, data: data, side: {}, deferred: true };
+  return { view: v, data: data, side: bootSide_(token, user, have) };
+}
+/** The parts api_bootstrap leaves out when have.defer is set. Every part still goes through its own api_ function and role check. */
+function api_bootstrapExtras(token, view, have) {
+  var user = requireUser_(token), v = String(view || '');
+  have = have || {};
+  if (!Object.prototype.hasOwnProperty.call(BOOT_VIEWS_, v)) throw new Error('Unknown view.');
+  var data = {};
+  if (Object.prototype.hasOwnProperty.call(BOOT_EXTRAS_, v)) bootPart_(function () { BOOT_EXTRAS_[v](token, data, user); }, null);
+  return { view: v, data: data, side: bootSide_(token, user, have) };
 }
 
 /* ---- scheduled housekeeping: keep the big log sheets small ---- */
@@ -4623,11 +5612,17 @@ var REQ_MARGIN_CM = { left: 4.0, right: 2.5, top: 2.5, bottom: 2.5 };
 var MARGIN_TOL_CM = 0.1;
 
 /* ---- Drive ids and sharing ---- */
+/** Only real Google Drive / Docs file URLs count. A bare id or a look-alike host is rejected everywhere. */
+function parseDriveFileId_(url) {
+  var u = String(url || '').trim();
+  if (!/^https:\/\/(drive|docs)\.google\.com\//i.test(u)) return '';
+  var m = /\/d\/([\w-]{15,})|[?&]id=([\w-]{15,})/.exec(u);
+  return m ? (m[1] || m[2]) : '';
+}
 function fileIdsFromUrls_(urls) {
   var out = [], seen = {};
   String(urls || '').split(/[\s,]+/).forEach(function (u) {
-    if (!/^https?:\/\//i.test(u)) return;
-    var m = /\/d\/([\w-]{15,})|[?&]id=([\w-]{15,})/.exec(u), id = m && (m[1] || m[2]);
+    var id = parseDriveFileId_(u);
     if (id && !seen[id]) { seen[id] = 1; out.push(id); }
   });
   return out;
@@ -4676,15 +5671,16 @@ function supervisorEmails_(staffIds) {
  *  receipt / proof-of-payment files go ONLY to the student, the Coordinator(s) and the HoD. */
 function accessPlanFor_(reg, type) {
   var restricted = isRestrictedType_(type), plan = {}, rank = { reader: 1, commenter: 2, writer: 3 };
+  var viewers = viewersForSubmissionType_(type), may = function (role) { return viewers.indexOf(role) !== -1; };
   var add = function (email, role) { email = String(email || '').trim().toLowerCase(); if (EMAIL_RE.test(email) && (!plan[email] || rank[role] > rank[plan[email]])) plan[email] = role; };
   var stu = studentByReg_(reg);
-  if (stu && !restricted) supervisorEmails_([stu.mainSupervisorId, stu.coSupervisorId]).forEach(function (e) { add(e, 'writer'); });
-  if (stu) add(stu.email, 'reader');   // every upload is private, so the owner is granted explicitly
+  if (stu && !restricted && may('Staff')) supervisorEmails_([stu.mainSupervisorId, stu.coSupervisorId]).forEach(function (e) { add(e, 'writer'); });
+  if (stu && may('Student')) add(stu.email, 'reader');   // every upload is private, so the owner is granted explicitly
   readTable_('Users').forEach(function (u) {
-    if (!toBool_(u.active) || String(u.status) !== 'Approved') return;
+    if (!toBool_(u.active) || String(u.status) !== 'Approved' || !may(u.role)) return;
     if (u.role === 'PG_Coordinator') add(u.email, restricted ? 'commenter' : 'writer');   // commenter = view + download, no edit
-    else if (u.role === 'Submission_Inspector') { if (!isPaymentType_(type)) add(u.email, 'commenter'); }
-    else if (u.role === 'HoD') add(u.email, 'reader');   // the HoD can view / download every student upload
+    else if (u.role === 'Submission_Inspector') add(u.email, 'commenter');
+    else if (u.role === 'HoD') add(u.email, 'reader');
   });
   return plan;
 }
@@ -4717,7 +5713,7 @@ function syncAllSubmissionAccess() {
  *  examiner(s) currently assigned to that very document. Any other examiner is removed. Re-run if it stops at the time limit. */
 function lockdownPrivateFiles() {
   var t0 = Date.now(), done = 0, left = 0;
-  var exRows = readTable_('Examiners').filter(function (x) { return String(x.status) === 'Assigned'; });
+  var exRows = readTable_('Examiners').filter(examinerAccessActive_);
   var allExaminerEmails = readTable_('Users').filter(function (u) { return u.role === 'Examiner'; }).map(function (u) { return String(u.email || '').toLowerCase(); }).filter(Boolean);
   readTable_('Submissions').filter(function (s) { return !isRestrictedType_(s.type); }).forEach(function (sub) {
     if (Date.now() - t0 > 300000) { left++; return; }
@@ -4771,13 +5767,24 @@ function auditPublicFiles(dryRun) {
 }
 
 /* ---- who can open what ---- */
+/** The catalogue's viewers array is authoritative for live document types; legacy rows keep the old policy. */
+function defaultViewersForType_(type) {
+  if (isRestrictedType_(type)) return ['Student'].concat(restrictedViewersFor_(type));
+  if (EXAMINER_DOC_TYPES.indexOf(String(type)) !== -1) return ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Submission_Inspector', 'Examiner'];
+  return ['Student', 'PG_Coordinator', 'HoD', 'Staff', 'Submission_Inspector'];
+}
+function viewersForSubmissionType_(type) {
+  var doc = documentByType_(type);
+  return doc && doc.viewers ? doc.viewers.slice() : defaultViewersForType_(type);
+}
 function canSeeSubmission_(user, sub) {
   if (String(sub.status) === 'Draft') return user.role === 'Student' && String(sub.regNumber) === String(user.regNumber);
+  var viewers = viewersForSubmissionType_(sub.type);
+  if (user.role !== 'SuperAdmin' && viewers.indexOf(user.role) === -1) return false;
   if (user.role === 'Student') return String(sub.regNumber) === String(user.regNumber);
-  if (isRestrictedType_(sub.type)) return restrictedViewersFor_(sub.type).indexOf(user.role) !== -1;   // PPTX: Coordinator + HoD + Inspector; payment documents: Coordinator + HoD
   if (user.role === 'Examiner') return examinerMaySee_(user, sub);
   if (user.role === 'Staff') { var stu = studentByReg_(sub.regNumber); return !!stu && supOf_(user, stu); }
-  return ['PG_Coordinator', 'HoD', 'Submission_Inspector'].indexOf(user.role) !== -1;
+  return true;
 }
 function canEditSubmission_(user, sub) {
   if (isRestrictedType_(sub.type)) return false;   // view / comment / download only
@@ -4859,6 +5866,19 @@ function api_getFileAccess(token, fileId) {
       ok = true;
     }
   }
+  if (!ok) {
+    var exReport = findWhere_('Examiners', function (x) { return fileIdsFromUrls_(x.reportUrl).indexOf(id) > -1; });
+    if (exReport) {
+      var owner = String(exReport.examLogin) === String(user.regNumber) && (['Declined', 'Revoked'].indexOf(String(exReport.status)) === -1 || examinerAccessActive_(exReport));
+      var stuEx = studentByReg_(exReport.regNumber);
+      var mayReport = owner || ['PG_Coordinator', 'HoD', 'Submission_Inspector', 'SuperAdmin'].indexOf(user.role) > -1 ||
+        (user.role === 'Staff' && stuEx && supOf_(user, stuEx)) ||
+        (user.role === 'Student' && stuEx && String(stuEx.regNumber) === String(user.regNumber) && String(exReport.status) === 'Scored');
+      if (!mayReport) throw new Error('You cannot open this file.');
+      ok = true;
+    }
+  }
+  if (!ok && downloadForFileId_(id)) ok = true;   // official templates are available to every signed-in portal user
   if (!ok) throw new Error('File not found.');
   var file = DriveApp.getFileById(id);
   if (user.email) grantFileRole_(id, user.email, role);
@@ -5631,11 +6651,14 @@ function onOpen() {
 
 /* =========================== 16. EXAMINATION WORKFLOW (v2) =========================== */
 /* Journey: 4 Title Approval -> 5 Proposal -> 6 Defence Readiness -> 7 Proposal Defence -> 8 Progress Report Intent ->
- * 9 Internal Examiner Assignment -> 10 Progress Presentation (PPTX) -> 11 Final Examination Intent -> 12 Thesis Submission ->
- * 13 External Examiner Assignment -> 14 Examiners Comments -> 15 Final Compliance -> 16 Signed Copies and Completion.
- * RUN ONCE after deploying:  migrateJourneyStagesV2()  (renames existing students' stages to the new list). */
+ * 9 Internal Examiner Assignment -> 10 Progress Presentation (PPTX, the first internal examination) ->
+ * 10b Second Internal Examination (PhD only; the PG Coordinator records the outcome) ->
+ * 11 Final Examination Intent -> 12 Thesis Submission -> 13 External Examiner Assignment -> 14 Examiners Comments ->
+ * 15 Final Compliance -> 16 Signed Copies and Completion.
+ * Existing students keep their stored stage labels: 10b was inserted without renumbering 11-16, so no data migration
+ * is required for this change. migrateJourneyStagesV2() remains the run-once migration from the older 15-stage list. */
 
-var RESTRICTED_TYPES = ['Progress Presentation (PPTX)'];          // student + PG Coordinator + HoD + Submission Inspector only
+var RESTRICTED_TYPES = ['Proposal Defence Presentation (PPTX)', 'Progress Presentation (PPTX)', 'Progress Presentation (PPTX) (Second Internal)'];  // student + PG Coordinator + HoD + Submission Inspector only
 var PAYMENT_TYPES = ['Receipt of Fees', 'Evidence of Payment for Examination'];   // student + PG Coordinator + HoD only
 var RESTRICTED_VIEWERS = ['PG_Coordinator', 'Submission_Inspector', 'HoD'];
 var PAYMENT_VIEWERS = ['PG_Coordinator', 'HoD'];
@@ -5643,29 +6666,94 @@ function isPaymentType_(type) { return PAYMENT_TYPES.indexOf(String(type || ''))
 function isRestrictedType_(type) { return RESTRICTED_TYPES.indexOf(String(type || '')) !== -1 || isPaymentType_(type); }
 function restrictedViewersFor_(type) { return isPaymentType_(type) ? PAYMENT_VIEWERS : RESTRICTED_VIEWERS; }
 /** Documents an examiner may be given: the Progress Report (Internal Examiner) and the Final Thesis/Dissertation (External Examiner). Nothing else. */
-var EXAMINER_DOC_TYPES = ['Progress Report', 'Final Thesis/Dissertation'];
+var EXAMINER_DOC_TYPES = ['Progress Report', 'Progress Report (Second Internal)', 'Final Thesis/Dissertation'];
 /** Files that must NEVER be "anyone with the link": the restricted/payment files, the Plagiarism Certificate and the examiner documents.
  *  They are private in Drive and shared only with named people (see accessPlanFor_ and the examiner grants). */
 var LOCKED_EXTRA_TYPES = ['Plagiarism Certificate'].concat(EXAMINER_DOC_TYPES);
 function isLockedFileType_(type) { return isRestrictedType_(type) || LOCKED_EXTRA_TYPES.indexOf(String(type || '')) !== -1; }
 function lockFile_(file) { try { file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE); } catch (e) { Logger.log('lockFile_: ' + e); } }
+/** One place decides the format of every document type. Word = doc/docx, PowerPoint = pptx, PDF = pdf.
+  * Legacy types keep their old permissive rule; the new spec-listed types are strict. */
+var DOC_EXTS_ = ['doc', 'docx'], PDF_EXTS_ = ['pdf'], PPT_EXTS_ = ['pptx'];
+/** Legacy rows keep their old permissive rule; every live type is derived from DOCUMENT_CONFIG.formats. */
+var LEGACY_UPLOAD_EXTS_BY_TYPE_ = {
+  'Internal Examiner and Other Observations': DOC_EXTS_,
+  'Internal Examiner and Other Observations (Second Internal)': DOC_EXTS_,
+  'External Examiner Comments': DOC_EXTS_, 'Examiner Report': DOC_EXTS_,
+  'Research Plan Form': PDF_EXTS_, 'Seminar Presentation': PPT_EXTS_
+};
+function allowedUploadExts_(type) {
+  var doc = documentByType_(type);
+  if (doc && doc.formats && doc.formats.length) return doc.formats.slice();
+  return LEGACY_UPLOAD_EXTS_BY_TYPE_[String(type || '')] || DOC_EXTS_;
+}
 function checkUploadKind_(type, ext) {
   ext = String(ext || '').toLowerCase();
-  var isImg = ['jpg', 'jpeg', 'png'].indexOf(ext) !== -1;
-  if (type === 'Progress Presentation (PPTX)' && ext !== 'pptx') throw new Error('Upload the PowerPoint (.pptx) file for the progress presentation.');
-  if (type !== 'Progress Presentation (PPTX)' && ext === 'pptx') throw new Error('PowerPoint files are accepted only for the progress presentation.');
-  if (isPaymentType_(type) || type === 'Plagiarism Certificate') { if (ext !== 'pdf' && !isImg) throw new Error('Upload the receipt / evidence of payment / plagiarism certificate as a PDF, JPG or PNG file.'); }
-  else if (isImg) throw new Error('Images (JPG/PNG) are accepted only for the receipt of fees, the evidence of payment and the plagiarism certificate. Upload a PDF, DOC or DOCX file.');
+  var allowed = allowedUploadExts_(type);
+  if (allowed.indexOf(ext) === -1) {
+    var want = allowed.length === 1 && allowed[0] === 'pptx' ? 'a PowerPoint (.pptx) file' :
+      allowed.length === 1 && allowed[0] === 'pdf' ? 'a PDF (.pdf) file' :
+      allowed.length && allowed.every(function (e) { return DOC_EXTS_.indexOf(e) > -1; }) ? 'a Word (.doc or .docx) file' :
+      'a PDF, DOC or DOCX file';
+    throw new Error('Upload ' + want + ' for \u201C' + String(type || 'this document') + '\u201D.');
+  }
+}
+/** Pasted links must be real, readable Drive files with the format required by the catalogue. */
+function assertUploadLinkKind_(type, url) {
+  var id = parseDriveFileId_(url);
+  if (!id) throw new Error('Paste a Google Drive file link (drive.google.com or docs.google.com).');
+  var f, name, mime;
+  try { f = DriveApp.getFileById(id); name = f.getName(); mime = String(f.getMimeType() || ''); }
+  catch (err) { throw new Error('The Drive link could not be opened by the portal. Upload the file here instead.'); }
+  if (/^application\/vnd\.google-apps\./.test(mime) || mime === 'application/vnd.google-apps.folder')
+    throw new Error('Upload a real file, not a Google Docs/Slides/Sheets item or folder. In Google Docs use File \u2192 Download, then upload the downloaded file.');
+  var dot = name.lastIndexOf('.'), ext = dot > -1 ? name.slice(dot + 1).toLowerCase() : '';
+  if (!ext) { for (var k in SUB_MIME_BY_EXT) if (SUB_MIME_BY_EXT[k] === mime) { ext = k; break; } }
+  if (!ext) throw new Error('Upload a file with a recognisable extension (' + allowedUploadExts_(type).join(', ') + ').');
+  checkUploadKind_(type, ext);
+  var want = SUB_MIME_BY_EXT[ext];   // Drive's own MIME type must agree with the extension
+  var family = { doc: ['application/msword', SUB_MIME_BY_EXT.docx], docx: [SUB_MIME_BY_EXT.docx, 'application/msword'] };
+  var okMimes = (family[ext] || [want]).concat(['application/octet-stream']);
+  if (want && okMimes.indexOf(mime) === -1) throw new Error('Upload a genuine ' + ext.toUpperCase() + ' file; the linked file is not one (it is ' + mime + ').');
+}
+/** The client-supplied MIME type is only a hint: check the actual bytes before creating a Drive file. */
+function assertMagicBytes_(ext, bytes) {
+  ext = String(ext || '').toLowerCase();
+  var b = function (i) { return bytes && bytes.length > i ? bytes[i] & 255 : -1; }, hex = function (a) {
+    return a.map(function (i) { var v = b(i); return v < 0 ? '' : ('0' + v.toString(16)).slice(-2); }).join('');
+  }, sig = function (s) {
+    var out = ''; for (var i = 0; i < s.length; i++) out += ('0' + s.charCodeAt(i).toString(16)).slice(-2); return out;
+  };
+  var ok = false;
+  if (ext === 'pdf') ok = hex([0, 1, 2, 3, 4]) === sig('%PDF-');
+  else if (ext === 'doc') ok = hex([0, 1, 2, 3, 4, 5, 6, 7]) === 'd0cf11e0a1b11ae1';
+  else if (ext === 'docx' || ext === 'pptx') ok = hex([0, 1, 2, 3]) === '504b0304' || hex([0, 1, 2, 3]) === '504b0506';
+  else if (ext === 'jpg' || ext === 'jpeg') ok = hex([0, 1, 2]) === 'ffd8ff';
+  else if (ext === 'png') ok = hex([0, 1, 2, 3, 4, 5, 6, 7]) === '89504e470d0a1a0a';
+  else ok = true;
+  if (!ok) throw new Error('That file does not match its extension. Upload a genuine ' + ext.toUpperCase() + ' file.');
+}
+/** docx / pptx are zip packages: confirm the package holds the part that makes it a Word / PowerPoint file. */
+function assertOfficePackage_(ext, bytes) {
+  ext = String(ext || '').toLowerCase();
+  var need = ext === 'docx' ? 'word/document.xml' : ext === 'pptx' ? 'ppt/presentation.xml' : '';
+  if (!need) return;
+  var names = [];
+  try { names = Utilities.unzip(Utilities.newBlob(bytes, 'application/zip', 'x.zip')).map(function (b) { return String(b.getName()); }); }
+  catch (e) { throw new Error('That ' + ext.toUpperCase() + ' file is damaged or is not a genuine Office file.'); }
+  if (names.indexOf(need) === -1) throw new Error('That file is not a genuine ' + ext.toUpperCase() + ' document. Upload the original Word / PowerPoint file.');
 }
 function templatesFor_() {
   var t = {}; Object.keys(CFG.TEMPLATES).forEach(function (k) { t[k] = CFG.TEMPLATES[k]; });
   var d = String(getSetting_('TEMPLATE_PROPOSAL_DEFENCE_FORM', '') || '').trim(), p = String(getSetting_('TEMPLATE_PROGRESS_PPTX', '') || '').trim();
   if (d) t['Proposal Defence Form'] = d;
-  t['Progress Presentation Template'] = p || t['Progress Presentation Template'] || t['Seminar Template'];
+  t['Progress Presentation Template'] = p;   // no silent fallback: an unset key shows "not provided" in Downloads
   return t;
 }
 
 /* ---- stage helpers ---- */
+/** PhD-only stages are identified by programme, never by the presence of an examiner or a submission type. */
+function isPhd_(programme) { return /phd/i.test(String(programme || '')); }
 function stageIdx_(s) { return CFG.JOURNEY_STAGES.indexOf(String(s || '')); }
 function advanceStageTo_(stu, target, why) {
   if (!stu || stageIdx_(target) < 0 || stageIdx_(target) <= stageIdx_(stu.currentStage)) return '';
@@ -5692,6 +6780,8 @@ function stageEntered_(stu, stage) {
     notifyCoordinators_('Assign External Examiner \u2014 ' + stu.regNumber, t2, t2); notifyHoDs_('Assign External Examiner \u2014 ' + stu.regNumber, t2);
   } else if (stage === S_.DEFENCE) {
     notifyCoordinators_('Proposal defence \u2014 ' + stu.regNumber, who + ' is cleared for the proposal defence. Record the outcome after the defence.', who + ' is cleared for the proposal defence. Record the outcome in Overview & Reports \u2192 Pipeline.');
+  } else if (stage === S_.SECOND_INTERNAL) {
+    notifyCoordinators_('Second internal examination \u2014 ' + stu.regNumber, who + ' has completed the first internal examination and is waiting for the PhD-only second internal examination. Record the outcome in the coordinator dashboard.', who + ' is waiting for the PhD-only second internal examination. Record the outcome in the PG Coordinator dashboard.');
   }
 }
 
@@ -5728,22 +6818,25 @@ function notifyPptxRecipients_(sub) {
         : who + ' has uploaded the progress presentation (PPTX). Open Submissions Review to view, download, and approve or return it against the standard.\n\n' + CFG.APP_NAME }); } catch (e) {} }
   });
 }
-/** Stage 14 -> 15: when the comments file, the comment-by-comment response and the final corrected version are all in. */
-var FINAL_PACKAGE_TYPES = ['External Examiner Comments', 'Comment-by-Comment Response (External Examiner)', 'Final Correction'];
+/** Stage 14 -> 15: the External Examiner must have scored, and the student must supply the response and clean copy. */
+var FINAL_PACKAGE_TYPES = ['Comment-by-Comment Response (External Examiner)', 'Final Correction', 'External Examiner Assessment'];
 function finalPackageStatus_(reg) {
+  var studentTypes = FINAL_PACKAGE_TYPES.slice(0, 2);
   var subs = filterWhere_('Submissions', function (s) { return String(s.regNumber) === String(reg) && String(s.status) !== 'Draft' && String(s.status) !== 'Rejected'; }), done = {};
-  FINAL_PACKAGE_TYPES.forEach(function (t) { done[t] = subs.some(function (s) { return s.type === t; }); });
+  studentTypes.forEach(function (t) { done[t] = subs.some(function (s) { return s.type === t; }); });
+  var fb = examinerFeedbackForStudent_(reg);
+  done['External Examiner Assessment'] = !!(fb.external && (fb.external.submittedAt || fb.external.status === 'Feedback received'));
   return { required: FINAL_PACKAGE_TYPES, done: done, complete: FINAL_PACKAGE_TYPES.every(function (t) { return done[t]; }) };
 }
 function checkFinalPackage_(reg) {
   var stu = studentByReg_(reg);
   if (!stu || stageIdx_(stu.currentStage) !== stageIdx_(S_.COMMENTS) || !finalPackageStatus_(reg).complete) return;
-  if (!advanceStageTo_(stu, S_.FINAL_COMPLIANCE, 'all examiner-correction files submitted')) return;
-  var t = fullNameOf_(stu) + ' (' + reg + ') has submitted the examiner comments, the comment-by-comment response and the final corrected version. Final compliance check can start.';
+  if (!advanceStageTo_(stu, S_.FINAL_COMPLIANCE, 'external assessment and all corrections submitted')) return;
+  var t = fullNameOf_(stu) + ' (' + reg + ') has the External Examiner\u2019s assessment, the comment-by-comment response and the corrected clean copy. Final compliance check can start.';
   notifyCoordinators_('Final compliance \u2014 ' + reg, t, t);
   readTable_('Users').filter(function (u) { return u.role === 'Submission_Inspector' && toBool_(u.active); }).forEach(function (u) { addNote_(u.regNumber, 'Final compliance check: ' + fullNameOf_(stu) + ' (' + reg + ')'); });
   [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Please endorse the final corrections: ' + fullNameOf_(stu) + ' (' + reg + ')'); });
-  notifyStudent_(reg, 'Final compliance check started', 'All three correction files are in. Your supervisors, the Submission Inspector and the PG Coordinator now run the final compliance check.');
+  notifyStudent_(reg, 'Final compliance check started', 'The External Examiner\u2019s assessment, your response and your corrected clean copy are in. Your supervisors, the Submission Inspector and the PG Coordinator now run the final compliance check.');
 }
 
 /* ---- title / readiness / intents: finishing an approval that needs no PG Coordinator step ---- */
@@ -5780,10 +6873,30 @@ function api_recordProposalDefence_l(token, reg, outcome, note) {
 }
 function api_recordProposalDefence() { return L_(api_recordProposalDefence_l, arguments); }
 
+/* ---- Second internal examination outcome (PhD only, PG Coordinator) ----
+ *  Stage 10b is a PhD-only gate between the shared first internal examination (stage 10) and stage 11.
+ *  MSc/MPhil students never enter it: approving their progress presentation moves them straight to stage 11. */
+function api_recordSecondInternal_l(token, reg, outcome, note) {
+  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can record the second internal examination outcome.');
+  if (['Passed', 'Passed with corrections', 'Not passed'].indexOf(outcome) === -1) throw new Error('Choose an outcome.');
+  var stu = studentByReg_(reg); if (!stu) throw new Error('Student not found.');
+  if (!isPhd_(stu.programme)) throw new Error('The second internal examination is a PhD-only stage.');
+  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at the Second Internal Examination stage.');
+  note = String(note || '').trim().slice(0, 800);
+  if (outcome !== 'Passed' && !note) throw new Error('Add a note (corrections required, or reason).');
+  var moved = outcome === 'Not passed' ? '' : advanceStageTo_(stu, S_.FINAL_INTENT, 'second internal examination ' + outcome.toLowerCase());
+  logAudit_(user.id, user.regNumber, 'SECOND_INTERNAL', reg, outcome + (note ? ': ' + note : ''));
+  notifyStudent_(reg, 'Second internal examination outcome: ' + outcome, 'The PG Coordinator recorded your PhD second internal examination as \u201C' + outcome + '\u201D.' + (note ? '\n' + note : '') + (moved ? '\nYour stage is now: ' + moved + '.' : '\nYou remain at the Second Internal Examination stage.'));
+  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Second internal examination ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
+  return { ok: true, stage: moved || stu.currentStage };
+}
+function api_recordSecondInternal() { return L_(api_recordSecondInternal_l, arguments); }
+
 /* ---- Examiners: assignment (Coordinator / HoD), login role, assessment ---- */
 var HOME_DEPT_RE = /physics/i, HOME_UNI_RE = /(university of abuja|uniabuja)/i;
 var ASSESSMENT_CRITERIA = {
   Internal: ['Clarity of research problem and objectives', 'Progress and results to date', 'Methodology and analysis', 'Quality of the presentation', 'Response to questions'],
+  'Internal (Second)': ['Clarity of research problem and objectives', 'Progress and results to date', 'Methodology and analysis', 'Quality of the presentation', 'Response to questions'],
   External: ['Originality and contribution to knowledge', 'Literature review', 'Methodology and rigour', 'Results, analysis and conclusions', 'Presentation and referencing']
 };
 var RECOMMENDATIONS = ['Accept as submitted', 'Accept with minor corrections', 'Major corrections required', 'Re-examination required', 'Reject'];
@@ -5793,15 +6906,22 @@ function newExaminerLoginId_() {
   var max = 0; readTable_('Users').forEach(function (u) { var m = /^EXM(\d{4})$/.exec(String(u.regNumber || '')); if (m) max = Math.max(max, parseInt(m[1], 10)); });
   return 'EXM' + ('0000' + (max + 1)).slice(-4);
 }
-function examinerRows_(user) { return readTable_('Examiners').filter(function (x) { return String(x.examLogin) === String(user.regNumber) && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; }); }
+/** An assignment gives document access while it is Assigned, or when it was revoked/replaced but an authorised
+ *  administrator has explicitly granted continued (read-only) access (extendedAccess = 'yes'). */
+function examinerAccessActive_(x) {
+  var st = String(x && x.status || '');
+  return st === 'Assigned' || (st === 'Revoked' && String(x.extendedAccess || '') === 'yes');
+}
+function examinerRows_(user) { return readTable_('Examiners').filter(function (x) { return String(x.examLogin) === String(user.regNumber) && (['Declined', 'Revoked'].indexOf(String(x.status)) === -1 || examinerAccessActive_(x)); }); }
 /** An examiner may open ONLY: the thesis/dissertation they were assigned to (External) or the student's Progress Report (Internal).
  *  Receipts, evidence of payment, the Plagiarism Certificate, the PPTX and every other upload are refused. */
 function examinerMaySee_(user, sub) {
   if (isRestrictedType_(sub.type) || EXAMINER_DOC_TYPES.indexOf(String(sub.type)) === -1) return false;
   if (String(sub.status) === 'Draft') return false;
   return examinerRows_(user).some(function (x) {
-    if (String(x.status) !== 'Assigned') return false;
+    if (!examinerAccessActive_(x)) return false;
     if (x.type === 'External') return sub.type === 'Final Thesis/Dissertation' && String(x.submissionId) === String(sub.id);
+    if (x.type === 'Internal (Second)') return sub.type === 'Progress Report (Second Internal)' && String(x.regNumber) === String(sub.regNumber);
     return x.type === 'Internal' && sub.type === 'Progress Report' && String(x.regNumber) === String(sub.regNumber);
   });
 }
@@ -5809,7 +6929,8 @@ function examinerMaySee_(user, sub) {
 function examinerDocSubs_(ex) {
   if (!ex) return [];
   if (ex.type === 'External') { var s = ex.submissionId && findById_('Submissions', ex.submissionId); return s && s.type === 'Final Thesis/Dissertation' ? [s] : []; }
-  return filterWhere_('Submissions', function (s) { return String(s.regNumber) === String(ex.regNumber) && s.type === 'Progress Report' && String(s.status) !== 'Draft'; });
+  var type = ex.type === 'Internal (Second)' ? 'Progress Report (Second Internal)' : 'Progress Report';
+  return filterWhere_('Submissions', function (s) { return String(s.regNumber) === String(ex.regNumber) && s.type === type && String(s.status) !== 'Draft'; });
 }
 function examinerEachFileId_(ex, fn) { examinerDocSubs_(ex).forEach(function (s) { fileIdsFromUrls_(s.driveFileUrls).forEach(fn); }); }
 function activeExaminer_(reg, type, subId) {
@@ -5820,7 +6941,7 @@ var EXAMINER_RANKS_ = ['Professor', 'Associate Professor', 'Senior Lecturer'];
 function api_assignExaminer_l(token, p) {
   var user = requireUser_(token); assertRole_(user, ['PG_Coordinator', 'HoD'], 'Only the PG Coordinator or HoD can assign examiners.');
   p = p || {}; if (['Internal', 'External'].indexOf(p.type) === -1) throw new Error('Choose Internal or External.');
-  var sub = null, stu;
+  var sub = null, stu, replacing = p.replaceId ? findById_('Examiners', p.replaceId) : null;
   if (p.type === 'External') {
     sub = findById_('Submissions', p.submissionId); if (!sub) throw new Error('Thesis submission not found.');
     if (sub.type !== 'Final Thesis/Dissertation') throw new Error('An External Examiner is assigned to the thesis/dissertation.');
@@ -5831,6 +6952,12 @@ function api_assignExaminer_l(token, p) {
     if (stu && stageIdx_(stu.currentStage) < stageIdx_(S_.INT_EXAM)) throw new Error('The student\u2019s progress-report intent must be approved first (stage 9).');
   }
   if (!stu) throw new Error('Student not found.');
+  if (replacing) {
+    if (String(replacing.regNumber) !== String(stu.regNumber) || replacing.type !== p.type) throw new Error('The replacement does not match this assignment.');
+    if (String(replacing.status) === 'Scored') throw new Error('A submitted assessment cannot be replaced.');
+    if (['Revoked', 'Declined'].indexOf(String(replacing.status)) > -1) throw new Error('That assignment has already ended; it cannot be replaced again.');
+    if (p.type === 'External' && String(replacing.submissionId) !== String(sub && sub.id)) throw new Error('The replacement does not match this thesis submission.');
+  }
   var name = String(p.fullName || '').trim(), em = cleanEmail_(p.email), rank = String(p.rank || '').trim(), inst = String(p.institution || '').trim(), dept = String(p.department || '').trim();
   if (!validateName_(name.replace(/\./g, ''))) throw new Error('Enter the examiner\u2019s full name.');
   if (!validateEmail_(em)) throw new Error('Enter a valid email address.');
@@ -5849,7 +6976,8 @@ function api_assignExaminer_l(token, p) {
     if (HOME_UNI_RE.test(inst) || /@uniabuja\.edu\.ng$/i.test(em)) throw new Error('An External Examiner must be an academic staff of another university.');
   }
   if (supervisorEmails_([stu.mainSupervisorId, stu.coSupervisorId]).indexOf(em) !== -1) throw new Error('A supervisor of this student cannot be the examiner.');
-  if (activeExaminer_(stu.regNumber, p.type, sub && sub.id)) throw new Error('A ' + p.type + ' examiner is already assigned. Revoke that one first.');
+  var active = activeExaminer_(stu.regNumber, p.type, sub && sub.id);
+  if (active && (!replacing || String(active.id) !== String(replacing.id))) throw new Error('A ' + p.type + ' examiner is already assigned. Use Replace on the current assignment.');
   var login = findWhere_('Users', function (u) { return u.role === 'Examiner' && String(u.email).toLowerCase() === em; }), tempPw = '', loginId;
   if (login) { loginId = login.regNumber; updateRow_('Users', login.id, { active: true, status: 'Approved', fullName: name }); bumpSessionEpoch_(login.id); }
   else {
@@ -5859,7 +6987,22 @@ function api_assignExaminer_l(token, p) {
   }
   var due = String(p.dueDate || '').trim();
   var r = appendRow_('Examiners', { regNumber: stu.regNumber, examinerName: name, type: p.type, email: em, score: '', comments: '', status: 'Assigned', createdAt: nowIso_(),
-    submissionId: sub ? sub.id : '', institution: inst, department: dept, rank: rank, examLogin: loginId, assignedBy: user.fullName, dueDate: due, recommendation: '', scores: '', reportUrl: '', submittedAt: '', profileUrl: '' });
+    submissionId: sub ? sub.id : '', institution: inst, department: dept, rank: rank, examLogin: loginId, assignedBy: user.fullName, dueDate: due, recommendation: '', scores: '', reportUrl: '', submittedAt: '', profileUrl: '', replacesId: replacing ? replacing.id : '' });
+  if (replacing && p.type === 'Internal') {
+    readTable_('Examiners').filter(function (x) {
+      return String(x.regNumber) === String(stu.regNumber) && x.type === 'Internal (Second)' && String(x.status) === 'Assigned' && String(x.examLogin) === String(replacing.examLogin);
+    }).forEach(function (x) {
+      logAudit_(user.id, user.regNumber, 'EXAMINER_SECOND_CYCLE_CARRIED', stu.regNumber, 'Second-cycle assignment ' + x.id + ' moved from ' + x.examinerName + ' [' + x.examLogin + '] to ' + name + ' [' + loginId + '] by ' + user.fullName + ' on ' + nowIso_());
+      updateRow_('Examiners', x.id, { examinerName: name, email: em, examLogin: loginId, institution: inst, department: dept, rank: rank });
+      if (String(x.email).toLowerCase() !== em) examinerEachFileId_(x, function (fid) { revokeFileEmails_(fid, [x.email]); });
+      try { examinerEachFileId_(x, function (fid) { grantFileRole_(fid, em, 'reader'); }); } catch (e) { Logger.log('second-cycle examiner share: ' + e); }
+    });
+  }
+  if (replacing) {
+    updateRow_('Examiners', replacing.id, { status: 'Revoked', revokedAt: nowIso_(), revokedBy: user.fullName, revokedByReg: user.regNumber, replacedById: r.id });
+    if (String(replacing.email).toLowerCase() !== em) examinerEachFileId_(replacing, function (fid) { revokeFileEmails_(fid, [replacing.email]); });
+    deactivateExaminerIfUnused_(replacing.examLogin);
+  }
   try { examinerEachFileId_(r, function (id) { grantFileRole_(id, em, 'reader'); }); } catch (e) { Logger.log('examiner share: ' + e); }   // the thesis (External) or the Progress Report (Internal): nothing else
   var what = p.type === 'Internal' ? 'read the student\u2019s progress report (open it from My Assignments in the portal) and assess the progress presentation at the departmental seminar (the slides are not shared with examiners)' : 'read and assess the thesis/dissertation';
   var coordMail = coordinatorEmail_(), subj = 'Examiner appointment \u2014 ' + stu.programme + ' ' + p.type + ' examination';
@@ -5879,38 +7022,136 @@ function api_assignExaminer_l(token, p) {
     '<p style="color:#66756f;font-size:13px;margin-top:12px">' + (tempPw ? 'You will be asked to set a new password at first login. ' : '') + 'Sign in, open &ldquo;My Assignments&rdquo; and submit your assessment.</p>' +
     '<p style="margin:12px 0 0;font-size:13px"><strong>Please do not reply to this email.</strong> For any question, write to the PG Coordinator at <a href="mailto:' + escHtml_(coordMail) + '" style="color:#14532d;font-weight:600">' + escHtml_(coordMail) + '</a>.</p>';
   try { sendPortalMail_({ to: em, subject: subj, body: body, htmlBody: exHtml, contactEmail: coordMail, contactLabel: 'the PG Coordinator' }); } catch (e) { Logger.log('examiner mail: ' + e); }
-  notifyStudent_(stu.regNumber, 'Examiner assigned', 'An ' + p.type + ' examiner has been appointed for your examination. Examiner identities are kept confidential.');
+  var hadPrevious = readTable_('Examiners').some(function (x) {
+    return String(x.regNumber) === String(stu.regNumber) && x.type === p.type && String(x.id) !== String(r.id);
+  });
+  notifyStudent_(stu.regNumber, hadPrevious ? 'Examiner reassigned' : 'Examiner assigned',
+    (hadPrevious ? 'A new ' : 'An ') + p.type + ' examiner has been ' + (hadPrevious ? 'appointed in place of the previous one' : 'appointed for your examination') +
+    (hadPrevious ? '. The previous examiner no longer has access' : '') + '. Examiner identities are kept confidential.');
   var t = user.fullName + ' assigned ' + name + ' (' + (p.type === 'External' ? inst + ', ' : '') + dept + ') as ' + p.type + ' examiner for ' + stu.regNumber + '.';
   notifyCoordinators_('Examiner assigned \u2014 ' + stu.regNumber, t, t); if (user.role !== 'HoD') notifyHoDs_('Examiner assigned \u2014 ' + stu.regNumber, t);
   [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, p.type + ' examiner assigned to ' + fullNameOf_(stu) + ': ' + name); });
   if (p.type === 'Internal') advanceStageTo_(stu, S_.PRESENT, 'internal examiner assigned');
   logAudit_(user.id, user.regNumber, 'ASSIGN_EXAMINER', stu.regNumber, p.type + ': ' + name + ' [' + loginId + ']');
+  if (replacing) logAudit_(user.id, user.regNumber, 'REPLACE_EXAMINER', stu.regNumber, p.type + ': ' + replacing.examinerName + ' [' + replacing.examLogin + '] (originally assigned ' + (replacing.createdAt || '?') + ' by ' + (replacing.assignedBy || '?') + ') replaced by ' + name + ' [' + loginId + '] on ' + nowIso_() + ' by ' + user.fullName + '; assignment ' + replacing.id + ' -> ' + r.id);
   return { id: r.id, loginId: loginId, newAccount: !!tempPw };
 }
 function api_assignExaminer() { return L_(api_assignExaminer_l, arguments); }
+/** One-step replacement: revoke the current assignment and appoint the new examiner in the same locked call. */
+function api_replaceExaminer_l(token, id, p) {
+  var old = findById_('Examiners', id);
+  if (!old) throw new Error('Examiner record not found.');
+  p = p || {}; p.replaceId = id;
+  return api_assignExaminer_l(token, p);
+}
+function api_replaceExaminer() { return L_(api_replaceExaminer_l, arguments); }
+function deactivateExaminerIfUnused_(loginId) {
+  if (!loginId || readTable_('Examiners').some(function (x) { return String(x.examLogin) === String(loginId) && examinerAccessActive_(x); })) return;
+  var u = userByRegExact_(loginId); if (u) { updateRow_('Users', u.id, { active: false }); bumpSessionEpoch_(u.id); }
+}
+
+/** PhD second internal cycle: a separate assessment row (no new sheet columns) for the same Internal Examiner.
+ *  It is created only at stage 10b and only after a first Internal Examiner assignment exists. */
+function api_assignSecondInternal_l(token, reg) {
+  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can open the second internal examination.');
+  var stu = studentByReg_(reg); if (!stu) throw new Error('Student not found.');
+  if (!isPhd_(stu.programme)) throw new Error('The second internal examination is PhD-only.');
+  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at the second internal examination stage.');
+  var existing = findWhere_('Examiners', function (x) { return String(x.regNumber) === String(stu.regNumber) && x.type === 'Internal (Second)' && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; });
+  if (existing) throw new Error('The second internal examiner has already been assigned.');
+  var first = readTable_('Examiners').filter(function (x) { return String(x.regNumber) === String(stu.regNumber) && x.type === 'Internal' && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; })
+    .sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); })[0];
+  if (!first) throw new Error('Assign the first Internal Examiner before opening the second cycle.');
+  var r = appendRow_('Examiners', {
+    regNumber: stu.regNumber, examinerName: first.examinerName, type: 'Internal (Second)', email: first.email,
+    score: '', comments: '', status: 'Assigned', createdAt: nowIso_(), submissionId: '', institution: first.institution || 'University of Abuja',
+    department: first.department, rank: first.rank, examLogin: first.examLogin, assignedBy: user.fullName, dueDate: '',
+    recommendation: '', scores: '', reportUrl: '', submittedAt: '', profileUrl: ''
+  });
+  examinerEachFileId_(r, function (id) { try { grantFileRole_(id, first.email, 'reader'); } catch (e) { Logger.log('second examiner share: ' + e); } });
+  notifyStudent_(stu.regNumber, 'Second internal examiner assigned', 'An Internal Examiner has been assigned for your PhD second internal examination. Examiner identities are kept confidential. The second progress report is now available on your examiner\u2019s dashboard.');
+  addNote_(first.examLogin, 'You have been assigned a PhD second internal examination for ' + fullNameOf_(stu) + ' (' + stu.regNumber + '). Open My Assignments to submit your assessment.');
+  logAudit_(user.id, user.regNumber, 'ASSIGN_SECOND_INTERNAL', stu.regNumber, 'Cycle 2 opened from first internal assignment ' + first.id);
+  return { id: r.id, loginId: first.examLogin };
+}
+function api_assignSecondInternal() { return L_(api_assignSecondInternal_l, arguments); }
 
 function api_revokeExaminer_l(token, id) {
   var user = requireUser_(token); assertRole_(user, ['PG_Coordinator', 'HoD'], 'You cannot revoke examiners.');
   var ex = findById_('Examiners', id); if (!ex) throw new Error('Examiner record not found.');
   if (String(ex.status) === 'Scored') throw new Error('This examiner has already submitted an assessment.');
-  updateRow_('Examiners', id, { status: 'Revoked' });
+  updateRow_('Examiners', id, { status: 'Revoked', revokedAt: nowIso_(), revokedBy: user.fullName, revokedByReg: user.regNumber });
   examinerEachFileId_(ex, function (fid) { revokeFileEmails_(fid, [ex.email]); });
-  if (!readTable_('Examiners').some(function (x) { return String(x.examLogin) === String(ex.examLogin) && String(x.status) === 'Assigned'; })) {
-    var u = userByRegExact_(ex.examLogin); if (u) { updateRow_('Users', u.id, { active: false }); bumpSessionEpoch_(u.id); }
-  }
-  logAudit_(user.id, user.regNumber, 'REVOKE_EXAMINER', ex.regNumber, ex.type + ': ' + ex.examinerName); return { ok: true };
+  deactivateExaminerIfUnused_(ex.examLogin);
+  notifyStudent_(ex.regNumber, 'Examiner assignment changed', 'A previously assigned ' + ex.type + ' examiner has been withdrawn from your examination. Their access to your documents has ended; you will be told when a replacement is appointed.');
+  logAudit_(user.id, user.regNumber, 'REVOKE_EXAMINER', ex.regNumber, ex.type + ': ' + ex.examinerName + ' [' + ex.examLogin + '] (originally assigned ' + (ex.createdAt || '?') + ' by ' + (ex.assignedBy || '?') + ') revoked by ' + user.fullName + ' on ' + nowIso_()); return { ok: true };
 }
 function api_revokeExaminer() { return L_(api_revokeExaminer_l, arguments); }
+
+/** Full assignment history for one student (PG Coordinator / HoD): original assignment, every reassignment or revocation,
+ *  who did it and when, and any continued-access decision. Rows are never deleted, so the chain is permanent. */
+function api_getExaminerHistory(token, regNumber, kind) {
+  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator', 'HoD'], 'Access denied.');
+  var reg = String(regNumber || '').trim(); if (!studentByReg_(reg)) throw new Error('Student not found.');
+  var k = String(kind || '');
+  return readTable_('Examiners').filter(function (x) { return String(x.regNumber) === reg && (!k || String(x.type).indexOf(k) === 0); })
+    .sort(function (a, b) { return String(a.createdAt).localeCompare(String(b.createdAt)); })
+    .map(function (x) {
+      return { id: x.id, type: x.type, examinerName: x.examinerName, rank: x.rank || '', department: x.department || '', institution: x.institution || '',
+        email: x.email || '', loginId: x.examLogin || '', status: x.status, assignedBy: x.assignedBy || '', assignedAt: x.createdAt || '',
+        submittedAt: x.submittedAt || '', revokedAt: x.revokedAt || '', revokedBy: x.revokedBy || '', replacedById: x.replacedById || '', replacesId: x.replacesId || '',
+        continuedAccess: String(x.extendedAccess || '') === 'yes', continuedBy: x.extendedBy || '', continuedAt: x.extendedAt || '', continuedNote: x.extendedNote || '',
+        continuedEndedAt: x.extendedEndedAt || '', continuedEndedBy: x.extendedEndedBy || '', canChangeAccess: String(x.status) === 'Revoked' };
+    });
+}
+/** Explicitly grant (or withdraw) continued READ-ONLY access for an examiner who was replaced or revoked. The default after any
+ *  reassignment is no access; this is the only way to keep it, it needs a written reason, and every change is audited. */
+function api_setExaminerContinuedAccess_l(token, id, grant, note) {
+  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator', 'HoD'], 'Only the PG Coordinator or HoD can change examiner access.');
+  var ex = findById_('Examiners', id); if (!ex) throw new Error('Examiner record not found.');
+  if (String(ex.status) !== 'Revoked') throw new Error('Continued access applies only to an examiner who has been replaced or revoked.');
+  var on = grant === true || grant === 'true' || grant === 1, reason = String(note || '').trim().slice(0, 500), stu = studentByReg_(ex.regNumber), now = nowIso_();
+  if (!stu) throw new Error('Student not found.');
+  var u = ex.examLogin ? userByRegExact_(ex.examLogin) : null;
+  if (on) {
+    if (String(ex.extendedAccess || '') === 'yes') throw new Error('Continued access is already granted.');
+    if (reason.length < 10) throw new Error('Enter the reason for granting continued access (at least 10 characters).');
+    updateRow_('Examiners', ex.id, { extendedAccess: 'yes', extendedBy: user.fullName, extendedByReg: user.regNumber, extendedAt: now, extendedNote: reason, extendedEndedAt: '', extendedEndedBy: '' });
+    if (u) { updateRow_('Users', u.id, { active: true }); bumpSessionEpoch_(u.id); }
+    try { examinerEachFileId_(ex, function (fid) { grantFileRole_(fid, ex.email, 'reader'); }); } catch (e) { Logger.log('continued access share: ' + e); }
+    if (u) addNote_(ex.examLogin, 'Read-only access to the ' + ex.type + ' documents of ' + fullNameOf_(stu) + ' has been reinstated by ' + user.fullName + '. You cannot submit a new assessment.');
+    notifyStudent_(ex.regNumber, 'Examiner access updated', 'An administrator has authorised a previously assigned ' + String(ex.type).replace(/ \(Second\)$/, '') + ' examiner to keep read-only access to the relevant document. Examiner identities remain confidential.');
+    logAudit_(user.id, user.regNumber, 'EXAMINER_CONTINUED_ACCESS_GRANTED', ex.regNumber, ex.type + ': ' + ex.examinerName + ' [' + ex.examLogin + '] (assignment ' + ex.id + ', revoked ' + (ex.revokedAt || '?') + ') granted by ' + user.fullName + ' on ' + now + '. Reason: ' + reason);
+  } else {
+    if (String(ex.extendedAccess || '') !== 'yes') throw new Error('This examiner has no continued access to withdraw.');
+    updateRow_('Examiners', ex.id, { extendedAccess: '', extendedEndedAt: now, extendedEndedBy: user.fullName });
+    var em = String(ex.email || '').toLowerCase();
+    var stillCovered = readTable_('Examiners').some(function (x) { return String(x.id) !== String(ex.id) && String(x.regNumber) === String(ex.regNumber) && String(x.email || '').toLowerCase() === em && examinerAccessActive_(x); });
+    if (!stillCovered) examinerEachFileId_(ex, function (fid) { revokeFileEmails_(fid, [ex.email]); });
+    deactivateExaminerIfUnused_(ex.examLogin);
+    notifyStudent_(ex.regNumber, 'Examiner access updated', 'Continued access for a previously assigned ' + String(ex.type).replace(/ \(Second\)$/, '') + ' examiner has ended.');
+    logAudit_(user.id, user.regNumber, 'EXAMINER_CONTINUED_ACCESS_ENDED', ex.regNumber, ex.type + ': ' + ex.examinerName + ' [' + ex.examLogin + '] (assignment ' + ex.id + ') ended by ' + user.fullName + ' on ' + now);
+  }
+  return { ok: true, continuedAccess: on };
+}
+function api_setExaminerContinuedAccess() { return L_(api_setExaminerContinuedAccess_l, arguments); }
 
 /** Students waiting for an Internal / External examiner, with the current assignment if any (Coordinator + HoD). */
 function api_listExaminerQueue(token) {
   var user = requireUser_(token); assertRole_(user, ['PG_Coordinator', 'HoD'], 'Access denied.');
   var view = function (e) { return e ? { id: e.id, name: e.examinerName, email: e.email, institution: e.institution, department: e.department, rank: e.rank, status: e.status, dueDate: e.dueDate, recommendation: e.recommendation, score: e.score, loginId: e.examLogin, comments: e.comments || '', reportUrl: e.reportUrl || '', submittedAt: e.submittedAt || '', scores: e.scores ? safeParse_(e.scores) : null } : null; };
   var internal = readTable_('Students').filter(function (s) { var i = stageIdx_(s.currentStage); return i >= stageIdx_(S_.INT_EXAM) && i <= stageIdx_(S_.FINAL_INTENT) || !!activeExaminer_(s.regNumber, 'Internal'); })
-    .map(function (s) { return { kind: 'Internal', regNumber: s.regNumber, studentName: fullNameOf_(s), programme: s.programme, department: s.department, stage: s.currentStage, submissionId: '', examiner: view(activeExaminer_(s.regNumber, 'Internal')) }; });
+    .map(function (s) {
+      var second = findWhere_('Examiners', function (x) { return String(x.regNumber) === String(s.regNumber) && x.type === 'Internal (Second)' && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; });
+      return { kind: 'Internal', regNumber: s.regNumber, studentName: fullNameOf_(s), programme: s.programme, department: s.department,
+        stage: s.currentStage, submissionId: '', examiner: view(activeExaminer_(s.regNumber, 'Internal')), secondExaminer: view(second) };
+    });
   var external = readTable_('Submissions').filter(function (s) { return s.type === 'Final Thesis/Dissertation' && String(s.status) === 'Approved'; })
     .map(function (s) { var st = studentByReg_(s.regNumber) || {};
       return { kind: 'External', regNumber: s.regNumber, studentName: st.regNumber ? fullNameOf_(st) : '', programme: st.programme || '', department: st.department || '', stage: st.currentStage || '', submissionId: s.id, examiner: view(activeExaminer_(s.regNumber, 'External', s.id)) }; });
+  var past = {}; readTable_('Examiners').forEach(function (x) { if (['Revoked', 'Declined'].indexOf(String(x.status)) > -1) past[String(x.regNumber)] = 1; });
+  internal.forEach(function (r) { r.hasHistory = !!past[String(r.regNumber)]; });
+  external.forEach(function (r) { r.hasHistory = !!past[String(r.regNumber)]; });
   return { internal: internal, external: external };
 }
 
@@ -5919,13 +7160,15 @@ function api_getExaminerDashboard(token) {
   var user = requireUser_(token); assertRole_(user, ['Examiner'], 'Access denied.');
   return {
     criteria: ASSESSMENT_CRITERIA, recommendations: RECOMMENDATIONS, internalRecommendations: INTERNAL_RECS,
+    documentCatalog: documentCatalogPayload_(),
     assignments: examinerRows_(user).map(function (x) {
       var stu = studentByReg_(x.regNumber);
       var docs = examinerDocSubs_(x).sort(function (a, b) { return String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)); });
       return { id: x.id, type: x.type, status: x.status, dueDate: x.dueDate, submittedAt: x.submittedAt, submissionId: docs.length ? docs[0].id : '',
         student: stu ? fullNameOf_(stu) : x.regNumber, programme: stu ? stu.programme : '', thesisTitle: stu ? (stu.thesisTitle || '') : '',
-        document: x.type === 'External' ? 'Thesis / Dissertation' : 'Progress Report (the presentation is assessed at the seminar; the slides are not shared)',
-        recommendation: x.recommendation, score: x.score, comments: x.comments, scores: x.scores ? safeParse_(x.scores) : null, reportUrl: x.reportUrl || '' };
+        document: x.type === 'External' ? 'Thesis / Dissertation' : x.type === 'Internal (Second)' ? 'Second Progress Report (PhD second internal cycle)' : 'Progress Report (the presentation is assessed at the seminar; the slides are not shared)',
+        recommendation: x.recommendation, score: x.score, comments: x.comments, scores: x.scores ? safeParse_(x.scores) : null, reportUrl: x.reportUrl || '',
+        readOnly: String(x.status) === 'Revoked' };
     })
   };
 }
@@ -5935,19 +7178,24 @@ function api_submitExaminerAssessment_l(token, id, a) {
   var user = requireUser_(token); assertRole_(user, ['Examiner'], 'Access denied.');
   var ex = findById_('Examiners', id); if (!ex || String(ex.examLogin) !== String(user.regNumber)) throw new Error('Assignment not found.');
   if (String(ex.status) !== 'Assigned') throw new Error('This assessment has already been submitted or withdrawn.');
-  a = a || {}; var crit = ASSESSMENT_CRITERIA[ex.type] || [], scores = {}, total = 0;
+  a = a || {}; var isSecond = ex.type === 'Internal (Second)', isExternal = ex.type === 'External';
+  var crit = ASSESSMENT_CRITERIA[ex.type] || ASSESSMENT_CRITERIA.Internal || [], scores = {}, total = 0;
   crit.forEach(function (c) { var n = parseFloat((a.scores || {})[c]); if (isNaN(n) || n < 0 || n > 100) throw new Error('Enter a score (0\u2013100) for: ' + c); scores[c] = n; total += n; });
-  if ((ex.type === 'External' ? RECOMMENDATIONS : INTERNAL_RECS).indexOf(a.recommendation) === -1) throw new Error('Choose a recommendation.');
-  var comments = String(a.comments || '').trim(); if (comments.length < 30) throw new Error('Write your comments (a few sentences at least).');
+  if ((isExternal ? RECOMMENDATIONS : INTERNAL_RECS).indexOf(a.recommendation) === -1) throw new Error('Choose a recommendation.');
   var avg = Math.round((total / crit.length) * 10) / 10, rep = String(a.reportUrl || '').trim();
   if (rep && !/^https:\/\/(drive|docs)\.google\.com\//i.test(rep)) rep = '';
+  var comments = String(a.comments || '').trim();
+  /* The Word report and the dashboard comments are alternatives: at least one must carry the examiner's feedback. */
+  if (!rep && !comments) throw new Error('Enter your comments in the text field, or link to your Word report (or both).');
+  if (comments && comments.length < 30) throw new Error('Write your comments (a few sentences at least), or link to your Word report instead.');
   updateRow_('Examiners', id, { score: avg, scores: JSON.stringify(scores), recommendation: a.recommendation, comments: comments.slice(0, 8000), reportUrl: rep, status: 'Scored', submittedAt: nowIso_() });
   var stu = studentByReg_(ex.regNumber), who = (stu ? fullNameOf_(stu) + ' ' : '') + '(' + ex.regNumber + ')';
   var msg = ex.type + ' examiner ' + ex.examinerName + ' submitted an assessment for ' + who + ': ' + a.recommendation + ' (' + avg + '%).';
   notifyCoordinators_('Examiner assessment received \u2014 ' + ex.regNumber, msg, msg + '\nOpen Overview & Reports \u2192 Examiner assignment to read it.'); notifyHoDs_('Examiner assessment received \u2014 ' + ex.regNumber, msg);
   if (stu) [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (sid) { var u = sid && staffUserFor_(sid); if (u) addNote_(u.regNumber, msg); });
   examinerEachFileId_(ex, function (fid) { revokeFileEmails_(fid, [ex.email]); });
-  if (ex.type === 'External' && stu) { var moved = advanceStageTo_(stu, S_.COMMENTS, 'external examiner assessment received'); notifyStudent_(ex.regNumber, 'External examiner comments available', 'Your External Examiner has submitted comments' + (moved ? '. Your stage is now: ' + moved + '.' : '.') + ' Open your dashboard, then upload the comments file, your comment-by-comment response and the final corrected version.'); }
+  if (isExternal && stu) { var moved = advanceStageTo_(stu, S_.COMMENTS, 'external examiner assessment received'); notifyStudent_(ex.regNumber, 'External examiner comments available', 'Your External Examiner has submitted comments' + (moved ? '. Your stage is now: ' + moved + '.' : '.') + ' Open your dashboard, then upload your comment-by-comment response and corrected clean copy.'); try { checkFinalPackage_(stu.regNumber); } catch (e) { Logger.log('final package after assessment: ' + e); } }
+  if (isSecond && stu) notifyStudent_(ex.regNumber, 'Second internal examiner comments available', 'Your second internal examiner has submitted comments. Open the PhD second-cycle documents section of your dashboard to read them and upload your response and corrected clean copy.');
   logAudit_(user.id, user.regNumber, 'EXAMINER_ASSESSMENT', ex.regNumber, ex.type + ': ' + a.recommendation + ' ' + avg);
   return { ok: true, average: avg };
 }
@@ -5956,7 +7204,8 @@ function api_submitExaminerAssessment() { return L_(api_submitExaminerAssessment
 /* ---- shown to the student ---- */
 function studentExaminers_(reg) {
   return readTable_('Examiners').filter(function (x) { return String(x.regNumber) === String(reg) && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; })
-    .map(function (x) { return { type: x.type, status: x.status === 'Scored' ? 'Assessment received' : 'Assigned' }; });   // identity is never sent to the student
+    .map(function (x) { return { type: x.type === 'Internal (Second)' ? 'Internal' : x.type, cycle: x.type === 'Internal (Second)' ? 2 : 1,
+      status: x.status === 'Scored' ? 'Assessment received' : 'Assigned' }; });   // identity is never sent to the student
 }
 function externalReportFor_(reg) {
   var x = readTable_('Examiners').filter(function (e) { return String(e.regNumber) === String(reg) && e.type === 'External' && String(e.status) === 'Scored'; }).pop();
@@ -5992,13 +7241,16 @@ function api_getPipeline(token) {
       else if (s.currentStage === S_.EXT_EXAM && !myEx.some(function (e) { return e.type === 'External'; })) waiting = 'Coordinator / HoD: assign External Examiner';
       else if (s.currentStage === S_.EXT_EXAM) waiting = 'External Examiner (assessment)';
       else if (s.currentStage === S_.DEFENCE) waiting = 'PG Coordinator: record defence outcome';
+      else if (s.currentStage === S_.SECOND_INTERNAL) waiting = myEx.some(function (e) { return e.type === 'Internal (Second)'; }) ? 'PG Coordinator: record second internal examination outcome' : 'PG Coordinator: assign second internal examiner';
       else if (s.currentStage === S_.PRESENT) waiting = 'Student: upload progress presentation (PPTX)';
       else if (s.currentStage === S_.COMMENTS) waiting = 'Student: comments file, response and final correction';
       else waiting = 'Student';
       since = days(s.updatedAt || s.createdAt);
     }
     var main = s.mainSupervisorId && findById_('Staff', s.mainSupervisorId);
-    return { regNumber: reg, studentName: fullNameOf_(s), programme: s.programme, stage: s.currentStage, title: s.thesisTitle || '', titleStatus: titleState_(s).status, mainSupervisor: main ? main.fullName : '', waitingOn: waiting, waitingDays: since, detail: detail };
+    return { regNumber: reg, studentName: fullNameOf_(s), programme: s.programme, stage: s.currentStage, title: s.thesisTitle || '', titleStatus: titleState_(s).status,
+      mainSupervisor: main ? main.fullName : '', waitingOn: waiting, waitingDays: since, detail: detail,
+      secondInternal: myEx.some(function (e) { return e.type === 'Internal (Second)'; }) };
   });
 }
 
@@ -6055,7 +7307,7 @@ function notifySupervisorsOf_(stu, text) {
 
 /* ---- action-item tracker ---- */
 function api_addAction_l(token, reg, text, owner, dueDate, meetingId) {
-  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator'], 'You cannot add action items.');
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot add action items.');
   var stu = threadStudent_(user, reg);
   text = cleanText_(text, 3, 500, 'The action item');
   owner = owner === 'Supervisor' ? 'Supervisor' : 'Student';
@@ -6123,7 +7375,7 @@ function api_submitCheckIn() { return L_(api_submitCheckIn_l, arguments); }
 /* ---- structured supervisor review (visible to the student and the coordinator) ---- */
 var REVIEW_RECS = ['Continue', 'Concern', 'At risk'], REVIEW_RATINGS = ['Excellent', 'Good', 'Satisfactory', 'Unsatisfactory'];
 function api_saveReview_l(token, reg, period, rating, recommendation, comments) {
-  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator'], 'You cannot write progress reviews.');
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot write progress reviews.');
   var stu = threadStudent_(user, reg);
   if (REVIEW_RATINGS.indexOf(rating) === -1) throw new Error('Choose a progress rating.');
   if (REVIEW_RECS.indexOf(recommendation) === -1) throw new Error('Choose a recommendation.');
@@ -6139,7 +7391,7 @@ function api_saveReview() { return L_(api_saveReview_l, arguments); }
 /* ---- confidential concern flag (never shown to the student) ---- */
 var CONCERN_CATEGORIES = ['Not responding / out of contact', 'Welfare or wellbeing', 'Academic progress', 'Funding or resources', 'Supervisor relationship', 'Other'];
 function api_raiseConcern_l(token, reg, category, text) {
-  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator'], 'You cannot raise concerns.');
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot raise concerns.');
   var stu = threadStudent_(user, reg);
   if (CONCERN_CATEGORIES.indexOf(category) === -1) throw new Error('Choose a category.');
   var t = cleanText_(text, 5, 1500, 'The description');
@@ -6595,5 +7847,54 @@ function migrateSurnamesToUppercase_(dryRun) {
     (dryRun ? '' : ' ' + changedCells + ' name-only cell(s) in other sheets were also updated.');
   Logger.log(summary);
   if (review.length) Logger.log('Needs a manual look:\n' + review.join('\n'));
+  return summary;
+}
+
+/* ---- One-off migration: re-apply the Title field rules to titles already in the sheet ----
+ * The Title field is stored with toTitleText_(): curly apostrophes straightened, runs of spaces collapsed, ends trimmed,
+ * every word capitalised (small words such as "of", "and", "the" stay lowercase unless first or after a colon),
+ * and words with 2+ capitals (ZnO, XRD, DNA, PhD) left alone. Titles entered before that rule existed may be
+ * ALL CAPS, all lowercase or irregularly spaced. Run previewThesisTitles() first and read the log (View > Logs),
+ * then run applyThesisTitles(). Only the title text changes: titleStatus, who confirmed it and the dates are untouched,
+ * so Confirmed titles stay Confirmed. Title Approval requests keep the same wording as the student's record. */
+function previewThesisTitles() { return migrateThesisTitles_(true); }
+function applyThesisTitles() { return migrateThesisTitles_(false); }
+function migrateThesisTitles_(dryRun) {
+  var students = readTable_('Students'), plan = [], skipped = [];
+  students.forEach(function (s) {
+    var oldT = String(s.thesisTitle === undefined || s.thesisTitle === null ? '' : s.thesisTitle);
+    if (!oldT.trim()) return;
+    // toTitleText_ leaves words with 2+ capitals alone, so an ALL-CAPS title would not change. Lowercase it first,
+    // then flag it: acronyms (XRD, ZnO) lose their capitals and need a manual look.
+    var allCaps = /[A-Z]/.test(oldT) && !/[a-z]/.test(oldT);
+    var newT = toTitleText_(allCaps ? oldT.toLowerCase() : oldT);
+    if (allCaps) skipped.push(s.regNumber + ': was ALL CAPS - check acronyms/chemical symbols in "' + newT + '"');
+    if (newT === oldT) return;
+    if (newT.length > 400) { skipped.push(s.regNumber + ': title is over 400 characters - left as is'); return; }
+    plan.push({ student: s, reg: s.regNumber, oldT: oldT, newT: newT });
+  });
+  var intentCells = 0, hasIntentTitle = (HEADERS.PresentationIntents || []).indexOf('title') > -1;
+  if (!dryRun) lockAcquire_(30000);
+  try {
+    plan.forEach(function (p) {
+      Logger.log((dryRun ? '[PREVIEW] ' : '[APPLY] ') + p.reg + ':  ' + p.oldT + '  ->  ' + p.newT);
+      if (dryRun) return;
+      updateRow_('Students', p.student.id, { thesisTitle: p.newT });
+      if (hasIntentTitle) {
+        try {
+          readTable_('PresentationIntents').forEach(function (r) {
+            if (String(r.regNumber) === String(p.reg) && r.kind === 'Title Approval' && String(r.title || '') === p.oldT) {
+              updateRow_('PresentationIntents', r.id, { title: p.newT }); intentCells++;
+            }
+          });
+        } catch (e) { Logger.log('Skipped PresentationIntents for ' + p.reg + ': ' + e); }
+      }
+      logAudit_('system', 'migration', 'THESIS_TITLE_FORMAT', p.reg, (p.oldT + ' -> ' + p.newT).slice(0, 200));
+    });
+  } finally { if (!dryRun) lockRelease_(); }
+  var summary = (dryRun ? 'PREVIEW ONLY - nothing was changed. ' : 'DONE. ') + plan.length + ' title(s) ' + (dryRun ? 'would be' : 'were') + ' reformatted out of ' +
+    students.filter(function (s) { return String(s.thesisTitle || '').trim(); }).length + ' on record.' + (dryRun || !intentCells ? '' : ' ' + intentCells + ' matching Title Approval request(s) updated too.');
+  Logger.log(summary);
+  if (skipped.length) Logger.log('Needs a manual look:\n' + skipped.join('\n'));
   return summary;
 }

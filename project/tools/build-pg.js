@@ -287,14 +287,15 @@ function copyAsset(rel) {
   console.log("  " + rel + "  (asset)");
 }
 
-/** The animated poster draws the 16 stage names itself, so verify them against
+/** The animated poster draws every stage name itself, so verify them against
  *  CFG.JOURNEY_STAGES (Code.gs). This is the drift that once left the public
  *  page on 15 stages while the portal was on 16 — fail the build, not the page. */
 function checkJourneyArt(rel) {
   const gs = fs.readFileSync(path.join(ROOT, "GAS_Files", "Code.gs"), "utf8");
   const block = gs.match(/JOURNEY_STAGES:\s*\[([\s\S]*?)\]/);
   if (!block) throw new Error("CFG.JOURNEY_STAGES not found in GAS_Files/Code.gs");
-  const canonical = [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1].replace(/^\d+\s*-\s*/, ""));
+  // Prefixes are numeric except the inserted PhD-only "10b", so strip any alphanumeric stage number.
+  const canonical = [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1].replace(/^[0-9]+[a-z]?\s*-\s*/i, ""));
 
   const svg = fs.readFileSync(path.join(ROOT, rel), "utf8");
   const labels = [...svg.matchAll(/<g class="lbl lb\d+">([\s\S]*?)<\/g>/g)].map((m) =>
@@ -315,7 +316,7 @@ function checkJourneyArt(rel) {
   if (drift.length) {
     throw new Error("Journey art labels differ from CFG.JOURNEY_STAGES — " + drift.join("; "));
   }
-  console.log("  journey art: 16 stage labels match CFG.JOURNEY_STAGES");
+  console.log("  journey art: " + canonical.length + " stage labels match CFG.JOURNEY_STAGES");
 }
 
 console.log("Building static site → dist/");

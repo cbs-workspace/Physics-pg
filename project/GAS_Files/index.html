@@ -687,12 +687,7 @@
         <h2>Your Postgraduate Journey</h2>
         <div class="card" style="padding:14px">
           <img class="journey-img" src="images/PG_Journey_Infographic.svg" loading="lazy"
-               alt="Postgraduate Journey infographic — 5 phases and 16 steps"
-               onerror="this.parentNode.style.display='none'">
-        </div>
-        <div class="card" style="padding:14px;margin-top:16px">
-          <img class="journey-img" src="/images/PG_Journey_Infographic.png" loading="lazy"
-               alt="Detailed Postgraduate Journey poster"
+               alt="Postgraduate Journey infographic — 5 phases, 16 stages and a PhD-only second internal examination (Step 10b)"
                onerror="this.parentNode.style.display='none'">
         </div>
         <div class="card-grid" style="margin-top:16px">
@@ -712,9 +707,9 @@
           <div class="card phase-card">
             <div class="phase-no">Phase 3</div>
             <h4>Research Execution &amp; Progress</h4>
-            <p>Approval to present the progress report, Internal Examiner assigned (from another department), then the progress presentation (PPTX) checked by the PG Coordinator and Inspector.</p>
-            <div class="steps">Steps 8&ndash;10</div>
-            <div class="gate-badge">Gate at Step 10 &middot; repeat / fall back as outcome requires</div>
+            <p>Approval to present the progress report, Internal Examiner assigned (from another department), then the progress presentation (PPTX) checked by the PG Coordinator and Inspector — the first internal examination. PhD students then sit a second internal examination at Step 10b, whose outcome the PG Coordinator records.</p>
+            <div class="steps">Steps 8&ndash;10b</div>
+            <div class="gate-badge">Gates at Steps 10 and 10b (PhD) &middot; repeat / fall back as outcome requires</div>
           </div>
           <div class="card phase-card">
             <div class="phase-no">Phase 4</div>
@@ -731,10 +726,11 @@
             <div class="gate-badge">Gate at Step 15</div>
           </div>
         </div>
-        <p class="small muted" style="margin-top:12px">Step 2 is for MSc students only. The proposal defence and progress
-          report both hold at the departmental monthly seminar. Inspector clearance is required twice — before the
-          plagiarism check and before final submission. See the full <em>PG Journey Roadmap</em> for every requirement
-          and outcome.</p>
+        <p class="small muted" style="margin-top:12px">Step 2 is for MSc students only; Step 10b is for PhD students only —
+          after the shared first internal examination, PhD students sit a second one before everyone proceeds to Stage 11.
+          The proposal defence and progress report both hold at the departmental monthly seminar. Inspector clearance is
+          required twice — before the plagiarism check and before final submission. See the full <em>PG Journey Roadmap</em>
+          for every requirement and outcome.</p>
       </section>
 
       <!-- About is condensed into one section on Home (its own page was retired). -->
@@ -758,7 +754,7 @@
           <div class="card info-card">
             <div class="card-icon">&#128204;</div>
             <h4>Track Your Journey</h4>
-            <p>Sixteen clearly defined stages — from admission and lectures to signed copies and completion — visible at a glance.</p>
+            <p>Sixteen core stages — from admission and lectures to signed copies and completion — plus a PhD-only second internal examination (Step 10b), visible at a glance.</p>
           </div>
           <div class="card info-card">
             <div class="card-icon">&#128218;</div>
@@ -828,8 +824,8 @@
                     </select>
                   </div>
                 </div>
-                <div class="field"><label>Passport Photo * <span class="muted" style="font-weight:400">(JPG/PNG/HEIC &mdash; large photos are resized for you)</span></label><input type="file" name="passportPhoto" accept="image/jpeg,image/png,image/heic,image/heif" required></div>
-                <div class="field"><label>Admission letter <span class="muted" style="font-weight:400">(optional &mdash; PDF, JPG or PNG, max 3 MB; only the PG Coordinator and HoD can open it)</span></label><input type="file" name="admissionLetter" accept=".pdf,image/jpeg,image/png"></div>
+                <div class="field"><label>Passport Photo * <span class="muted" style="font-weight:400">(any photo &mdash; JPG, PNG, WEBP or HEIC; large photos are resized for you)</span></label><input type="file" name="passportPhoto" accept="image/*,.heic,.heif,.jfif" required></div>
+                <div class="field"><label>Admission letter <span class="muted" style="font-weight:400">(optional &mdash; PDF, max 3 MB; only the PG Coordinator and HoD can open it)</span></label><input type="file" name="admissionLetter" accept=".pdf,application/pdf"></div>
                 <div class="sticky-actions"><button class="btn btn-primary btn-block" type="submit" id="reg-submit">Review Details</button></div>
               </form>
               <p class="small muted" style="text-align:center;margin-top:16px">Already registered? <a href="?page=login">Login here</a></p>
@@ -999,17 +995,18 @@
         if (d) d.innerHTML = depOptionsHtml(t.value, '');
       }
     });
-    var MAX_UPLOAD_BYTES = 1024 * 1024;
+    var MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+    var RAW_PASS_BYTES = 1024 * 1024;   /* JPG/PNG up to this size are sent untouched; anything bigger is resized (keeps the photo lists light) */
     function dataUrlBytes(u) { var i = u.indexOf(','), b64 = u.slice(i + 1); return Math.floor(b64.length * 3 / 4) - (b64.slice(-2) === '==' ? 2 : b64.slice(-1) === '=' ? 1 : 0); }
-    /** Phone cameras produce 2-6 MB photos: shrink to a <1 MB JPEG in the browser so the upload never fails on a size check. */
+    /** Phone cameras produce 2-6 MB photos: shrink to a <3 MB JPEG in the browser so the upload never fails on a size check. */
     function compressImage(file) {
       return new Promise(function (resolve, reject) {
         var url = URL.createObjectURL(file), img = new Image();
         img.onload = function () {
           URL.revokeObjectURL(url);
-          var scale = Math.min(1, 1000 / Math.max(img.naturalWidth, img.naturalHeight));
+          var scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
           var w = Math.max(1, Math.round(img.naturalWidth * scale)), h = Math.max(1, Math.round(img.naturalHeight * scale));
-          var q = 0.9, out = '', c = document.createElement('canvas');
+          var q = 0.92, out = '', c = document.createElement('canvas');
           for (var i = 0; i < 10; i++) {
             c.width = w; c.height = h;
             var ctx = c.getContext('2d');
@@ -1026,18 +1023,32 @@
         img.src = url;
       });
     }
-    function readFileInput(input) {
+    function passportPayloadFromFile_(file) {
       return new Promise(function (resolve, reject) {
-        var file = input.files[0];
         if (!file) { reject(new Error('Please choose a file.')); return; }
-        if (file.size > 25 * 1024 * 1024) { reject(new Error('That file is too large. Please choose a photo under 25 MB.')); return; }
-        if (['image/jpeg', 'image/png', 'image/heic', 'image/heif'].indexOf(file.type) === -1) { reject(new Error('Only JPG, PNG or HEIC photos are allowed.')); return; }
+        if (file.size > 50 * 1024 * 1024) { reject(new Error('That file is too large. Please choose a photo under 50 MB.')); return; }
+        /* Some phones/browsers report an empty or odd MIME type (HEIC, JFIF, WEBP), so fall back to the file extension. */
+        var ext = (String(file.name || '').match(/\.([A-Za-z0-9]+)$/) || [])[1];
+        ext = ext ? ext.toLowerCase() : '';
+        var extType = { jpg: 'image/jpeg', jpeg: 'image/jpeg', jfif: 'image/jpeg', jpe: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp', heic: 'image/heic', heif: 'image/heif' }[ext];
+        var ftype = (file.type && file.type.indexOf('image/') === 0) ? file.type : (extType || '');
+        if (ftype === 'image/jpg' || ftype === 'image/pjpeg') ftype = 'image/jpeg';
+        if (!ftype) { reject(new Error('Please choose a photo (JPG, PNG, WEBP or HEIC).')); return; }
         /* Phase 4: HEIC (what many phone cameras produce) always goes through the browser-side
-           resize to a <1 MB JPEG; JPG/PNG under the limit go straight through. */
-        if (file.type === 'image/heic' || file.type === 'image/heif') return compressImage(file).then(resolve, reject);
-        if (file.size <= MAX_UPLOAD_BYTES) {
+           resize to a <3 MB JPEG; JPG/PNG up to 1 MB go straight through. */
+        if (ftype === 'image/heic' || ftype === 'image/heif') {
+          return compressImage(file).then(resolve, function () {
+            /* This browser cannot decode HEIC: send the original if it is small enough; the server accepts it. */
+            if (file.size > MAX_UPLOAD_BYTES) { reject(new Error('This browser cannot read HEIC photos. Please choose a JPG or PNG, or set your camera to "Most Compatible".')); return; }
+            var r0 = new FileReader();
+            r0.onload = function () { resolve({ name: file.name, mimeType: ftype, dataUrl: String(r0.result).replace(/^data:[^;,]*/, 'data:' + ftype) }); };
+            r0.onerror = function () { reject(new Error('Could not read file.')); };
+            r0.readAsDataURL(file);
+          });
+        }
+        if (file.size <= RAW_PASS_BYTES && (ftype === 'image/jpeg' || ftype === 'image/png')) {
           var reader = new FileReader();
-          reader.onload = function () { resolve({ name: file.name, mimeType: file.type, dataUrl: reader.result }); };
+          reader.onload = function () { resolve({ name: file.name, mimeType: ftype, dataUrl: String(reader.result).replace(/^data:[^;,]*/, 'data:' + ftype) }); };
           reader.onerror = function () { reject(new Error('Could not read file.')); };
           reader.readAsDataURL(file);
         } else {
@@ -1045,6 +1056,7 @@
         }
       });
     }
+    function readFileInput(input) { return passportPayloadFromFile_(input && input.files[0]); }
 
     /* Mobile: label each table cell with its column heading so rows can stack as cards (see CSS). */
     function labelTables() {
@@ -1486,17 +1498,72 @@
       '1 - Admission', '2 - Lecture Attendance', '3 - Supervisor Allocation',
       '4 - Title Approval', '5 - Proposal Submission', '6 - Defence Readiness',
       '7 - Proposal Defence', '8 - Progress Report Intent', '9 - Internal Examiner Assignment',
-      '10 - Progress Presentation', '11 - Final Examination Intent', '12 - Thesis Submission',
+      '10 - Progress Presentation', '10b - Second Internal Examination (PhD)', '11 - Final Examination Intent', '12 - Thesis Submission',
       '13 - External Examiner Assignment', '14 - Examiners Comments', '15 - Final Compliance',
       '16 - Signed Copies and Completion'
     ];
+    var SECOND_INTERNAL_STAGE = '10b - Second Internal Examination (PhD)';
+    function isPhdSt_(s) { return /phd/i.test(String((s && s.programme) || '')); }
+    function stageNo_(st) { var m = String(st || '').match(/^([0-9]+[a-z]?)\s*-/i); return m ? m[1] : ''; }
+    function stageLabel_(st) { return String(st || '').replace(/^[0-9]+[a-z]?\s*-\s*/i, ''); }
+    /** 10b belongs to PhD students only. Students never request it; the coordinator records it after the examination. */
+    function selectableStages_(stu, studentView) {
+      return JOURNEY_STAGES.filter(function (st) {
+        if (st === SECOND_INTERNAL_STAGE) return !studentView && !!stu && isPhdSt_(stu);
+        return true;
+      });
+    }
     var PROGRAMMES = ['MPhil', 'MSc', 'PhD'];
     var SPECIALISATIONS = ['Experimental Solid-State Physics', 'Theoretical Solid-State Physics', 'Nuclear Physics', 'Solar Physics', 'Applied Geophysics'];
-    var SUBMISSION_TYPES = ['Research Plan Form', 'Seminar Presentation', 'Research Proposal', 'Progress Report', 'Final Thesis/Dissertation',
-      'Internal Examiner and Other Observations', 'Final Correction', 'Comment-by-Comment Response (External Examiner)', 'Comment-by-Comment Response (Internal Examiner)',
-      'Signed Proposal Defence Form', 'Progress Presentation (PPTX)', 'External Examiner Comments',
-      'Receipt of Fees', 'Evidence of Payment for Examination', 'Plagiarism Certificate'];
     var PAYMENT_TYPES = ['Receipt of Fees', 'Evidence of Payment for Examination'];
+    var SECOND_INTERNAL_TYPES = ['Progress Report (Second Internal)', 'Progress Presentation (PPTX) (Second Internal)',
+      'Comment-by-Comment Response (Internal Examiner) (Second Internal)',
+      'Corrected Clean Copy (Internal Examiner) (Second Internal)'];
+    var WORD_EXTS = ['doc', 'docx'], PDF_EXTS = ['pdf'], PPT_EXTS = ['pptx'];
+    /** The server catalogue is the single source of truth for the legacy picker and the file-accept rules. */
+    function catalogDocuments_() { return (((state.dashboard || {}).documentCatalog) || {}).documents || []; }
+    function catalogDocByType_(type) {
+      return catalogDocuments_().filter(function (d) { return d.type === type && d.uploader === 'Student'; })[0] || null;
+    }
+    function submissionTypesFromCatalog_() {
+      return catalogDocuments_().filter(function (d) {
+        return d.uploader === 'Student' && d.type && String(d.type).charAt(0) !== '_';
+      }).map(function (d) { return d.type; });
+    }
+    /** Mirrors allowedUploadExts_() in Code.gs; a small fallback covers old legacy submissions only. */
+    function allowedUploadExts_(type) {
+      var d = catalogDocByType_(type);
+      if (d && d.formats && d.formats.length) return d.formats.slice();
+      if (type === 'Internal Examiner and Other Observations' || type === 'Internal Examiner and Other Observations (Second Internal)' ||
+          type === 'External Examiner Comments') return WORD_EXTS;
+      if (type === 'Research Plan Form') return PDF_EXTS;
+      if (type === 'Seminar Presentation') return PPT_EXTS;
+      return ['pdf', 'doc', 'docx'];
+    }
+    function acceptForType_(type) { return allowedUploadExts_(type).map(function (e) { return '.' + e; }).join(','); }
+    /** Spec status vocabulary, mapped onto the portal's existing submission statuses. */
+    function docStatusKey_(status) {
+      var s = String(status || '');
+      if (s === 'unavailable' || s === 'Not Yet Available') return 'unavailable';
+      if (s === 'pending' || s === 'Pending Submission' || s === 'Draft' || s === 'Pending') return 'pending';
+      if (s === 'review' || s === 'Under Review') return 'review';
+      if (s === 'correction' || s === 'Changes Requested' || s === 'Rejected') return 'correction';
+      if (s === 'approved' || s === 'Approved') return 'approved';
+      if (s === 'awaitingExaminer') return 'awaitingExaminer';
+      if (s === 'feedback') return 'feedback';
+      return 'submitted';
+    }
+    function docStatusLabel_(status) {
+      var k = docStatusKey_(status);
+      return ({ unavailable: 'Not Yet Available', pending: 'Pending Submission', submitted: 'Submitted', review: 'Under Review',
+        correction: 'Correction Required', approved: 'Approved/Accepted', awaitingExaminer: 'Awaiting examiner feedback',
+        feedback: 'Feedback received' })[k];
+    }
+    function docStatusBadge_(status) {
+      var k = docStatusKey_(status), cls = (k === 'approved' || k === 'feedback') ? ' ok' : k === 'correction' ? ' bad' :
+        (k === 'submitted' || k === 'review') ? ' info' : k === 'unavailable' ? '' : ' warn';
+      return '<span class="badge' + cls + '">' + esc(docStatusLabel_(status)) + '</span>';
+    }
     var PRESENTATION_KINDS = ['Proposal Defence Readiness', 'Progress Report Presentation', 'Final Examination'];
     var TITLE_KIND = 'Title Approval';
     var PRESENTATION_INTENTS = {
@@ -1510,6 +1577,7 @@
 
     /* ================= RPC ================= */
     function authed(fn) {
+      if (!READ_ONLY_RPC_.test(fn)) invalidateViewCache_();   // anything that may change data: drop cached views so none is shown stale
       var args = [state.token].concat(Array.prototype.slice.call(arguments, 1));
       return call.apply(null, [fn].concat(args));
     }
@@ -1639,18 +1707,82 @@
       if (side.notes) { state.unread = side.notes.unread; state.notes = side.notes.items; var bn = document.getElementById('bell-n'); if (bn) bn.textContent = side.notes.unread || ''; }
       if (side.navCounts) state.navCounts = side.navCounts;
     }
+    /* ---- view cache: show the last copy of a view at once, refresh it in the background ----
+       A cached view is used only for plain navigation (max 5 minutes old). Any call that is not a read (see READ_ONLY_RPC_) empties the
+       cache, so a screen is never shown stale after the person (or the page) changed something. */
+    var VIEW_CACHE = {}, VIEW_CACHE_MAX_AGE = 5 * 60 * 1000, viewGen_ = 0, bootSeq_ = {};
+    var READ_ONLY_RPC_ = /^api_(get|list|bootstrap|heartbeat|me$|markNotification|check)/;
+    function invalidateViewCache_() { VIEW_CACHE = {}; viewGen_++; }
+    function viewKey_(view) { return String(state.token || '') + '|' + view; }
+    /* Runs fn when no dialog is open; retries for up to 15 s so a background refresh never lands on top of a dialog. */
+    function whenNoDialog_(fn, tries) {
+      if (!document.querySelector('.modal-card')) { fn(); return; }
+      if ((tries || 0) < 15) setTimeout(function () { whenNoDialog_(fn, (tries || 0) + 1); }, 1000);
+    }
+    var PREFETCH_ = { Student: { dashboard: ['submissions'], submissions: ['dashboard'] } };
+    function prefetchViews_(view) {
+      var list = ((PREFETCH_[state.user && state.user.role]) || {})[view];
+      if (!list) return;
+      setTimeout(function () {
+        if (document.hidden || !state.user) return;
+        list.forEach(function (v) {
+          var key = viewKey_(v), hit = VIEW_CACHE[key], gen = viewGen_, token = state.token;
+          if (!bootEligible_(v) || (hit && Date.now() - hit.at < VIEW_CACHE_MAX_AGE)) return;
+          authed('api_bootstrap', v, { facdep: !!FACDEP, templates: !!state.templates, defer: true }).then(function (r) {
+            var d = (r && r.data) || {};
+            if (gen === viewGen_ && state.token === token && !VIEW_CACHE[key]) VIEW_CACHE[key] = { at: Date.now(), main: d, sig: JSON.stringify(d), extra: null };
+          }).catch(function () {});
+        });
+      }, 2500);
+    }
     function loadView(view) {
       if (!bootEligible_(view)) { loadViewLegacy_(view); return; }
-      state.busy = true; render();
-      authed('api_bootstrap', view, { facdep: !!FACDEP, templates: !!state.templates }).then(function (r) {
-        applyBoot_(r);
-        if (state.view === view) { state.busy = false; render(); }
+      var key = viewKey_(view), hit = VIEW_CACHE[key], gen = viewGen_, token = state.token;
+      var seq = (bootSeq_[key] = (bootSeq_[key] || 0) + 1);
+      var fresh = !!(hit && Date.now() - hit.at < VIEW_CACHE_MAX_AGE);
+      if (fresh) {
+        applyBoot_({ data: Object.assign({}, hit.main, hit.extra || {}) });
+        state.busy = false; render();
+      } else { state.busy = true; render(); }
+      authed('api_bootstrap', view, { facdep: !!FACDEP, templates: !!state.templates, defer: true }).then(function (r) {
+        if (seq !== bootSeq_[key] || state.token !== token) return;   // a newer load of this view is running, or the person signed out / switched account
+        var d = (r && r.data) || {}, sig = JSON.stringify(d), changed = !fresh || !hit || hit.sig !== sig;
+        if (gen === viewGen_) VIEW_CACHE[key] = { at: Date.now(), main: d, sig: sig, extra: (hit && hit.extra) || null };
+        if (!fresh) {
+          applyBoot_(r);
+          if (state.view === view) { state.busy = false; render(); }
+        } else if (changed) {
+          whenNoDialog_(function () {
+            if (state.token !== token) return;
+            applyBoot_(r);
+            if (state.view === view && !state.busy) render();
+          });
+        }
+        if (r && r.deferred) loadExtras_(view, key, gen, token);
         refreshCalendar_(view);
+        prefetchViews_(view);
       }).catch(function (e) {
         var m = e && e.message ? e.message : '';
         if (/Script function not found|is not a function|reading 'apply'|Unknown view/i.test(m)) { bootBroken_ = true; loadViewLegacy_(view); return; }   // the server has not been updated yet: use the older calls
+        if (fresh) return;   // a cached copy is on screen; a failed refresh should not replace it with an error
         setError(e);
       });
+    }
+    /* Second, parallel call: the parts that are not needed for the first paint (message recipients, pipeline, examiner queues) and the
+       side data (menu counts, notifications, templates). */
+    function loadExtras_(view, key, gen, token) {
+      authed('api_bootstrapExtras', view, { templates: !!state.templates }).then(function (r) {
+        if (state.token !== token) return;
+        var ex = (r && r.data) || {}, esig = JSON.stringify(ex), entry = (gen === viewGen_) ? VIEW_CACHE[key] : null;
+        var changed = Object.keys(ex).length > 0 && (!entry || entry.extraSig !== esig);   // views with no extra parts, or unchanged ones, need no re-render
+        if (entry) { entry.extra = Object.keys(ex).length ? ex : null; entry.extraSig = esig; }
+        whenNoDialog_(function () {
+          if (state.token !== token) return;
+          applyBoot_(r);
+          if (changed && state.view === view && !state.busy) render();
+          updateNavBadges();
+        });
+      }).catch(function () {});
     }
     /* The programme calendar feeds other views too; refresh it in the background, at most every two minutes. */
     function refreshCalendar_(view) {
@@ -2203,18 +2335,8 @@
     }
 
     /* ================= EXAMINATION WORKFLOW (v2) ================= */
-    function defaultIntentKind_(stage) { var i = JOURNEY_STAGES.indexOf(stage); if (i >= 10) return 'Final Examination'; if (i >= 7) return 'Progress Report Presentation'; return 'Proposal Defence Readiness'; }
+    function defaultIntentKind_(stage) { var i = JOURNEY_STAGES.indexOf(stage); if (i >= 11) return 'Final Examination'; if (i >= 7) return 'Progress Report Presentation'; return 'Proposal Defence Readiness'; }
     function stageAtLeast_(s, name) { return JOURNEY_STAGES.indexOf(s.currentStage) >= JOURNEY_STAGES.indexOf(name); }
-    function tplDownload_(key, label) {
-      var id = state.dashboard && state.dashboard.templates && state.dashboard.templates[key];
-      return id ? '<a class="btn btn-outline btn-sm" href="https://drive.google.com/uc?export=download&id=' + esc(id) + '" target="_blank" rel="noopener">' + esc(label) + '</a>'
-        : '<span class="small muted">The ' + esc(label.toLowerCase()) + ' will be provided by the department.</span>';
-    }
-    function uploadBtn_(type, label) { return '<button class="btn btn-primary btn-sm" type="button" data-action="goto-upload" data-type="' + esc(type) + '">' + esc(label) + '</button>'; }
-    function subStatusLine_(type) {
-      var sub = ((state.dashboard && state.dashboard.submissions) || []).filter(function (x) { return x.type === type && x.status !== 'Draft'; })[0];
-      return sub ? '<p class="small" style="margin:6px 0">Status of your upload: ' + statusBadge(sub.status) + (sub.inspectorComments ? ' <span class="muted">&mdash; ' + esc(sub.inspectorComments) + '</span>' : '') + '</p>' : '';
-    }
     function titleApprovalCard(s) {
       var list = state.dashboard.presentationIntents || [], ACT = ['Pending Supervisors', 'Returned'];
       var act = list.filter(function (x) { return x.kind === TITLE_KIND && ACT.indexOf(x.status) > -1; })[0];
@@ -2239,41 +2361,83 @@
     }
     function defenceReadinessCard(s) {
       if (!stageAtLeast_(s, '6 - Defence Readiness') || JOURNEY_STAGES.indexOf(s.currentStage) > JOURNEY_STAGES.indexOf('7 - Proposal Defence')) return '';
-      return '<div class="card"><h4 style="margin:0 0 8px">Proposal Defence Readiness</h4><p class="small muted" style="margin:0 0 12px">Show that you are ready to defend. Use <strong>either</strong> route; the PG Coordinator then clears you for the defence.</p>' +
+      return '<div class="card"><h4 style="margin:0 0 8px">Proposal Defence Readiness</h4><p class="small muted" style="margin:0 0 12px">Show that you are ready to defend. Use <strong>either</strong> route; the PG Coordinator then clears you for the defence. Uploads and the official template are in <strong>Documents by Journey Stage</strong> and <strong>Downloads</strong> below.</p>' +
         '<div class="grid cols-2" style="gap:12px"><div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px"><strong>Route A &mdash; signed paper form</strong>' +
-        '<ol class="small" style="margin:8px 0;padding-left:18px"><li>Download the Proposal Defence Form.</li><li>Get your Main and Co-Supervisor to sign it.</li><li>Upload the signed copy (PDF).</li></ol>' +
-        '<div class="row" style="flex-wrap:wrap;gap:8px">' + tplDownload_('Proposal Defence Form', 'Proposal Defence Form') + ' ' + uploadBtn_('Signed Proposal Defence Form', 'Upload signed form') + '</div>' + subStatusLine_('Signed Proposal Defence Form') + '</div>' +
+        '<ol class="small" style="margin:8px 0;padding-left:18px"><li>Download the Proposal Defence Form from Downloads.</li><li>Get your Main and Co-Supervisor to sign it.</li><li>Upload the signed copy (PDF) in the Supervisor Allocation and Title Approval section.</li></ol></div>' +
         '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px"><strong>Route B &mdash; approval in the system</strong>' +
         '<p class="small" style="margin:8px 0">Choose <em>Ready for proposal defence</em> in <em>Approval Requests</em> below. Your supervisors approve online (their approval counts as their signature), then the PG Coordinator confirms.</p></div></div></div>';
     }
-    function paymentCard(s) {
-      var i = JOURNEY_STAGES.indexOf(s.currentStage);
-      if (i < JOURNEY_STAGES.indexOf('11 - Final Examination Intent') || i >= JOURNEY_STAGES.indexOf('14 - Examiners Comments')) return '';
-      return '<div class="card"><h4 style="margin:0 0 8px">Examination Fees</h4><p class="small muted" style="margin:0 0 10px">Before the external examination, upload your receipt of fees, your evidence of payment for the examination and your plagiarism certificate (PDF, JPG or PNG). Only the PG Coordinator and the HoD can open the fee documents; the plagiarism certificate is also visible to your supervisors and the Inspector. Your thesis/dissertation is uploaded under <em>Final Thesis/Dissertation</em> at stage 12.</p>' +
-        '<div class="row" style="flex-wrap:wrap;gap:8px">' + uploadBtn_('Receipt of Fees', 'Upload receipt of fees') + ' ' + uploadBtn_('Evidence of Payment for Examination', 'Upload evidence of payment') + ' ' + uploadBtn_('Plagiarism Certificate', 'Upload plagiarism certificate') + '</div>' +
-        subStatusLine_('Receipt of Fees') + subStatusLine_('Evidence of Payment for Examination') + subStatusLine_('Plagiarism Certificate') + '</div>';
-    }
-    function pptxCard(s) {
-      var i = JOURNEY_STAGES.indexOf(s.currentStage);
-      if (i < JOURNEY_STAGES.indexOf('10 - Progress Presentation') || i > JOURNEY_STAGES.indexOf('11 - Final Examination Intent')) return '';
-      return '<div class="card"><h4 style="margin:0 0 8px">Progress Presentation (PPTX)</h4><p class="small muted" style="margin:0 0 10px">Download the template, build your slides, and upload the .pptx when ready. The PG Coordinator and the Submission Inspector check it against the standard and approve it or return it. <strong>Only they (and you) can open this file.</strong></p>' +
-        '<div class="row" style="flex-wrap:wrap;gap:8px">' + tplDownload_('Progress Presentation Template', 'PowerPoint template') + ' ' + uploadBtn_('Progress Presentation (PPTX)', 'Upload my PPTX') + '</div>' + subStatusLine_('Progress Presentation (PPTX)') + '</div>';
-    }
     function finalPackageCard(s) {
       if (!stageAtLeast_(s, '14 - Examiners Comments')) return '';
-      var d = state.dashboard, fp = d.finalPackage || { required: [], done: {} }, r = d.examinerReport;
-      var out = '<div class="card"><h4 style="margin:0 0 8px">Examiners\u2019 Comments and Corrections</h4>';
-      if (r) out += '<div style="border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-bottom:12px"><strong>External Examiner: ' + esc(r.recommendation) + '</strong><p class="small pre" style="margin:8px 0 0">' + esc(r.comments) + '</p>' + (r.reportUrl ? '<p class="small" style="margin:6px 0 0"><a href="' + esc(r.reportUrl) + '" target="_blank" rel="noopener">Examiner\u2019s report file</a></p>' : '') + '</div>';
-      out += '<p class="small muted" style="margin:0 0 8px">Upload all three to move to the final compliance check:</p>';
-      (fp.required || []).forEach(function (t) {
-        var done = fp.done && fp.done[t];
-        out += '<p style="margin:6px 0">' + (done ? '\u2713' : '\u25CB') + ' ' + esc(t === 'External Examiner Comments' ? 'External Examiner\u2019s comments file' : t === 'Final Correction' ? 'Final corrected version' : 'Comment-by-comment response') + ' ' + (done ? '<span class="badge ok">submitted</span>' : uploadBtn_(t, 'Upload')) + '</p>';
-      });
-      return out + '</div>';
+      var fp = state.dashboard.finalPackage || { required: [], done: {} };
+      var left = (fp.required || []).filter(function (t) { return !(fp.done && fp.done[t]); });
+      return '<div class="card"><h4 style="margin:0 0 8px">Examiners\u2019 Comments and Corrections</h4>' +
+        '<p class="small muted" style="margin:0">Examiner reports and comments appear in <strong>Examiner Feedback</strong> above. The response and corrected clean copy are uploaded in the <strong>After External Defence</strong> section of <strong>Documents by Journey Stage</strong>.' +
+        (left.length ? ' Still required: ' + esc(left.join(', ')) + '.' : ' All final-stage items have been submitted.') + '</p></div>';
     }
     function examinersInfoCard() {
       var l = (state.dashboard.examiners || []); if (!l.length) return '';
-      return '<div class="card"><h4 style="margin:0 0 8px">My Examiners</h4>' + l.map(function (x) { return '<p style="margin:4px 0"><strong>' + esc(x.type) + ' Examiner:</strong> <span class="small muted">identity confidential</span> ' + '<span class="badge ' + (x.status === 'Assessment received' ? 'ok' : 'warn') + '">' + esc(x.status) + '</span></p>'; }).join('') + '</div>';
+      return '<div class="card"><h4 style="margin:0 0 8px">My Examiners</h4>' + l.map(function (x) { return '<p style="margin:4px 0"><strong>' + esc(x.type) + (x.cycle === 2 ? ' (second internal)' : '') + ' Examiner:</strong> <span class="small muted">identity confidential</span> ' + '<span class="badge ' + (x.status === 'Assessment received' ? 'ok' : 'warn') + '">' + esc(x.status) + '</span></p>'; }).join('') + '</div>';
+    }
+
+    /* ---- Central document catalogue: all student upload fields are generated from server config. ---- */
+    function docRowHtml_(d) {
+      var acts = '';
+      if (d.canUpload) acts += '<button class="btn btn-primary btn-sm" type="button" data-action="doc-upload" data-id="' + esc(d.id) + '">' +
+        (d.submissionId ? (docStatusKey_(d.status) === 'correction' ? 'Resubmit' : 'Replace') : 'Upload') + '</button> ';
+      if (d.canView && d.submissionId) acts += '<button class="btn btn-outline btn-sm" type="button" data-action="read-files" data-id="' + esc(d.submissionId) + '">View / download</button> ';
+      else if (d.canView && d.fileId) acts += '<button class="btn btn-outline btn-sm" type="button" data-action="doc-file" data-file="' + esc(d.fileId) + '">View / download</button> ';
+      if (d.inspectorComments) acts += '<span class="small muted"> &mdash; ' + esc(d.inspectorComments) + '</span>';
+      return '<div style="padding:10px 0;border-top:1px solid var(--border-soft)">' +
+        '<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>' + esc(d.name) + '</strong>' +
+        (d.required ? ' <span class="badge warn">Required</span>' : ' <span class="small muted">Optional</span>') + ' ' + docStatusBadge_(d.status) + '</div>' +
+        '<p class="small muted" style="margin:5px 0">' + esc(d.description) + '</p>' +
+        '<p class="small" style="margin:5px 0">Formats: <strong>' + esc((d.formats || []).join(', ').toUpperCase()) + '</strong>' +
+        (d.fileName ? ' &middot; File: <strong>' + esc(d.fileName) + '</strong>' : '') +
+        (d.uploadedAt ? ' &middot; Uploaded ' + esc(d.uploadedAt) : '') +
+        (d.available ? '' : ' &middot; Opens at: ' + esc(d.trigger)) + '</p>' +
+        '<div class="row" style="gap:8px;flex-wrap:wrap">' + acts + '</div></div>';
+    }
+    function documentSectionsCard() {
+      var docs = state.dashboard.documents || []; if (!docs.length) return '';
+      var names = [], groups = {};
+      docs.forEach(function (d) { if (!groups[d.section]) { groups[d.section] = []; names.push(d.section); } groups[d.section].push(d); });
+      var out = '<div class="card"><h4 style="margin:0 0 6px">Documents by Journey Stage</h4>' +
+        '<p class="small muted" style="margin:0 0 12px">Sections open automatically as you reach each stage. Requirements, formats, roles and statuses are maintained centrally by the PG Coordinator.</p>';
+      names.forEach(function (name, i) {
+        var rows = groups[name], open = rows.some(function (d) { return d.available; }) || i === 0;
+        out += '<details style="margin-bottom:8px;border:1px solid var(--border-soft);border-radius:10px;padding:8px 12px"' + (open ? ' open' : '') + '>' +
+          '<summary style="cursor:pointer;font-weight:600">' + esc(name) + ' <span class="small muted">(' + rows.length + ' document' + (rows.length === 1 ? '' : 's') + ')</span></summary>' +
+          rows.map(docRowHtml_).join('') + '</details>';
+      });
+      return out + '</div>';
+    }
+    function downloadsCard() {
+      var list = state.dashboard.downloads || [];
+      var out = '<div class="card"><h4 style="margin:0 0 6px">Downloads</h4>' +
+        '<p class="small muted" style="margin:0 0 12px">Official departmental resources. These are reference files, not submissions; an administrator replaces them through the Config sheet without a code change.</p>';
+      if (!list.length) return out + '<p class="small muted">No resources have been provided yet.</p></div>';
+      out += list.map(function (x) {
+        return '<div style="padding:8px 0;border-top:1px solid var(--border-soft)"><strong>' + esc(x.name) + '</strong> <span class="small muted">(' + esc(x.format) + ')</span>' +
+          '<p class="small muted" style="margin:4px 0">' + esc(x.description) + '</p>' +
+          (x.available ? '<button class="btn btn-outline btn-sm" type="button" data-action="doc-file" data-file="' + esc(x.fileId) + '">Download</button>'
+            : '<span class="small muted">Not provided yet. Ask the PG Coordinator to set the ' + esc(x.configKey || 'template') + ' Config key.</span>') + '</div>';
+      }).join('');
+      return out + '</div>';
+    }
+    function feedbackCard() {
+      var f = state.dashboard.examinerFeedback || {}, parts = [];
+      [[f.internal, 'Internal Examiner feedback'], [f.internal2, 'Second internal feedback (PhD)'], [f.external || state.dashboard.examinerReport, 'External Examiner feedback']].forEach(function (p) {
+        if (!p || !p[0]) return;
+        var x = p[0], fid = x.reportUrl ? driveFileId(x.reportUrl) : '';
+        if (!x.comments && !fid && !x.submittedAt) return;   // an assignment is not feedback until the examiner submits it
+        parts.push('<div style="padding:8px 0;border-top:1px solid var(--border-soft)"><strong>' + esc(p[1]) + '</strong> ' + docStatusBadge_(x.status === 'Feedback received' || x.submittedAt ? 'feedback' : 'awaitingExaminer') +
+          (x.recommendation ? ' <span class="small muted">&middot; ' + esc(x.recommendation) + '</span>' : '') +
+          '<p class="small pre" style="margin:6px 0">' + esc(x.comments || '') + '</p>' +
+          (fid ? '<button class="btn btn-outline btn-sm" type="button" data-action="doc-file" data-file="' + esc(fid) + '">Open report file</button> ' : '') +
+          (x.submittedAt ? '<span class="small muted">' + esc(x.submittedAt) + '</span>' : '') + '</div>');
+      });
+      return parts.length ? '<div class="card"><h4 style="margin:0 0 6px">Examiner Feedback</h4>' + parts.join('') + '</div>' : '';
     }
 
     /* ---- Coordinator / HoD: pipeline board and examiner assignment ---- */
@@ -2286,7 +2450,8 @@
       out += '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Stage</th><th>Waiting on</th><th>Days</th><th>Details</th><th></th></tr></thead><tbody>' + rows.map(function (x) {
         return '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + ' &middot; ' + esc(x.programme) + '</span></td><td class="small">' + esc(x.stage) + '</td><td class="small"><strong>' + esc(x.waitingOn) + '</strong></td><td class="small">' + esc(x.waitingDays === '' ? '' : x.waitingDays) + '</td>' +
           '<td class="small">' + (x.title ? 'Title: ' + esc(x.title) + '<br>' : '') + (x.detail || []).map(esc).join('<br>') + '</td>' +
-          '<td>' + (isCo && x.stage === '7 - Proposal Defence' ? '<button class="btn btn-outline btn-sm" data-action="defence-outcome" data-id="' + esc(x.regNumber) + '">Record defence outcome</button>' : '') + '</td></tr>';
+          '<td>' + (isCo && x.stage === '7 - Proposal Defence' ? '<button class="btn btn-outline btn-sm" data-action="defence-outcome" data-id="' + esc(x.regNumber) + '">Record defence outcome</button>' : isCo && x.stage === SECOND_INTERNAL_STAGE ?
+            (x.secondInternal ? '<button class="btn btn-outline btn-sm" data-action="second-internal" data-id="' + esc(x.regNumber) + '">Record 2nd internal</button>' : '<button class="btn btn-outline btn-sm" data-action="assign-second-internal" data-id="' + esc(x.regNumber) + '">Assign 2nd internal</button>') : '') + '</td></tr>';
       }).join('') + '</tbody></table></div></div>';
       return out;
     }
@@ -2294,7 +2459,9 @@
       var e = x.examiner, act;
       if (!e) act = '<button class="btn btn-primary btn-sm" data-action="examiner-assign" data-kind="' + x.kind + '" data-reg="' + esc(x.regNumber) + '" data-sub="' + esc(x.submissionId || '') + '">Assign ' + x.kind + ' examiner</button>';
       else if (e.status === 'Scored') act = '<button class="btn btn-outline btn-sm" data-action="examiner-view" data-id="' + esc(e.id) + '">Read assessment</button>';
-      else act = '<button class="btn btn-outline btn-sm" data-action="examiner-revoke" data-id="' + esc(e.id) + '">Revoke</button>';
+      else act = '<button class="btn btn-outline btn-sm" data-action="examiner-replace" data-id="' + esc(e.id) + '" data-kind="' + esc(x.kind) + '" data-reg="' + esc(x.regNumber) + '" data-sub="' + esc(x.submissionId || '') + '">Replace</button> ' +
+        '<button class="btn btn-outline btn-sm" data-action="examiner-revoke" data-id="' + esc(e.id) + '">Revoke</button>';
+      if (e || x.hasHistory) act += ' <button class="btn btn-outline btn-sm" data-action="examiner-history" data-kind="' + esc(x.kind) + '" data-reg="' + esc(x.regNumber) + '">History</button>';
       return '<tr><td>' + esc(x.studentName) + '<br><span class="small muted">' + esc(x.regNumber) + ' &middot; ' + esc(x.programme) + '</span></td><td class="small">' + esc(x.stage) + '</td><td class="small">' +
         (e ? '<strong>' + esc(e.name) + '</strong><br>' + esc(e.rank) + ', ' + esc(e.department) + (x.kind === 'External' ? ' &middot; ' + esc(e.institution) : '') + '<br>' + (e.status === 'Scored' ? '<span class="badge ok">Assessed: ' + esc(e.recommendation) + ' (' + esc(e.score) + '%)</span>' : '<span class="badge warn">Assigned</span>' + (e.dueDate ? ' due ' + esc(e.dueDate) : '')) : '<span class="muted">Not assigned</span>') + '</td><td>' + act + '</td></tr>';
     }
@@ -2347,17 +2514,21 @@
       }), 'Memo generated and downloaded.', function () { loadView('hod'); });
     }
     var EXAMINER_RANKS = ['Professor', 'Associate Professor', 'Senior Lecturer'];
-    function openExaminerModal(kind, reg, sub) {
+    function examinerQueueRow_(id) {
+      var found = null; ['internal', 'external'].forEach(function (k) { ((state.examQueue || {})[k] || []).forEach(function (x) { if (x.examiner && x.examiner.id === id) found = x; }); });
+      return found;
+    }
+    function openExaminerModal(kind, reg, sub, replaceId) {
       var ext = kind === 'External';
       if (!ext && !FACDEP) {   // the faculty/department list is needed for Internal Examiners
-        loadFacDep().then(function () { openExaminerModal(kind, reg, sub); }).catch(function () { setError(new Error('Could not load the faculty and department list. Please try again.')); });
+        loadFacDep().then(function () { openExaminerModal(kind, reg, sub, replaceId); }).catch(function () { setError(new Error('Could not load the faculty and department list. Please try again.')); });
         return;
       }
       var q = (state.examQueue || {})[kind === 'Internal' ? 'internal' : 'external'] || [];
       var row = q.filter(function (x) { return x.regNumber === reg && String(x.submissionId || '') === String(sub || ''); })[0] || { studentName: reg, department: '' };
       var rankSel = '<div class="field"><label>Academic rank</label><select name="rank" required><option value="">Select rank</option>' + EXAMINER_RANKS.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join('') + '</select></div>';
-      showModal('<h3 style="margin:0 0 6px">Assign ' + kind + ' Examiner</h3><p class="small muted" style="margin:0 0 12px">' + esc(row.studentName) + ' (' + esc(reg) + ')' + (row.department ? ' &middot; ' + esc(row.department) : '') + '</p>' +
-        '<form id="examiner-assign-form" data-kind="' + kind + '" data-reg="' + esc(reg) + '" data-sub="' + esc(sub || '') + '">' +
+      showModal('<h3 style="margin:0 0 6px">' + (replaceId ? 'Replace' : 'Assign') + ' ' + kind + ' Examiner</h3><p class="small muted" style="margin:0 0 12px">' + esc(row.studentName) + ' (' + esc(reg) + ')' + (row.department ? ' &middot; ' + esc(row.department) : '') + '</p>' +
+        '<form id="examiner-assign-form" data-kind="' + kind + '" data-reg="' + esc(reg) + '" data-sub="' + esc(sub || '') + '" data-replace="' + esc(replaceId || '') + '">' +
         '<div class="row-cols" style="--cols:2"><div class="field"><label>Full name (with title)</label><input type="text" name="fullName" required placeholder="Prof. Jane Doe"></div><div class="field"><label>Email</label><input type="email" name="email" required></div></div>' +
         (ext
           ? '<div class="row-cols" style="--cols:2">' + rankSel + '<div class="field"><label>Department</label><input type="text" name="department" required></div></div>' +
@@ -2367,18 +2538,50 @@
             '<div class="field"><label>Department</label><select name="department" required>' + depOptionsHtml('', '') + '</select></div></div>' +
             '<p class="small muted" style="margin:0 0 8px">Department must differ from ' + esc(row.department || 'the student\u2019s department') + ' (and not be Physics).</p>') +
         '<div class="field" style="max-width:240px"><label>Assessment due date (optional)</label><input type="date" name="dueDate"></div>' +
-        '<button class="btn btn-primary" type="submit">Assign and email login</button> <button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></form>');
+        '<button class="btn btn-primary" type="submit">' + (replaceId ? 'Replace and email login' : 'Assign and email login') + '</button> <button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></form>');
+    }
+    /* Assignment history (Coordinator / HoD): original assignment, reassignments, who/when, and continued-access control. */
+    function openExaminerHistory_(reg, kind) {
+      authed('api_getExaminerHistory', reg, kind).then(function (rows) {
+        var byId = {}; rows.forEach(function (r) { byId[r.id] = r; });
+        var t = function (v) { return v ? esc(String(v).replace('T', ' ').slice(0, 16)) : ''; };
+        var btn = function (act, r) { return '<button class="btn btn-outline btn-sm" data-action="' + act + '" data-id="' + esc(r.id) + '" data-reg="' + esc(reg) + '" data-kind="' + esc(kind) + '">' + (act === 'examiner-access-end' ? 'End access' : 'Grant continued access') + '</button>'; };
+        var body = rows.length ? '<div class="table-wrap"><table><thead><tr><th>Examiner</th><th>Assigned</th><th>Status</th><th>Access</th></tr></thead><tbody>' + rows.map(function (r) {
+          var st = r.status === 'Revoked'
+            ? '<span class="badge bad">Revoked</span><br><span class="small muted">' + t(r.revokedAt) + (r.revokedBy ? ' by ' + esc(r.revokedBy) : '') + (r.replacedById && byId[r.replacedById] ? '<br>replaced by ' + esc(byId[r.replacedById].examinerName) : '') + '</span>'
+            : '<span class="badge ' + (r.status === 'Scored' ? 'ok' : 'warn') + '">' + esc(r.status) + '</span>';
+          var ac = r.continuedAccess
+            ? '<span class="badge warn">Continued read-only</span><br><span class="small muted">' + esc(r.continuedBy) + ', ' + t(r.continuedAt) + '<br>' + esc(r.continuedNote) + '</span><br>' + btn('examiner-access-end', r)
+            : r.canChangeAccess
+              ? '<span class="small muted">No access' + (r.continuedEndedAt ? ' (continued access ended ' + t(r.continuedEndedAt) + ')' : '') + '</span><br>' + btn('examiner-access-grant', r)
+              : (r.status === 'Assigned' ? '<span class="small muted">Current</span>' : '<span class="small muted">&mdash;</span>');
+          return '<tr><td><strong>' + esc(r.examinerName) + '</strong><br><span class="small muted">' + esc(r.type) + (r.institution ? ' &middot; ' + esc(r.institution) : '') + '<br>' + esc(r.email) + '</span></td><td class="small">' + t(r.assignedAt) + '<br>by ' + esc(r.assignedBy || '') + '</td><td class="small">' + st + '</td><td class="small">' + ac + '</td></tr>';
+        }).join('') + '</tbody></table></div>' : '<p class="muted">No assignments recorded.</p>';
+        showModal('<h3 style="margin:0 0 6px">' + esc(kind) + ' examiner history</h3><p class="small muted" style="margin:0 0 10px">' + esc(reg) + '. A replaced or revoked examiner loses access automatically. Continued read-only access needs a written reason and is recorded in the audit log.</p>' + body + '<p style="margin-top:12px"><button class="btn btn-outline" type="button" data-action="close-modal">Close</button></p>');
+      }).catch(setError);
+    }
+    function changeExaminerAccess_(el, grant) {
+      var id = el.getAttribute('data-id'), reg = el.getAttribute('data-reg'), kind = el.getAttribute('data-kind'), note = '';
+      if (grant) { note = prompt('Reason for granting this examiner continued read-only access (required):'); if (!note) return; }
+      else if (!confirm('End this examiner\u2019s continued access?')) return;
+      authed('api_setExaminerContinuedAccess', id, grant, note).then(function () { setNotice(grant ? 'Continued access granted.' : 'Continued access ended.'); openExaminerHistory_(reg, kind); }).catch(setError);
     }
     function showExaminerAssessment_(id) {
       var x = null; ['internal', 'external'].forEach(function (k) { ((state.examQueue || {})[k] || []).forEach(function (r) { if (r.examiner && r.examiner.id === id) x = r; }); });
       if (!x) return; var e = x.examiner, sc = e.scores || {};
       showModal('<h3 style="margin:0 0 6px">' + esc(x.kind) + ' Examiner assessment</h3><p class="small muted" style="margin:0 0 10px">' + esc(e.name) + ' &middot; ' + esc(x.studentName) + ' (' + esc(x.regNumber) + ')</p>' +
         '<p><strong>' + esc(e.recommendation) + '</strong> &middot; average ' + esc(e.score) + '%</p>' + Object.keys(sc).map(function (k) { return '<p class="small" style="margin:2px 0">' + esc(k) + ': <strong>' + esc(sc[k]) + '</strong></p>'; }).join('') +
-        '<p class="small pre" style="margin:10px 0">' + esc(e.comments) + '</p>' + (e.reportUrl ? '<p class="small"><a href="' + esc(e.reportUrl) + '" target="_blank" rel="noopener">Examiner\u2019s report file</a></p>' : '') +
+        '<p class="small pre" style="margin:10px 0">' + esc(e.comments) + '</p>' + (e.reportUrl && driveFileId(e.reportUrl) ? '<p class="small"><button class="btn btn-outline btn-sm" type="button" data-action="doc-file" data-file="' + esc(driveFileId(e.reportUrl)) + '">Open examiner\u2019s report file</button></p>' : '') +
         '<button class="btn btn-outline" type="button" data-action="close-modal">Close</button>');
     }
     function openDefenceModal(reg) {
       showModal('<h3 style="margin:0 0 6px">Proposal defence outcome</h3><p class="small muted" style="margin:0 0 12px">' + esc(reg) + '</p><form id="defence-form" data-reg="' + esc(reg) + '">' +
+        '<div class="field"><label>Outcome</label><select name="outcome" required><option>Passed</option><option>Passed with corrections</option><option>Not passed</option></select></div>' +
+        '<div class="field"><label>Note (required unless Passed)</label><textarea name="note" rows="3"></textarea></div>' +
+        '<button class="btn btn-primary" type="submit">Record outcome</button> <button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></form>');
+    }
+    function openSecondInternalModal(reg) {
+      showModal('<h3 style="margin:0 0 6px">Second internal examination (PhD only)</h3><p class="small muted" style="margin:0 0 12px">' + esc(reg) + ' &middot; a pass moves the student to stage 11 (Final Examination Intent); "Not passed" keeps them at 10b.</p><form id="second-internal-form" data-reg="' + esc(reg) + '">' +
         '<div class="field"><label>Outcome</label><select name="outcome" required><option>Passed</option><option>Passed with corrections</option><option>Not passed</option></select></div>' +
         '<div class="field"><label>Note (required unless Passed)</label><textarea name="note" rows="3"></textarea></div>' +
         '<button class="btn btn-primary" type="submit">Record outcome</button> <button class="btn btn-outline" type="button" data-action="close-modal">Cancel</button></form>');
@@ -2390,20 +2593,26 @@
       var out = '<h2 style="margin:0 0 6px">My Assignments</h2><p class="small muted" style="margin:0 0 16px">You see only the students assigned to you. Submit one assessment per assignment; it locks once submitted.</p>';
       if (!d.assignments.length) return out + '<div class="empty">No assignments yet.</div>';
       d.assignments.forEach(function (a) {
-        out += '<div class="card"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h4 style="margin:0">' + esc(a.type) + ' examination &mdash; ' + esc(a.student) + '</h4><p class="small muted" style="margin:4px 0 0">' + esc(a.programme) + (a.thesisTitle ? ' &middot; ' + esc(a.thesisTitle) : '') + '</p></div><div>' + (a.status === 'Scored' ? '<span class="badge ok">Submitted</span>' : '<span class="badge warn">Awaiting your assessment</span>') + '</div></div>' +
+        out += '<div class="card"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h4 style="margin:0">' + esc(a.type) + ' examination &mdash; ' + esc(a.student) + '</h4><p class="small muted" style="margin:4px 0 0">' + esc(a.programme) + (a.thesisTitle ? ' &middot; ' + esc(a.thesisTitle) : '') + '</p></div><div>' + (a.status === 'Scored' ? '<span class="badge ok">Submitted</span>' : a.readOnly ? '<span class="badge">Read-only access</span>' : '<span class="badge warn">Awaiting your assessment</span>') + '</div></div>' +
           '<p class="small" style="margin:8px 0">' + esc(a.document) + (a.dueDate ? ' &middot; due ' + esc(a.dueDate) : '') + '</p>';
         if (a.status === 'Scored') {
           out += '<p><strong>' + esc(a.recommendation) + '</strong> &middot; average ' + esc(a.score) + '%</p>' + Object.keys(a.scores || {}).map(function (k) { return '<p class="small" style="margin:2px 0">' + esc(k) + ': ' + esc(a.scores[k]) + '</p>'; }).join('') + '<p class="small pre">' + esc(a.comments) + '</p></div>';
           return;
         }
-        if (a.submissionId) out += '<p><button class="btn btn-primary btn-sm" type="button" data-action="read-files" data-id="' + esc(a.submissionId) + '">' + (a.type === 'External' ? 'Open the thesis / dissertation' : 'Open the progress report') + '</button></p>';
-        else if (a.type === 'Internal') out += '<p class="small muted">The student\u2019s progress report is not available yet.</p>';
-        var crit = d.criteria[a.type] || [], recs = a.type === 'External' ? d.recommendations : d.internalRecommendations;
+        if (a.readOnly) {
+          out += '<p class="small muted" style="margin:0 0 8px">Read-only access granted by an administrator. You cannot submit a new assessment for this assignment.</p>' +
+            (a.submissionId ? '<p><button class="btn btn-outline btn-sm" type="button" data-action="read-files" data-id="' + esc(a.submissionId) + '">Open the document</button></p>' : '') + '</div>';
+          return;
+        }
+        if (a.submissionId) out += '<p><button class="btn btn-primary btn-sm" type="button" data-action="read-files" data-id="' + esc(a.submissionId) + '">' + (a.type === 'External' ? 'Open the thesis / dissertation' : a.type === 'Internal (Second)' ? 'Open the second progress report' : 'Open the progress report') + '</button></p>';
+        else if (a.type !== 'External') out += '<p class="small muted">The student\u2019s progress report is not available yet.</p>';
+        var crit = d.criteria[a.type] || d.criteria.Internal || [], recs = a.type === 'External' ? d.recommendations : d.internalRecommendations;
         out += '<form id="exam-assess-form" data-id="' + esc(a.id) + '" data-type="' + esc(a.type) + '"><div class="row-cols" style="--cols:2">' +
           crit.map(function (c, i) { return '<div class="field"><label>' + esc(c) + ' (0&ndash;100)</label><input type="number" name="score' + i + '" min="0" max="100" step="0.5" required></div>'; }).join('') + '</div>' +
           '<div class="field"><label>Recommendation</label><select name="recommendation" required><option value="">Choose&hellip;</option>' + optionsHtml(recs, null, '') + '</select></div>' +
-          '<div class="field"><label>Comments for the student and the department</label><textarea name="comments" rows="6" required minlength="30" placeholder="Summarise strengths, required corrections and any concerns"></textarea></div>' +
-          '<div class="field"><label>Link to your marked-up report (optional, Google Drive link)</label><input type="url" name="reportUrl" placeholder="https://drive.google.com/..."></div>' +
+          '<div class="field"><label>Comments for the student and the department</label><textarea name="comments" rows="6" minlength="30" placeholder="Summarise strengths, required corrections and any concerns"></textarea></div>' +
+          '<div class="field"><label>Upload your Word report (optional &mdash; DOC/DOCX, max 10 MB)</label><input type="file" name="reportFile" accept=".doc,.docx"><p class="small muted" style="margin:4px 0 0">You may enter comments in the field above instead; if both are provided, both are kept.</p></div>' +
+          '<div class="field"><label>Or paste a Google Drive report link</label><input type="url" name="reportUrl" placeholder="https://drive.google.com/..." value="' + esc(a.reportUrl || '') + '"></div>' +
           '<button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit assessment</button><p class="small muted" style="margin:8px 0 0">You cannot edit it after submitting.</p></form></div>';
       });
       return out;
@@ -2411,8 +2620,8 @@
     document.addEventListener('change', function (e) {
       var t = e.target; if (!t) return;
       if (t.id === 'pipe-filter') { state.pipeFilter = t.value; render(); return; }
-      if (t.name === 'type' && t.form && t.form.id === 'sub-form') {   // PPTX only for the progress presentation; documents otherwise
-        var inp = t.form.querySelector('[name=docFile]'); if (inp) inp.setAttribute('accept', t.value === 'Progress Presentation (PPTX)' ? '.pptx' : (PAYMENT_TYPES.indexOf(t.value) > -1 || t.value === 'Plagiarism Certificate' ? '.pdf,.jpg,.jpeg,.png' : '.pdf,.doc,.docx'));
+      if (t.name === 'type' && t.form && t.form.id === 'sub-form') {   // the picker follows the per-document format rules
+        var inp = t.form.querySelector('[name=docFile]'); if (inp) inp.setAttribute('accept', acceptForType_(t.value));
       }
     });
 
@@ -2554,16 +2763,17 @@
     var JT_PHASES = [
       { name: 'Coursework & Research Preparation', col: '#10b981', from: 0, to: 2 },
       { name: 'Proposal Stage', col: '#3b82f6', from: 3, to: 6 },
-      { name: 'Research Execution & Progress', col: '#f59e0b', from: 7, to: 9 },
-      { name: 'Thesis Verification & External Examination', col: '#8b5cf6', from: 10, to: 12 },
-      { name: 'Post-Defence Corrections & Completion', col: '#ec4899', from: 13, to: 15 }
+      { name: 'Research Execution & Progress', col: '#f59e0b', from: 7, to: 10 },
+      { name: 'Thesis Verification & External Examination', col: '#8b5cf6', from: 11, to: 13 },
+      { name: 'Post-Defence Corrections & Completion', col: '#ec4899', from: 14, to: 16 }
     ];
     var JT_GATES = {
       6: { t: 'Proposal Defence', o: ['Passed \u2014 you move on to the Progress Report Intent (Step 8).', 'Passed with corrections \u2014 you move on, and the corrections noted by the panel must be made.', 'Not passed \u2014 you stay at this stage; the Coordinator records what must be redone and the roadmap sends you back to revise the proposal (Step 5).'] },
-      9: { t: 'Progress Presentation', o: ['Satisfactory \u2014 you can proceed to the Final Examination Intent (Step 11).', 'Satisfactory with recommendations \u2014 you proceed and address the recommendations.', 'Needs improvement / unsatisfactory \u2014 you repeat the presentation or fall back as the outcome requires.'] },
-      11: { t: 'Thesis Submission', o: ['Approved \u2014 the thesis passes the format, similarity and Inspector / Coordinator checks and goes for external examination.', 'Changes requested \u2014 fix the listed issues and resubmit; nothing moves until it is approved.'] },
-      12: { t: 'External Examiner Assignment', o: ['An External Examiner from another university is appointed and reads the thesis.', 'The examiner recommends one of: accept as submitted, accept with minor corrections, major corrections, re-examination, or reject. Your next steps follow that recommendation.'] },
-      14: { t: 'Final Compliance', o: ['Approved \u2014 your corrected final copy is accepted; you proceed to signed copies and completion (Step 16).', 'Changes requested \u2014 correct the points raised and resubmit.'] }
+      9: { t: 'Progress Presentation / first internal examination', o: ['Satisfactory \u2014 MSc/MPhil proceed to the Final Examination Intent (Step 11); PhD students go to the Second Internal Examination (Step 10b).', 'Satisfactory with recommendations \u2014 you proceed and address the recommendations.', 'Needs improvement / unsatisfactory \u2014 you repeat the presentation or fall back as the outcome requires.'] },
+      10: { t: 'Second Internal Examination (PhD only)', o: ['Passed \u2014 the PG Coordinator records the outcome and you proceed to the Final Examination Intent (Step 11).', 'Passed with corrections \u2014 you proceed and make the corrections noted by the panel.', 'Not passed \u2014 you remain at Step 10b until the PG Coordinator records a successful outcome.'] },
+      12: { t: 'Thesis Submission', o: ['Approved \u2014 the thesis passes the format, similarity and Inspector / Coordinator checks and goes for external examination.', 'Changes requested \u2014 fix the listed issues and resubmit; nothing moves until it is approved.'] },
+      13: { t: 'External Examiner Assignment', o: ['An External Examiner from another university is appointed and reads the thesis.', 'The examiner recommends one of: accept as submitted, accept with minor corrections, major corrections, re-examination, or reject. Your next steps follow that recommendation.'] },
+      15: { t: 'Final Compliance', o: ['Approved \u2014 your corrected final copy is accepted; you proceed to signed copies and completion (Step 16).', 'Changes requested \u2014 correct the points raised and resubmit.'] }
     };
     function journeyTrackerCard(s, stageIdx) {
       var isMsc = /msc/i.test(String(s.programme || ''));
@@ -2571,10 +2781,11 @@
         var ph = JT_PHASES.filter(function (p) { return i >= p.from && i <= p.to; })[0] || JT_PHASES[0];
         var cls = i < stageIdx ? 'done' : i === stageIdx ? 'cur' : 'todo';
         if (i === 1 && !isMsc) cls += ' optional';
-        var label = String(st).replace(/^\d+\s*-\s*/, '');
+        if (st === SECOND_INTERNAL_STAGE && !isPhdSt_(s)) cls += ' optional';
+        var label = stageLabel_(st);
         return '<div class="jt-n ' + cls + '" style="--ph:' + ph.col + '" title="' + esc(st) + '">' +
           (JT_GATES[i] ? '<span class="jt-g" title="Gate"><b>G</b></span>' : '') +
-          '<div class="jt-dot">' + (i < stageIdx ? '\u2713' : (i + 1)) + '</div><div class="jt-l">' + esc(label) + '</div></div>';
+          '<div class="jt-dot">' + (i < stageIdx ? '\u2713' : esc(stageNo_(st))) + '</div><div class="jt-l">' + esc(label) + '</div></div>';
       }).join('');
       var leg = JT_PHASES.map(function (p, k) { return '<span><i style="background:' + p.col + '"></i>Phase ' + (k + 1) + '</span>'; }).join('') +
         '<span><i style="background:#fbbf24;border-radius:2px"></i>Gate (outcome decides next step)</span>';
@@ -2611,7 +2822,7 @@
       out += '<div class="card"><div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">' +
         '<div style="text-align:center">' +
           (s.passportFileId ? '<img src="' + thumb(s.passportFileId) + '" class="profile-photo-lg" alt="">' : '<div class="photo-placeholder" style="width:100px;height:100px;font-size:36px">?</div>') +
-          '<form id="photo-form" style="margin-top:12px"><input type="file" name="newPhoto" accept="image/jpeg,image/png" style="margin-bottom:8px"><button class="btn btn-outline btn-sm" type="submit">Update Photo</button></form>' +
+          '<form id="photo-form" style="margin-top:12px"><input type="file" name="newPhoto" accept="image/*,.heic,.heif,.jfif" style="margin-bottom:8px"><button class="btn btn-outline btn-sm" type="submit">Update Photo</button></form>' +
         '</div>' +
         '<div style="flex:1;min-width:200px">' +
           '<h3 style="margin:0 0 8px">' + esc(s.firstName + ' ' + s.otherNames + ' ' + s.surname) + '</h3>' +
@@ -2644,12 +2855,12 @@
       out += actionsCard(state.dashboard.actions, 'student') + studentCheckInCard(state.dashboard) + studentReviewsCard(state.dashboard);
 
       // Journey stage
-      out += '<div class="card"><h4 style="margin:0 0 12px">PG Journey — Stage ' + (stageIdx + 1) + ' of ' + JOURNEY_STAGES.length + '</h4>' +
+      out += '<div class="card"><h4 style="margin:0 0 12px">PG Journey — Stage ' + esc(stageNo_(s.currentStage)) + ' of ' + JOURNEY_STAGES.length + '</h4>' +
         '<div class="stage-bar"><div class="stage-fill" style="width:' + pct + '%">' + esc(s.currentStage) + '</div></div>' +
         journeyTrackerCard(s, stageIdx) +
         '</div>' + gateExplainerCard(stageIdx);
 
-      out += defenceReadinessCard(s) + pptxCard(s) + paymentCard(s) + finalPackageCard(s) + presentationIntentStudentCard(s) + examinersInfoCard();
+      out += defenceReadinessCard(s) + documentSectionsCard() + feedbackCard() + finalPackageCard(s) + presentationIntentStudentCard(s) + examinersInfoCard();
 
       // Announcements
       out += '<div class="card"><h4 style="margin:0 0 12px">Announcements</h4>';
@@ -2659,7 +2870,7 @@
       });
       out += '</div>';
 
-      out += calendarMiniCard() + timeCard() + stageChecklistCard(s, stageIdx) + '<div class="card"><h4 style="margin:0 0 8px">Next step</h4><p class="small muted" style="margin:0 0 6px">' + pct + '% complete &middot; about ' + monthsLeft(s.programme, pct) + ' months left (typical duration)</p><p style="margin:0">' + esc(STAGE_HINTS[Math.min(stageIdx + 1, 15)] || '') + '</p><button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">Message my supervisors</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">My timeline</button> <button class="btn btn-outline btn-sm" data-action="owncard" style="margin-top:8px">Download my card</button> <button class="btn btn-outline btn-sm" data-action="ics" style="margin-top:8px">Add deadlines to calendar</button></div>';
+      out += calendarMiniCard() + timeCard() + stageChecklistCard(s, stageIdx) + '<div class="card"><h4 style="margin:0 0 8px">Next step</h4><p class="small muted" style="margin:0 0 6px">' + pct + '% complete &middot; about ' + monthsLeft(s.programme, pct) + ' months left (typical duration)</p><p style="margin:0">' + esc(STAGE_HINTS[Math.min(stageIdx + 1, STAGE_HINTS.length - 1)] || '') + '</p><button class="btn btn-outline btn-sm" data-action="thread" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">Message my supervisors</button> <button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '" style="margin-top:8px">My timeline</button> <button class="btn btn-outline btn-sm" data-action="owncard" style="margin-top:8px">Download my card</button> <button class="btn btn-outline btn-sm" data-action="ics" style="margin-top:8px">Add deadlines to calendar</button></div>';
       var dls = state.dashboard.deadlines || [];
       out += '<div class="card"><h4 style="margin:0 0 12px">Upcoming Deadlines</h4>' + (dls.length ? dls.map(function (d) { return '<p style="margin:4px 0"><strong>' + esc(d.date) + '</strong> &mdash; ' + esc(d.title) + '</p>'; }).join('') : '<p class="muted">None scheduled.</p>') + '</div>';
       out += seminarsCard(state.dashboard.seminars || []);
@@ -2675,33 +2886,22 @@
       var pendStage = rqs.filter(function (r) { return r.type === 'Stage change' && r.status === 'Pending'; })[0];
       out += '<div class="card"><h4 style="margin:0 0 12px">My Journey Stage</h4><p style="margin:0 0 8px">Current stage: <strong>' + esc(s.currentStage) + '</strong></p>' +
         (pendStage ? '<p class="small muted" style="margin:0">Your stage update request (' + esc(String(pendStage.reason || '').replace(/^\[Stage: ([^\]]+)\][\s\S]*$/, '$1')) + ') is awaiting PG Coordinator approval.</p>' :
-        '<form id="stage-form"><div class="row-cols" style="--cols:2"><div class="field"><label>I am now at</label><select name="stage" required>' + optionsHtml(JOURNEY_STAGES, null, s.currentStage) + '</select></div>' +
+        '<form id="stage-form"><div class="row-cols" style="--cols:2"><div class="field"><label>I am now at</label><select name="stage" required>' + optionsHtml(selectableStages_(s, true), null, s.currentStage) + '</select></div>' +
         '<div class="field"><label>Note (optional)</label><textarea name="note" rows="2"></textarea></div></div><button class="btn btn-primary btn-sm" type="submit"' + (state.busy ? ' disabled' : '') + '>Request stage update</button>' +
         '<p class="small muted" style="margin:8px 0 0">Your stage changes once the PG Coordinator approves it from the dashboard.</p></form>') + '</div>';
       out += '<div class="card"><h4 style="margin:0 0 12px">Requests</h4><form id="req-form"><div class="row-cols" style="--cols:2"><div class="field"><label>Type</label><select name="type"><option>Supervisor change</option><option>Stage extension</option></select></div>' +
         '<div class="field"><label>Reason</label><textarea name="reason" rows="2" required></textarea></div></div><button class="btn btn-primary btn-sm" type="submit">Send request</button></form>' +
         (rqs.length ? '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Type</th><th>Status</th><th>Decision note</th><th>Date</th></tr></thead><tbody>' + rqs.map(function (r) { return '<tr><td>' + esc(r.type) + '</td><td>' + statusBadge(r.status === 'Declined' ? 'Rejected' : r.status) + '</td><td class="small">' + esc(r.decisionNote || '—') + '</td><td class="small">' + esc(r.createdAt) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '') + '</div>';
-      // Templates
-      out += '<div class="card"><h4 style="margin:0 0 12px">Download Templates</h4><div class="row" style="flex-wrap:wrap">';
-      for (var key in state.dashboard.templates) {
-        if (!state.dashboard.templates[key]) continue;
-        out += '<a class="btn btn-outline btn-sm" href="https://drive.google.com/uc?export=download&id=' + esc(state.dashboard.templates[key]) + '" target="_blank">' + esc(key) + '</a>';
-      }
-      out += '</div></div>';
+      // Downloads are generated from DOWNLOAD_CONFIG; they are resources, never submissions.
+      out += downloadsCard();
 
       // New submission
       out += '<div class="card"><h4 style="margin:0 0 12px">New Submission</h4>' +
         '<form id="sub-form">' +
-          '<div class="field"><label>Type</label><select name="type" required>' + optionsHtml(SUBMISSION_TYPES, null, '') + '</select>' +
-          '<p class="small muted" style="margin:6px 0 0">Current stage: <strong>' + esc(state.dashboard.student.currentStage || 'not set') + '</strong>. Each document opens at its own stage: Research Proposal at stage 5, Signed Proposal Defence Form at 6, the PPTX at 10, the thesis at 12, the receipt of fees and evidence of payment from 11 (before the external examination), and the examiner-correction files at 14. The server checks this rule; request a stage update and wait for PG Coordinator approval if your stage is wrong.</p></div>' +
-          '<div class="field"><label>Upload file (PDF/DOC/DOCX; PPTX only for the progress presentation; PDF/JPG/PNG for fee receipts and proof of payment; max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
+          '<div class="field"><label>Type</label><select name="type" required>' + optionsHtml(submissionTypesFromCatalog_(), null, '') + '</select>' +
+          '<p class="small muted" style="margin:6px 0 0">Current stage: <strong>' + esc(state.dashboard.student.currentStage || 'not set') + '</strong>. The central document catalogue decides when each file opens, which formats it accepts and who may see it. The new document sections above give the same choices with more detail; request a stage update if your stage is wrong.</p></div>' +
+          '<div class="field"><label>Upload file (the accepted format is chosen automatically from the type; max 50 MB)</label><input type="file" name="docFile" accept=".pdf,.doc,.docx" style="margin-bottom:8px"><div id="pre-up-status" class="small muted"></div></div><div class="field"><label>…or paste a Drive link</label><input type="url" name="driveFileUrls" placeholder="https://drive.google.com/..."></div>' +
 
-    function onDocFileChange(input) {
-      if (!input || !input.files || !input.files[0]) return;
-      var f = input.files[0];
-      if (f.size > 50 * 1024 * 1024) { alert('File must be under 50 MB.'); input.value = ''; return; }
-      if (!['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'].some(function (ext) { return f.name.toLowerCase().endsWith(ext); })) { alert('Upload a PDF, DOC, DOCX, PNG, JPG or JPEG file.'); input.value = ''; return; }
-    }
           '<div class="sticky-actions"><button class="btn btn-primary" type="submit"' + (state.busy ? ' disabled' : '') + '>Submit</button> <button class="btn btn-outline" type="submit" data-draft="1"' + (state.busy ? ' disabled' : '') + '>Save as draft</button></div>' +
           '<p class="small muted" style="margin:8px 0 0">A draft is private to you. It is not sent to reviewers until you press Submit for review in My Submissions.</p>' +
         '</form></div>';
@@ -2712,11 +2912,11 @@
     /* ---- Student Submissions ---- */
     function viewSubmissions() {
       if (!state.submissions) return skeletonHtml();
-      var out = '<h2 style="margin:0 0 20px">My Submissions</h2>';
+      var out = '<h2 style="margin:0 0 20px">My Submissions</h2><p class="small muted" style="margin:-12px 0 16px">Submission status is shown as Pending, Submitted, Reviewed or Correction Required. Internally these map to Draft, Submitted, Approved and Changes Requested.</p>';
       if (!state.submissions.length) return out + '<div class="empty">No submissions yet.</div>';
       out += '<div class="table-wrap"><table><thead><tr><th>Type</th><th>Status</th><th>Date</th><th>Inspector Comments</th><th>Supervisor Notes</th><th></th></tr></thead><tbody>';
       state.submissions.forEach(function (s) {
-        out += '<tr><td>' + esc(s.type) + (s.status === 'Draft' && fileLinks(s.driveFileUrls) ? '<br><span class="small">' + fileLinks(s.driveFileUrls) + '</span>' : '') + '</td><td>' + statusBadge(s.status) + '</td><td class="small">' + esc(s.createdAt) + '<br><button class="btn btn-outline btn-sm" style="margin-top:6px" data-action="sub-thread" data-id="' + esc(s.id) + '">Feedback</button></td><td class="small pre">' + esc(s.inspectorComments || '—') + '</td><td class="small">' + esc(s.supervisorNotes || '—') + '</td><td>' + (s.status === 'Rejected' || s.status === 'Changes Requested' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<label class="btn btn-outline btn-sm" style="cursor:pointer">Resubmit file<input type="file" accept=".pdf,.doc,.docx" data-resubmit="' + esc(s.id) + '" style="display:none"></label> <button class="btn btn-outline btn-sm" data-action="resubmit" data-id="' + esc(s.id) + '">Use a link</button>' : s.status === 'Draft' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<button class="btn btn-primary btn-sm" data-action="draft-submit" data-id="' + esc(s.id) + '">Submit for review</button> <button class="btn btn-danger btn-sm" data-action="draft-delete" data-id="' + esc(s.id) + '">Delete</button>' : '') + '</td></tr>';
+        out += '<tr><td>' + esc(s.type) + (s.status === 'Draft' && fileLinks(s.driveFileUrls) ? '<br><span class="small">' + fileLinks(s.driveFileUrls) + '</span>' : '') + '</td><td>' + docStatusBadge_(s.status) + '</td><td class="small">' + esc(s.createdAt) + '<br><button class="btn btn-outline btn-sm" style="margin-top:6px" data-action="sub-thread" data-id="' + esc(s.id) + '">Feedback</button></td><td class="small pre">' + esc(s.inspectorComments || '—') + '</td><td class="small">' + esc(s.supervisorNotes || '—') + '</td><td>' + (s.status === 'Rejected' || s.status === 'Changes Requested' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<label class="btn btn-outline btn-sm" style="cursor:pointer">Resubmit file<input type="file" accept=".pdf,.doc,.docx" data-resubmit="' + esc(s.id) + '" style="display:none"></label> <button class="btn btn-outline btn-sm" data-action="resubmit" data-id="' + esc(s.id) + '">Use a link</button>' : s.status === 'Draft' ? (COMPLIANCE_TYPES.indexOf(s.type) !== -1 ? '<button class="btn btn-outline btn-sm" data-action="stu-check" data-id="' + esc(s.id) + '">Check my formatting</button> ' : '') + '<button class="btn btn-primary btn-sm" data-action="draft-submit" data-id="' + esc(s.id) + '">Submit for review</button> <button class="btn btn-danger btn-sm" data-action="draft-delete" data-id="' + esc(s.id) + '">Delete</button>' : '') + '</td></tr>';
       });
       out += '</tbody></table></div>';
       return out;
@@ -3039,8 +3239,10 @@
     }
     function titleCell(s) { return s.thesisTitle ? esc(s.thesisTitle) + '<br>' + titleBadge(s).trim() : '<span class="muted">—</span>'; }
     function confirmTitleBtn(s) {
-      return (state.user && state.user.role === 'PG_Coordinator' && s.thesisTitle && s.titleStatus !== 'Confirmed')
-        ? '<button class="btn btn-primary btn-sm" data-action="title-confirm" data-id="' + esc(s.regNumber) + '">Confirm title</button>' : '';
+      if (!(state.user && state.user.role === 'PG_Coordinator')) return '';
+      var confirmBtn = (s.thesisTitle && s.titleStatus !== 'Confirmed')
+        ? '<button class="btn btn-primary btn-sm" data-action="title-confirm" data-id="' + esc(s.regNumber) + '">Confirm title</button> ' : '';
+      return confirmBtn + '<button class="btn btn-outline btn-sm" data-action="title-edit" data-id="' + esc(s.regNumber) + '">' + (s.thesisTitle ? 'Edit title' : 'Enter title') + '</button>';
     }
     function uniqueStudentValues(students, key) {
       var seen = {};
@@ -3092,6 +3294,8 @@
         var actions = '';
         if (role === 'coordinator') {
           actions = confirmTitleBtn(s) + '<button class="btn btn-outline btn-sm" data-action="assign-super" data-id="' + esc(s.regNumber) + '">Assign supervisors</button>' +
+            (s.currentStage === SECOND_INTERNAL_STAGE ? '<button class="btn btn-primary btn-sm" data-action="second-internal" data-id="' + esc(s.regNumber) + '">Record 2nd internal</button> ' : '') +
+            '<button class="btn btn-outline btn-sm" data-action="edit-reg" data-id="' + esc(s.regNumber) + '">Edit reg no.</button>' +
             '<button class="btn btn-outline btn-sm" data-action="reset-pw" data-id="' + esc(s.regNumber) + '">Reset password</button>' +
             '<button class="btn btn-danger btn-sm" data-action="remove-student" data-id="' + esc(s.regNumber) + '">Remove</button>';
         } else {
@@ -3101,7 +3305,7 @@
             '<button class="btn btn-outline btn-sm" data-action="timeline" data-id="' + esc(s.regNumber) + '">Journey</button>';
         }
         var stage = esc(s.currentStage || 'Not set');
-        var stageControl = role === 'coordinator' ? '<div class="field" style="margin:8px 0 0"><label>Update journey stage</label><select data-stage="' + esc(s.regNumber) + '" style="width:100%;font-size:12px">' + JOURNEY_STAGES.map(function (st) { return '<option' + (st === s.currentStage ? ' selected' : '') + '>' + esc(st) + '</option>'; }).join('') + '</select></div>' : '';
+        var stageControl = role === 'coordinator' ? '<div class="field" style="margin:8px 0 0"><label>Update journey stage</label><select data-stage="' + esc(s.regNumber) + '" style="width:100%;font-size:12px">' + selectableStages_(s, false).map(function (st) { return '<option' + (st === s.currentStage ? ' selected' : '') + '>' + esc(st) + '</option>'; }).join('') + '</select></div>' : '';
         var initials = String(s.fullName || '?').trim().split(/\s+/).slice(0, 2).map(function (part) { return part.charAt(0); }).join('').toUpperCase() || '?';
         var photo = s.passportFileId
           ? '<img class="student-card-photo" src="' + esc(thumb(s.passportFileId)) + '" alt="Passport photo of ' + esc(s.fullName || s.regNumber || 'student') + '" loading="lazy" onerror="this.style.display=&quot;none&quot;;this.nextElementSibling.style.display=&quot;flex&quot;">' +
@@ -3215,8 +3419,10 @@
         coordinatorFilteredStudents.forEach(function (s) {
           out += '<tr><td>' + selBox(s.regNumber) + '</td><td>' + esc(s.regNumber) + '</td><td>' + esc(s.fullName) + '</td><td>' + esc(s.programme) + '</td><td>' + esc(sess(s)) + '</td>' +
             '<td>' + esc(s.mainSupervisor || '—') + '</td><td>' + esc(s.coSupervisor || '—') + '</td><td class="small">' + titleCell(s) + '<br>' + confirmTitleBtn(s) + '</td>' +
-            '<td class="small">' + esc(s.currentStage) + '<br><select data-stage="' + esc(s.regNumber) + '" style="font-size:12px;margin-top:4px">' + JOURNEY_STAGES.map(function (st) { return '<option' + (st === s.currentStage ? ' selected' : '') + '>' + esc(st) + '</option>'; }).join('') + '</select></td><td>' + statusBadge(s.status) + '</td>' +
+            '<td class="small">' + esc(s.currentStage) + '<br><select data-stage="' + esc(s.regNumber) + '" style="font-size:12px;margin-top:4px">' + selectableStages_(s, false).map(function (st) { return '<option' + (st === s.currentStage ? ' selected' : '') + '>' + esc(st) + '</option>'; }).join('') + '</select></td><td>' + statusBadge(s.status) + '</td>' +
             '<td><button class="btn btn-outline btn-sm" data-action="assign-super" data-id="' + esc(s.regNumber) + '">Assign</button> ' +
+            (s.currentStage === SECOND_INTERNAL_STAGE ? '<button class="btn btn-primary btn-sm" data-action="second-internal" data-id="' + esc(s.regNumber) + '">Record 2nd internal</button> ' : '') +
+            '<button class="btn btn-outline btn-sm" data-action="edit-reg" data-id="' + esc(s.regNumber) + '">Edit reg</button> ' +
             '<button class="btn btn-outline btn-sm" data-action="reset-pw" data-id="' + esc(s.regNumber) + '">Reset PW</button> ' +
             '<button class="btn btn-danger btn-sm" data-action="remove-student" data-id="' + esc(s.regNumber) + '">Remove</button></td></tr>';
         });
@@ -3305,12 +3511,13 @@
           '<div style="flex:1;background:var(--border);border-radius:4px"><div style="width:' + Math.max(3, x[1] / max * 100) + '%;background:' + PALETTE[i % 8] + ';height:18px;border-radius:4px"></div></div><strong class="small">' + x[1] + '</strong></div>';
       }).join('');
     }
+    /** Private Drive files are never opened by a raw link: every button asks api_getFileAccess (handled by data-action="doc-file"). */
     function fileLinks(urls) {
       return String(urls || '').split(/[\s,]+/).filter(function (u) { return /^https?:\/\//i.test(u); }).map(function (u, i, arr) {
         var m = /\/d\/([\w-]+)|[?&]id=([\w-]+)/.exec(u), id = m && (m[1] || m[2]);
-        var n = arr.length > 1 ? ' ' + (i + 1) : '';
-        return '<a href="' + esc(u) + '" target="_blank" rel="noopener">View' + n + '</a>' + (id ? ' &middot; <a href="https://drive.google.com/uc?export=download&id=' + esc(id) + '" target="_blank" rel="noopener">Download' + n + '</a>' : '');
-      }).join('<br>');
+        if (!id) return '';
+        return '<button type="button" class="btn btn-outline btn-sm" data-action="doc-file" data-file="' + esc(id) + '">Open' + (arr.length > 1 ? ' ' + (i + 1) : '') + '</button>';
+      }).filter(Boolean).join(' ');
     }
 
     /* ---- HoD / Coordinator overview ---- */
@@ -3415,7 +3622,7 @@
         '<h2>Submissions</h2>' + (subs.length ? '<table>' + subs.map(function (x) { return '<tr><td>' + esc(x.type) + '</td><td>' + esc(x.status) + '</td><td>' + esc(x.createdAt) + '</td></tr>'; }).join('') + '</table>' : '<p>None yet.</p>') + '</div>');
     }
 
-    var STAGE_HINTS = ['Complete registration and orientation', 'Attend all required lectures', 'Await supervisor allocation', 'Submit your thesis title for approval by both supervisors', 'Submit your Research Proposal', 'Get your defence readiness approved', 'Defend your proposal at the seminar', 'Request approval to present your progress report', 'Await your Internal Examiner', 'Upload your progress presentation (PPTX)', 'Request approval for your final examination', 'Upload your thesis / dissertation for external examination', 'Await your External Examiner', 'Respond to the examiners\u2019 comments and upload your final correction', 'Final compliance check', 'Submit signed copies \u2014 journey complete'];
+    var STAGE_HINTS = ['Complete registration and orientation', 'Attend all required lectures', 'Await supervisor allocation', 'Submit your thesis title for approval by both supervisors', 'Submit your Research Proposal', 'Get your defence readiness approved', 'Defend your proposal at the seminar', 'Request approval to present your progress report', 'Await your Internal Examiner', 'Upload your progress presentation (PPTX)', 'Record your PhD second internal examination with the PG Coordinator', 'Request approval for your final examination', 'Upload your thesis / dissertation for external examination', 'Await your External Examiner', 'Respond to the examiners\u2019 comments and upload your final correction', 'Final compliance check', 'Submit signed copies \u2014 journey complete'];
     var TIPS = {
       Student: ['Your Dashboard shows your supervisors, current stage and the next step.', 'Submit documents by uploading a PDF/Word file or pasting a link (or Save as draft first); fix and Resubmit if changes are requested.', 'Use the bell for updates and "Message my supervisors" to chat. Use Inquiries for general questions to the PG Coordinator/HoD.'],
       Staff: ['"My Students" lists the students you supervise (main or co-supervisor).', 'Use Log meeting to record supervision sessions; students are notified.', 'Add notes to submissions and reply to student messages.'],
@@ -3562,26 +3769,50 @@
       t.value = '';
     });
     /* Passport photos are always private; the portal fetches them for people allowed to see them (api_getPhotos). */
-    var PHOTO_CACHE = {}, photoTimer = null;
+    /* Passport photos are small Drive thumbnails (a few KB), fetched only when the picture is on or near the screen, remembered for the
+       browser session, and cached on the server for every user. */
+    var PHOTO_CACHE = {}, PHOTO_REQ = {}, photoTimer = null, photoIO = null;
+    function photoStoreGet_(id) { try { return sessionStorage.getItem('pgph_' + id); } catch (e) { return null; } }
+    function photoStoreSet_(id, v) { try { if (v && v.length < 40000) sessionStorage.setItem('pgph_' + id, v); } catch (e) {} }
+    function photoNear_(img) {
+      if (img.getAttribute('data-pstate') === 'go' || !window.IntersectionObserver) return true;
+      var r = img.getBoundingClientRect();
+      return r.bottom > -600 && r.top < (window.innerHeight || 800) + 600;
+    }
+    function photoWatch_(img) {
+      if (!photoIO) photoIO = new IntersectionObserver(function (es) {
+        var any = false;
+        es.forEach(function (e) { if (e.isIntersecting) { photoIO.unobserve(e.target); if (e.target.hasAttribute('data-pid')) { e.target.setAttribute('data-pstate', 'go'); any = true; } } });
+        if (any) fixPrivatePhotos();
+      }, { rootMargin: '500px' });
+      photoIO.observe(img);
+    }
     function fixPrivatePhotos() {
       if (!state.user || !state.user.photoPrivate) return;
       var need = [];
-      document.querySelectorAll('img[src*="drive.google.com/thumbnail?id="]').forEach(function (img) {
-        var m = /thumbnail\?id=([^&]+)/.exec(img.getAttribute('src') || ''); if (!m) return;
-        var id = decodeURIComponent(m[1]);
-        if (PHOTO_CACHE[id]) { img.src = PHOTO_CACHE[id]; return; }
-        img.removeAttribute('src'); img.setAttribute('data-pid', id);
-        if (PHOTO_CACHE[id] === false) { img.dispatchEvent(new Event('error')); return; }
-        if (need.indexOf(id) === -1) need.push(id);
+      document.querySelectorAll('img[src*="drive.google.com/thumbnail?id="], img[data-pstate="wait"], img[data-pstate="go"]').forEach(function (img) {
+        var id = img.getAttribute('data-pid');
+        if (!id) {
+          var m = /thumbnail\?id=([^&]+)/.exec(img.getAttribute('src') || ''); if (!m) return;
+          id = decodeURIComponent(m[1]); img.removeAttribute('src'); img.setAttribute('data-pid', id);
+        }
+        var c = PHOTO_CACHE[id];
+        if (c === undefined) { var st = photoStoreGet_(id); if (st) c = PHOTO_CACHE[id] = st; }
+        if (c) { img.src = c; img.removeAttribute('data-pid'); img.removeAttribute('data-pstate'); return; }
+        if (c === false) { img.removeAttribute('data-pid'); img.removeAttribute('data-pstate'); img.dispatchEvent(new Event('error')); return; }
+        if (!photoNear_(img)) { if (img.getAttribute('data-pstate') !== 'wait') { img.setAttribute('data-pstate', 'wait'); photoWatch_(img); } return; }
+        img.setAttribute('data-pstate', 'req');
+        if (!PHOTO_REQ[id] && need.indexOf(id) === -1) need.push(id);
       });
       for (var i = 0; i < need.length; i += 8) (function (batch) {
-        authed('api_getPhotos', batch).then(function (map) {
-          batch.forEach(function (id) { PHOTO_CACHE[id] = (map && map[id]) || false; });
+        batch.forEach(function (id) { PHOTO_REQ[id] = 1; });
+        authed('api_getPhotos', batch, 'thumb').then(function (map) {
+          batch.forEach(function (id) { delete PHOTO_REQ[id]; PHOTO_CACHE[id] = (map && map[id]) || false; if (PHOTO_CACHE[id]) photoStoreSet_(id, PHOTO_CACHE[id]); });
           document.querySelectorAll('img[data-pid]').forEach(function (img) {
             var v = PHOTO_CACHE[img.getAttribute('data-pid')];
-            if (v) { img.src = v; img.removeAttribute('data-pid'); } else if (v === false) { img.removeAttribute('data-pid'); img.dispatchEvent(new Event('error')); }
+            if (v) { img.src = v; img.removeAttribute('data-pid'); img.removeAttribute('data-pstate'); } else if (v === false) { img.removeAttribute('data-pid'); img.removeAttribute('data-pstate'); img.dispatchEvent(new Event('error')); }
           });
-        }).catch(function () {});
+        }).catch(function () { batch.forEach(function (id) { delete PHOTO_REQ[id]; }); });
       })(need.slice(i, i + 8));
     }
     function watchPhotos() { new MutationObserver(function () { clearTimeout(photoTimer); photoTimer = setTimeout(fixPrivatePhotos, 60); }).observe(document.body, { childList: true, subtree: true }); }
@@ -3593,26 +3824,33 @@
       [{ t: 'Wait for the PG Coordinator to assign your supervisors', auto: 'supervisors' }],
       [{ t: 'Submit your thesis title; both supervisors must approve it', auto: 'title' }],
       [{ t: 'Submit your Research Proposal', type: 'Research Proposal' }],
-      [{ t: 'Route A: upload the Proposal Defence Form signed by both supervisors', type: 'Signed Proposal Defence Form' }, { t: 'Route B: request readiness approval in the system (both supervisors, then the PG Coordinator)', auto: 'readiness' }],
+      [{ t: 'Route A: upload the Proposal Defence Form signed by both supervisors', type: 'Signed Proposal Defence Form' }, { t: 'Route B: request readiness approval in the system (both supervisors, then the PG Coordinator)', auto: 'readiness' }, { t: 'Upload your proposal defence presentation (PPTX)', type: 'Proposal Defence Presentation (PPTX)' }],
       [{ t: 'Defend your proposal at the seminar; the PG Coordinator records the outcome' }],
-      [{ t: 'Request approval to present your progress report (both supervisors and the PG Coordinator)', auto: 'progressIntent' }],
+      [{ t: 'Request approval to present your progress report (both supervisors and the PG Coordinator)', auto: 'progressIntent' }, { t: 'Upload your Progress Report (Word); your Internal Examiner can open it once assigned', type: 'Progress Report' }],
       [{ t: 'The PG Coordinator or HoD assigns your Internal Examiner', auto: 'internalExaminer' }],
-      [{ t: 'Download the template and upload your presentation (PPTX); the PG Coordinator and Inspector approve it', type: 'Progress Presentation (PPTX)' }],
+      [{ t: 'Download the template and upload your presentation (PPTX); the PG Coordinator and Inspector approve it', type: 'Progress Presentation (PPTX)' },
+       { t: 'Upload your comment-by-comment response to the Internal Examiner (Word)', type: 'Comment-by-Comment Response (Internal Examiner)' },
+       { t: 'Upload your corrected clean copy after the internal comments (Word)', type: 'Corrected Clean Copy (Internal Examiner)' }],
+      [{ t: 'PhD only: sit the second internal examination; the PG Coordinator records the outcome', phd: true },
+       { t: 'Upload the second Progress Report (Word); your Internal Examiner can open it once assigned', type: 'Progress Report (Second Internal)', phd: true },
+       { t: 'Upload the second progress presentation (PPTX)', type: 'Progress Presentation (PPTX) (Second Internal)', phd: true },
+       { t: 'Upload your response to the second internal comments (Word)', type: 'Comment-by-Comment Response (Internal Examiner) (Second Internal)', phd: true },
+       { t: 'Upload the corrected clean copy after the second internal comments (Word)', type: 'Corrected Clean Copy (Internal Examiner) (Second Internal)', phd: true }],
       [{ t: 'Request approval for your final examination (both supervisors and the PG Coordinator)', auto: 'finalIntent' }, { t: 'Upload your receipt of fees', type: 'Receipt of Fees' }, { t: 'Upload your evidence of payment for the examination', type: 'Evidence of Payment for Examination' }, { t: 'Upload your plagiarism certificate', type: 'Plagiarism Certificate' }],
       [{ t: 'Upload your Thesis / Dissertation (format check, then Inspector and PG Coordinator approval)', type: 'Final Thesis/Dissertation' }],
       [{ t: 'The PG Coordinator or HoD assigns your External Examiner', auto: 'externalExaminer' }],
-      [{ t: 'Upload the External Examiner\u2019s comments file', type: 'External Examiner Comments' }, { t: 'Upload your comment-by-comment response', type: 'Comment-by-Comment Response (External Examiner)' }, { t: 'Upload your final corrected version', type: 'Final Correction' }],
+      [{ t: 'Read the External Examiner\u2019s assessment in Examiner Feedback', auto: 'externalFeedback' }, { t: 'Upload your comment-by-comment response (Word)', type: 'Comment-by-Comment Response (External Examiner)' }, { t: 'Upload your corrected clean copy (Word)', type: 'Final Correction' }],
       [{ t: 'Final compliance: supervisors endorse, then the Inspector and PG Coordinator approve your Final Correction', type: 'Final Correction' }],
       [{ t: 'Submit signed copies to the PG Coordinator' }]
     ];
     function stageChecklistCard(s, idx) {
-      var items = STAGE_REQS[idx] || []; if (!items.length) return '';
+      var items = (STAGE_REQS[idx] || []).filter(function (it) { return !it.phd || isPhdSt_(s); }); if (!items.length) return '';
       var subs = (state.dashboard && state.dashboard.submissions) || [];
       var rows = items.map(function (it) {
         var mark = '\u25CB', note = '';
         if (it.type) {
           var sub = subs.filter(function (x) { return x.type === it.type && x.status !== 'Draft'; })[0];
-          if (!sub) note = 'not submitted yet'; else if (sub.status === 'Approved') { mark = '\u2713'; note = 'approved'; } else { mark = '\u23F3'; note = sub.status.toLowerCase(); }
+          if (!sub) note = 'not submitted yet'; else if (sub.status === 'Approved') { mark = '\u2713'; note = 'submitted'; } else { mark = '\u23F3'; note = docStatusLabel_(sub.status).toLowerCase(); }
         } else if (it.auto === 'supervisors') { if (s.mainSupervisor) { mark = '\u2713'; note = 'assigned'; } }
         else if (it.auto === 'title') { if (s.titleLocked) { mark = '\u2713'; note = 'title approved'; } else if ((state.dashboard.presentationIntents || []).some(function (x) { return x.kind === TITLE_KIND && x.status === 'Pending Supervisors'; })) { mark = '\u23F3'; note = 'awaiting your supervisors'; } else note = 'title not submitted yet'; }
         else if (['readiness', 'progressIntent', 'finalIntent'].indexOf(it.auto) > -1) {
@@ -3622,10 +3860,13 @@
         } else if (it.auto === 'internalExaminer' || it.auto === 'externalExaminer') {
           var ex = (state.dashboard.examiners || []).filter(function (x) { return x.type === (it.auto === 'internalExaminer' ? 'Internal' : 'External'); })[0];
           if (ex) { mark = '\u2713'; note = 'assigned'; } else note = 'waiting for the Coordinator / HoD';
+        } else if (it.auto === 'externalFeedback') {
+          var fb = (state.dashboard.examinerFeedback || {}).external;
+          if (fb && (fb.submittedAt || fb.status === 'Feedback received')) { mark = '\u2713'; note = 'available'; } else note = 'awaiting the External Examiner';
         }
         return '<p style="margin:6px 0">' + mark + ' ' + esc(it.t) + (note ? ' <span class="small muted">&mdash; ' + esc(note) + '</span>' : '') + '</p>';
       });
-      return '<div class="card"><h4 style="margin:0 0 8px">To move on from stage ' + (idx + 1) + '</h4>' + rows.join('') +
+      return '<div class="card"><h4 style="margin:0 0 8px">To move on from stage ' + esc(JOURNEY_STAGES[idx] || (idx + 1)) + '</h4>' + rows.join('') +
         '<p class="small muted" style="margin:8px 0 0">Your stage is updated by the PG Coordinator, or automatically when key documents are approved. If it is wrong, use &ldquo;My Journey Stage&rdquo; below.</p></div>';
     }
     function timeCard() {
@@ -3650,7 +3891,7 @@
         (pend ? '<form id="emailcode-form" style="margin-top:10px"><div class="row" style="flex-wrap:wrap;gap:8px;align-items:flex-end"><div class="field" style="margin:0"><label>6-digit code from your new email</label><input type="text" name="code" required inputmode="numeric" maxlength="6" pattern="[0-9]{6}"></div><button class="btn btn-primary btn-sm" type="submit">Confirm new email</button></div></form>' : '') +
         '<p class="small muted" style="margin:8px 0 0">The code is sent to the new address, so the change only happens if you can open it.</p></div>';
     }
-    var HOWTO = {"Common": [{"t": "Sign in for the first time", "s": ["Open the portal and choose Login. Enter your registration number (students) or staff ID (e.g. ACA1234), then your password.", "Use the one-time password sent to you by email (or given by the PG Coordinator). At first sign-in you are asked to choose a new password.", "A new password must be 8–128 characters, contain at least one letter and one number, and must not be your registration number or a common password.", "After 5 wrong attempts the account is locked for 15 minutes. Your session ends automatically after about 6 hours; just sign in again."]}, {"t": "Forgot your password", "s": ["On the sign-in page choose Forgot password?, enter your registration number or staff ID and press Email me a code.", "A 6-digit code is sent to the email address on your account. It expires after 30 minutes.", "Enter the code and your new password. You can request a code up to 3 times per hour. If no email arrives, check your spam folder or contact the PG Coordinator."]}, {"t": "Notifications, email and settings", "s": ["The bell (top right) shows unread updates. Open it to see the history, switch between All and Unread, and mark items read one by one or with Mark all read.", "Red numbers on the menu tabs (for example Inquiries, Coordinator or Submissions Review) show how many items are waiting for you.", "On this Help & FAQ page, set Email notifications to Instant, Daily digest or Off (bell only). Account and security emails are always sent.", "Use the moon icon to switch between light and dark theme, Change password to update your password, and Sign out when you finish, especially on a shared computer.", "Emails come from a no-reply address. Do not reply to them; use the portal (Messages or Inquiries) instead."]}, {"t": "Change your email address", "s": ["Open Help & FAQ and find the My account card.", "Type the new email address and press Send confirmation code. The 6-digit code goes to the NEW address, so the change only happens if you can open it.", "Enter the code (valid for 30 minutes) and press Confirm new email. Your sign-in email, notifications and records all use the new address.", "You can request a code up to 3 times per hour. An address that another account already uses is refused."]}], "Student": [{"t": "Register as a new student", "s": ["From the public site choose Register. Fill in your registration number (e.g. UA/pg2026/003531, 26/408PHYX/040, Phd/sci/16586006 or 1750806006), names, gender, phone, email, faculty, department, programme and specialisation.", "Upload a passport photograph (JPG or PNG; large photos are resized for you). You may also attach your admission letter (PDF, JPG or PNG, up to 3 MB). Only the PG Coordinator and HoD can open it.", "Your registration waits for PG Coordinator approval. Use an email address that no other account uses. You can check the progress any time with Check Status, and you will be emailed the decision with a one-time password to sign in.", "Your academic session is set automatically from your registration number (e.g. a 2026 number shows as 2025/2026)."]}, {"t": "Read your Dashboard", "s": ["The Dashboard shows your session, your Main Supervisor and Co-Supervisor, your thesis title, a progress bar for your stage (1 to 15), a Next step hint, announcements, upcoming deadlines and supervision meetings.", "Use Add deadlines to calendar to download deadlines into your calendar, My timeline to see everything that has happened on your journey, and Download my card for your student card.", "To change your passport photo, choose a JPG or PNG under 1 MB in your profile card and press Update Photo.", "The To move on from stage card lists what you still need to do, with ticks for documents the portal can check (for example an approved Research Proposal). When your programme time limit is switched on by the PG Coordinator, the Programme time limit card shows how many months you have used and how many are left."]}, {"t": "Enter your thesis / dissertation title", "s": ["The title box opens once you reach stage 6 (Proposal Defence). If you are already past that stage, it is open now.", "Type your full title (10–400 characters) and press Save title. It shows Awaiting confirmation.", "You can edit and save again while it is awaiting confirmation. Each save puts it back to awaiting confirmation.", "Once the PG Coordinator confirms it, it is locked until stage 11 (External Defence). If it really must change earlier, use Need to change the confirmed title? under the title: give the new wording and your reason, then press Send title change request. If the PG Coordinator approves, the new wording replaces the old one and stays confirmed."]}, {"t": "Submit a document", "s": ["Under New Submission (Dashboard or My Submissions), choose the Type. Download the official templates first from Download Templates if needed.", "Upload a PDF, DOC or DOCX file (up to 50 MB), or paste a Google Drive link instead. Press Submit.", "Not ready to send? Press Save as draft instead of Submit. A draft is private to you and is not seen by reviewers (see Drafts below).", "Stage rules apply: Internal Examiner and Other Observations must be submitted before stage 11. Final Correction and the two Comment-by-Comment Responses can be submitted only from stage 12 (Examiners Comments).", "For Research Proposal, Progress Report, Final Thesis/Dissertation and Final Correction, Word files get an automatic format check: left margin 4.0 cm, other margins 2.5 cm, and in-text citations matched against the reference list. Submit Word (.docx) where you can; PDFs cannot be checked automatically.", "If you use a Drive link, make sure it is a file link. The portal shares it with your supervisors, the PG Coordinator and the inspectors."]}, {"t": "Drafts", "s": ["Open My Submissions. Drafts have the status Draft and show a link to the saved file.", "Press Submit for review when you are ready. The stage rules are checked at this moment, the format check runs, and your supervisors are given access to the file.", "Press Delete to remove a draft you no longer need. Only drafts can be deleted; submitted documents cannot."]}, {"t": "Track a submission and resubmit", "s": ["My Submissions lists every submission with its status: Submitted, Under Review, Changes Requested, Approved or Rejected, plus the Inspector Comments and Supervisor Notes.", "When a submission is Rejected or Changes Requested, read the numbered comments, fix your document and press Resubmit with the new file or link. It goes back to Submitted.", "Approval of your Research Proposal, Progress Report or Final Thesis moves your stage forward automatically and you are notified."]}, {"t": "Ask for a stage update", "s": ["If your stage is wrong, go to My Journey Stage, choose the stage you are at, add an optional note and press Request stage update.", "Only one stage request can wait at a time. The PG Coordinator approves or declines it and you are notified."]}, {"t": "Message your supervisors", "s": ["Press Message my supervisors on the Dashboard to open your conversation thread.", "Type a message, optionally attach a PDF, Word, PNG or JPG file (under 5 MB) and press Send. Your Main and Co-Supervisor are notified by bell and email.", "Replies appear in the same thread. The PG Coordinator and HoD can also read supervisor threads."]}, {"t": "Supervision meetings: scheduled meetings and notes", "s": ["When your supervisor schedules a meeting you get a bell notification and an email with a calendar file. Open that file to add the meeting to your calendar. Scheduled meetings show on your Dashboard with date, time and venue.", "After the meeting your supervisor records notes and action points. Read them under Supervision Meetings and press Acknowledge notes to confirm you have seen them.", "A cancelled meeting is shown crossed out and you are notified."]}, {"t": "Send an inquiry to the PG Coordinator / HoD", "s": ["Open Inquiries in the menu. Choose a Category, write a short Subject and your Message (10–2000 characters), then press Send inquiry.", "You can attach one file (PDF, Word, PNG or JPG, up to 5 MB), for example an admission letter. You can also attach a file when you send a follow-up.", "Your inquiry appears in the list as Open. When the PG Coordinator or HoD replies it becomes Answered and you are notified by bell and email.", "Open an inquiry to read the whole conversation, send a follow-up (it returns to Open), or press Mark as resolved to close it. A closed inquiry cannot be reopened by you; send a new one instead.", "You can have at most 10 unresolved inquiries at a time, so close the ones that are settled.", "Which one to use: Messages are for your supervisors, Inquiries are for general questions and requests to the PG Coordinator/HoD, and the Requests form is for a formal Supervisor change or Stage extension."]}, {"t": "Make a formal request (supervisor change or stage extension)", "s": ["In Requests on the Dashboard choose the Type, explain your reason (at least 10 characters) and press Send request.", "The PG Coordinator or HoD decides it. The decision and their note appear in your Requests table and you are notified."]}], "Staff": [{"t": "See the students you supervise", "s": ["Open My Students. It lists every student for whom you are Main Supervisor or Co-Supervisor, with photo, programme, stage, your role, the other supervisor and contact details.", "Needs attention lists students with no progress for over 90 days, submissions that were Rejected or sent back with Changes Requested, and submissions that have waited 3 or more days for your endorsement.", "You can see only your own assigned students."]}, {"t": "Log a supervision meeting", "s": ["Press Log meeting beside the student, set the date, write the meeting notes and the action points, and save.", "The student is notified, and the meeting appears under Supervision Meetings on their dashboard."]}, {"t": "Schedule a meeting and record the notes", "s": ["Press Schedule beside the student. Choose the date, time, venue and an optional agenda, then press Schedule.", "The student, you and the supervisors receive an email with a calendar file to add the meeting to a calendar.", "Under Supervision Meetings (bottom of the page) press Record notes after the meeting. Enter the notes and action points; the student is asked to acknowledge them. You can see who has acknowledged.", "Press Cancel if the meeting will not take place; the student is notified. Use Log meeting when the meeting already took place and you only need to record it."]}, {"t": "Message a student", "s": ["Press Messages beside a student to open your thread. Type, optionally attach a file, and press Send. Students are notified by bell and email.", "To write to one student or to all your assigned students at once, use the Send Message form and choose One of my assigned students or All my assigned students.", "Press Journey to see the student’s full timeline."]}, {"t": "Saved texts for messages", "s": ["Above a message box you will see Insert saved text. Pick a ready-made text or one of your own (marked with a star); it is added to the message so you can edit it.", "Write something you use often and press Save this text to keep it. My saved texts lets you delete texts you no longer need."]}, {"t": "Read, comment on and endorse submissions", "s": ["Submissions from My Students lists your students’ documents with status, files and inspector comments.", "Press Read / Edit to open the files inside the portal. You can edit Word files in Google Docs, and you have edit access in Drive.", "Press Add Note to record a supervisory note on a submission; the student can see it.", "Press Endorse once you are satisfied with a document. Several inspector checklists include Supervisor endorsement attached, so endorse before the inspector reviews it. The student is notified.", "If a submission waits for your endorsement, you get a bell notification and a reminder email every 3 days until you endorse it."]}, {"t": "When you are assigned or removed", "s": ["You get a bell notification and an email whenever the PG Coordinator assigns you to, or removes you from, a student, showing the student’s details and the other supervisor.", "Your Drive access to that student’s files is updated automatically."]}], "Submission_Inspector": [{"t": "Find submissions to review", "s": ["Open Submissions Review. Awaiting review lists new and in-progress submissions, oldest first, with the number of days each has waited. Reviewed history keeps your past decisions.", "Items waiting more than 7 days are flagged as overdue. If the PG Coordinator assigned a submission to you, you also get a notification.", "If a submission is assigned to you and you cannot take it, press Decline assignment and give a reason. It goes back to the PG Coordinator and HoD, who assign another inspector."]}, {"t": "Read the files and run the format check", "s": ["Press Read files to open the documents in the in-portal reader (you can also download them). You have comment access in Drive, not edit access.", "For Research Proposal, Progress Report, Final Thesis/Dissertation and Final Correction, the portal checks Word files automatically. Press Re-run format check to run it again.", "The result is Pass or Flagged. It checks margins (left 4.0 cm; top, right and bottom 2.5 cm) and compares in-text citations with the reference list. PDFs and old .doc files cannot be checked automatically, so read them yourself."]}, {"t": "Record the similarity (plagiarism) result", "s": ["On proposals, progress reports, theses and final corrections you will see a Similarity block. Enter the percentage from your similarity report, optionally paste the link to the report, and press Record.", "A result above the allowed limit (20% unless the department changed it) is marked in red. Use it when you request changes.", "If the department switched on the rule, a Final Thesis/Dissertation cannot be approved until a result within the limit is recorded."]}, {"t": "Approve, reject or request changes", "s": ["Tick every checklist item for the submission. All items must be ticked before you can Approve. Use Under Review to show a student you have started.", "To Reject or use Request Changes, comments are required. Write one issue per line; the portal numbers them for the student.", "Above the comment box, Insert saved text adds ready-made comments (for example about margins or missing references). Write a comment you reuse often and press Save this text to keep your own snippet.", "Approving a Research Proposal, Progress Report or Final Thesis automatically advances the student’s stage.", "The student is emailed your decision and comments, and the PG Coordinator and HoD are notified."]}, {"t": "Track your own work", "s": ["My reviews per week shows how many submissions you reviewed recently.", "After a student resubmits, the item returns to Awaiting review with the earlier history kept."]}], "PG_Coordinator": [{"t": "Approve or reject new registrations", "s": ["Open Coordinator. Pending Approvals lists new registrations.", "The Checks column warns about possible duplicates (the same phone number or name as another student) and links to the admission letter when the student attached one.", "Press Approve, or Reject and give a reason. The student is emailed either way.", "Approve all pending registrations approves everything waiting in one step; use it only after checking the list."]}, {"t": "Add or remove a student", "s": ["Use Add Student to register a student directly: fill in the form and save. The session is set from the registration number, and the student is emailed a one-time password. An email address already used by another account is refused.", "Remove deletes the student account and their submissions. It cannot be undone, so use it with care."]}, {"t": "Import many students from a CSV file", "s": ["In Import Students from CSV press Download template, fill it in (Excel can save as CSV), choose the file and press Import.", "Required columns: Reg Number, Surname, First Name, Gender, Phone, Email, Programme, Specialisation. Optional: Other Names, Faculty, Department (blank means Faculty of Physical Sciences / Physics).", "At most 60 students per file. Each valid row creates an approved student and emails a one-time password. A summary lists every row that failed and why, so you can fix and import only those rows."]}, {"t": "Assign supervisors", "s": ["Press Assign supervisors beside a student, choose the Main Supervisor and the Co-Supervisor (they must be different people) and save.", "The list shows each supervisor’s current number of students; you are warned before assigning someone who already has 8 or more.", "The student and both supervisors are notified, and Drive access to the student’s files is updated."]}, {"t": "Bulk actions on selected students", "s": ["Tick the box beside each student (cards or table). Select all shown ticks everyone matching the current filters; Clear unticks all.", "Set stage changes the journey stage for every selected student and notifies each one.", "Assign supervisors sets the Main and/or Co-Supervisor for everyone selected. Leave a role on Keep to change only the other one. Each supervisor receives one summary email instead of one per student.", "A result window lists any student the action could not be applied to."]}, {"t": "Update stages and handle stage requests", "s": ["Change a student’s stage with the Update journey stage drop-down on their card or row. The student is notified.", "Stage Update Requests lists students who asked for a change. Press Approve to move them to the requested stage, or Decline with a reason."]}, {"t": "Confirm thesis / dissertation titles", "s": ["Titles typed by students show as Awaiting confirmation in the Thesis Title column, and you get a notification.", "Press Confirm title once you have checked it. The student can then no longer change it before stage 11 (External Defence).", "Title Change Requests lists students who asked to change a confirmed title, showing the current title, the requested title and the reason. Press Approve to replace the title (it stays confirmed) or Decline with a reason."]}, {"t": "Find and filter students", "s": ["In the student list, filter by registration number, first name, last name, session, programme, specialisation, stage or main supervisor, then press Apply filters. Clear filters resets them.", "Switch between Cards view and Table view as you prefer."]}, {"t": "Manage staff and logins", "s": ["Staff List (Supervisors) shows rank and specialisation. Use Add Staff Member to add a supervisor, or Remove to take one off the list (their students become unassigned).", "Use Staff Logins & Roles to create or change a staff login. The staff ID must look like ACA1234. Choose the role (Staff, HoD, PG Coordinator or Submission Inspector); the person gets an email with an initial password.", "Deactivate or reactivate a login with the toggle beside it."]}, {"t": "Reset a student’s password", "s": ["Press Reset PW beside the student. A new one-time password is emailed to them and they must choose their own password at next sign-in. If the email cannot be sent, the page shows you the one-time password so you can give it to the student."]}, {"t": "Review submissions and assign inspectors", "s": ["Open Submissions Review to see all submissions. You can approve, reject or request changes there just like an inspector.", "Press Assign inspector to give a submission to a specific inspector; they are notified.", "Read / Edit opens a submission’s files, with edit access to Word documents."]}, {"t": "Answer student inquiries", "s": ["Open Inquiries. It starts on Open, the inquiries still waiting for a reply. Use the filter buttons for Answered, Closed or All.", "Press Reply to read the conversation, type your answer and press Send reply. The inquiry becomes Answered and the student is notified. The HoD can see and answer it too.", "Above the reply box, Insert saved text adds a ready-made reply; Save this text keeps your own. You can attach a file (PDF, Word, PNG or JPG, up to 5 MB) to a reply.", "Press Close inquiry when it is settled, or Reopen to continue a closed one. A closed inquiry must be reopened before anyone can reply.", "Forward to supervisor sends the conversation to a supervisor for input (the student only sees that it was forwarded).", "The Response time card at the top shows the average time to first reply, overall and for each category."]}, {"t": "Post announcements and send messages", "s": ["Post Announcement: write a title and body, choose the audience (Students only, Staff only or Every user), optionally tick the email option and pick a programme for the email, then post.", "Send Message: choose Individual, All students, All staff or Every user, add a subject and message, and send. Individual messages also appear in the student’s Messages thread."]}, {"t": "Deadlines, seminars, examiners and requests", "s": ["Open Overview & Reports. Add Deadline publishes a deadline that students see on their dashboard and can add to their calendar.", "Seminars: schedule a seminar with its presenters, then use Attendance to record who attended.", "Examiners & Defence Scores: assign an Internal or External examiner to a student (they receive an appointment email if you give an address), then use Record result to enter the score (0–100) and comments.", "Requests lists Supervisor change and Stage extension requests. Press Approve or Decline (a note is required to decline). Stage update requests are decided on the Coordinator page.", "If your department wants the HoD to approve examiners, set EXAMINER_APPROVAL_REQUIRED to yes in the Config tab. Examiners you assign then show as awaiting HoD approval and nobody is emailed until the HoD approves."]}, {"t": "Reports, exports, backup and audit", "s": ["Overview & Reports has charts by programme, gender, session, stage and submission status. Generate Report prints a statistics report, Print card prints a student card, and Export CSV downloads the student list.", "Supervisor List for HoD: choose a session and programme, press Generate, then print or save as PDF. It shows Reg No, Full Names, Programme, Session, Main Supervisor, Co-Supervisor and Title.", "Export Data (Coordinator page) has a Download CSV button for the students and submissions. Back up all data now copies the spreadsheet into the Backups folder; a nightly copy is made automatically and the newest 30 are kept.", "Audit Log lists who did what and when."]}, {"t": "Settings, reminders and privacy (Config tab)", "s": ["Run installAllTriggers once from the Apps Script editor (or the spreadsheet menu). It schedules the daily reminders, digests, weekly time-limit alert, nightly backup and housekeeping, and adds the settings below to the Config tab. It is safe to run again; after a schedule change, run reinstallAllTriggers instead so the times are replaced.", "Settings (Config tab): SIMILARITY_LIMIT (default 20), REQUIRE_SIMILARITY (yes/no), EXAMINER_APPROVAL_REQUIRED (yes/no), ENDORSE_REMIND_DAYS (3), NUDGE_DAYS (30) and TIME_ALERT_MONTHS (6).", "Time limits: the LIMIT_MONTHS values for MSc, MPhil and PhD are placeholders. Enter your department’s real limits, then set TIME_LIMITS_ENABLED to yes. Until then no time-limit information is shown to anyone.", "Students with no progress for 90 days get a gentle reminder email at most every NUDGE_DAYS days, and supervisors are reminded about submissions waiting for their endorsement.", "Optional: run rotateLegacyDefaultPasswords (try it with dryRun = true first) to replace the old shared default password on accounts that never changed it.", "Passport photos, submissions, admission letters and attachments are private: only the people allowed to see them can open them, through the portal. Run restrictExistingPassports once to remove the old link sharing from photos already uploaded. Printed student cards cannot show private photos.", "Old audit log rows (24 months) and read notifications (90 days) are tidied automatically every month."]}], "HoD": [{"t": "Read the Overview & Reports page", "s": ["Open Overview & Reports. The top cards show total, approved and pending students and total submissions. Charts break students down by programme, gender, session and journey stage, and submissions by status.", "All Students lists every student with session, stage, supervisors and thesis title. Buttons beside each row open the student’s Card, Messages thread and Journey timeline.", "As HoD you have read access to student records. Registrations, adding or removing students, stages, thesis-title confirmation and password resets are handled by the PG Coordinator.", "Below the tables you will find Time-limit alerts (students close to or past their programme limit, once the PG Coordinator switches the limits on), Students at risk (no progress for 90 days), Supervisor workload (students per supervisor) and Average days to reach each stage."]}, {"t": "Print the supervisor list and reports", "s": ["Press Supervisor List for HoD, choose a session and programme (or leave them on All), then press Generate. Print it or save it as PDF.", "It lists S/N, Reg No, Full Names, Programme, Session, Main Supervisor, Co-Supervisor and Title. Titles still awaiting confirmation are marked.", "Generate Report prints the statistics report, Print card prints a student card, and Export CSV downloads the student list."]}, {"t": "Assign supervisors", "s": ["Press Assign supervisors beside a student, choose Main Supervisor and Co-Supervisor (different people) and save. You are warned if someone already supervises 8 or more students.", "The student and the supervisors are notified."]}, {"t": "Answer student inquiries", "s": ["Open Inquiries. It starts on Open (awaiting reply). Press Reply, read the conversation, write your answer and press Send reply.", "The student is notified and the inquiry becomes Answered. The PG Coordinator sees your reply and may also answer. Use Close inquiry when settled, or Reopen for a closed one.", "The Response time card shows how quickly inquiries get a first reply, overall and by category. Saved replies and attachments work the same way as for the PG Coordinator."]}, {"t": "Decide requests", "s": ["In Requests (Overview & Reports) you will see students’ Supervisor change and Stage extension requests. Press Approve or Decline; a note is required to decline.", "Stage update requests are decided by the PG Coordinator."]}, {"t": "Deadlines, seminars and examiners", "s": ["Add Deadline publishes a deadline to students. Seminars lets you schedule a seminar with presenters and record attendance afterwards.", "Examiners & Defence Scores lets you appoint Internal or External examiners and record each score and comments.", "If your department uses HoD approval for examiners, examiners proposed by the PG Coordinator appear as awaiting HoD approval. Press Approve (the examiner and student are notified) or Decline (the PG Coordinator is told to propose another)."]}, {"t": "Announcements and messages", "s": ["Post Announcement to Students only, Staff only or Every user, with an optional email.", "Send Message to an individual, all students, all staff or every user."]}, {"t": "Review submissions and the audit trail", "s": ["All Submissions & Review Decisions shows every submission, its status, who reviewed it, their comments and the files (read-only for you).", "You are notified when submissions are approved or rejected. Audit Log shows who did what and when."]}]};
+    var HOWTO = {"Common": [{"t": "Sign in for the first time", "s": ["Open the portal and choose Login. Enter your registration number (students) or staff ID (e.g. ACA1234), then your password.", "Use the one-time password sent to you by email (or given by the PG Coordinator). At first sign-in you are asked to choose a new password.", "A new password must be 8–128 characters, contain at least one letter and one number, and must not be your registration number or a common password.", "After 5 wrong attempts the account is locked for 15 minutes. Your session ends automatically after about 6 hours; just sign in again."]}, {"t": "Forgot your password", "s": ["On the sign-in page choose Forgot password?, enter your registration number or staff ID and press Email me a code.", "A 6-digit code is sent to the email address on your account. It expires after 30 minutes.", "Enter the code and your new password. You can request a code up to 3 times per hour. If no email arrives, check your spam folder or contact the PG Coordinator."]}, {"t": "Notifications, email and settings", "s": ["The bell (top right) shows unread updates. Open it to see the history, switch between All and Unread, and mark items read one by one or with Mark all read.", "Red numbers on the menu tabs (for example Inquiries, Coordinator or Submissions Review) show how many items are waiting for you.", "On this Help & FAQ page, set Email notifications to Instant, Daily digest or Off (bell only). Account and security emails are always sent.", "Use the moon icon to switch between light and dark theme, Change password to update your password, and Sign out when you finish, especially on a shared computer.", "Emails come from a no-reply address. Do not reply to them; use the portal (Messages or Inquiries) instead."]}, {"t": "Change your email address", "s": ["Open Help & FAQ and find the My account card.", "Type the new email address and press Send confirmation code. The 6-digit code goes to the NEW address, so the change only happens if you can open it.", "Enter the code (valid for 30 minutes) and press Confirm new email. Your sign-in email, notifications and records all use the new address.", "You can request a code up to 3 times per hour. An address that another account already uses is refused."]}], "Student": [{"t": "Register as a new student", "s": ["From the public site choose Register. Fill in your registration number (e.g. UA/pg2026/003531, 26/408PHYX/040, Phd/sci/16586006 or 1750806006), names, gender, phone, email, faculty, department, programme and specialisation.", "Upload a passport photograph (JPG, PNG, WEBP or HEIC; large photos are resized for you). You may also attach your admission letter (PDF, JPG or PNG, up to 3 MB). Only the PG Coordinator and HoD can open it.", "Your registration waits for PG Coordinator approval. Use an email address that no other account uses. You can check the progress any time with Check Status, and you will be emailed the decision with a one-time password to sign in.", "Your academic session is set automatically from your registration number (e.g. a 2026 number shows as 2025/2026)."]}, {"t": "Read your Dashboard", "s": ["The Dashboard shows your session, your Main Supervisor and Co-Supervisor, your thesis title, a progress bar for your stage (1 to 15), a Next step hint, announcements, upcoming deadlines and supervision meetings.", "Use Add deadlines to calendar to download deadlines into your calendar, My timeline to see everything that has happened on your journey, and Download my card for your student card.", "To change your passport photo, choose a photo (JPG, PNG, WEBP or HEIC; large photos are resized for you) in your profile card and press Update Photo.", "The To move on from stage card lists what you still need to do, with ticks for documents the portal can check (for example an approved Research Proposal). When your programme time limit is switched on by the PG Coordinator, the Programme time limit card shows how many months you have used and how many are left."]}, {"t": "Enter your thesis / dissertation title", "s": ["The title box opens once you reach stage 6 (Proposal Defence). If you are already past that stage, it is open now.", "Type your full title (10–400 characters) and press Save title. It shows Awaiting confirmation.", "You can edit and save again while it is awaiting confirmation. Each save puts it back to awaiting confirmation.", "Once the PG Coordinator confirms it, it is locked until stage 11 (External Defence). If it really must change earlier, use Need to change the confirmed title? under the title: give the new wording and your reason, then press Send title change request. If the PG Coordinator approves, the new wording replaces the old one and stays confirmed."]}, {"t": "Submit a document", "s": ["Under New Submission (Dashboard or My Submissions), choose the Type. Download the official templates first from Download Templates if needed.", "Upload a PDF, DOC or DOCX file (up to 50 MB), or paste a Google Drive link instead. Press Submit.", "Not ready to send? Press Save as draft instead of Submit. A draft is private to you and is not seen by reviewers (see Drafts below).", "Stage rules apply: Internal Examiner and Other Observations must be submitted before stage 11. Final Correction and the two Comment-by-Comment Responses can be submitted only from stage 12 (Examiners Comments).", "For Research Proposal, Progress Report, Final Thesis/Dissertation and Final Correction, Word files get an automatic format check: left margin 4.0 cm, other margins 2.5 cm, and in-text citations matched against the reference list. Submit Word (.docx) where you can; PDFs cannot be checked automatically.", "If you use a Drive link, make sure it is a file link. The portal shares it with your supervisors, the PG Coordinator and the inspectors."]}, {"t": "Drafts", "s": ["Open My Submissions. Drafts have the status Draft and show a link to the saved file.", "Press Submit for review when you are ready. The stage rules are checked at this moment, the format check runs, and your supervisors are given access to the file.", "Press Delete to remove a draft you no longer need. Only drafts can be deleted; submitted documents cannot."]}, {"t": "Track a submission and resubmit", "s": ["My Submissions lists every submission with its status: Submitted, Under Review, Changes Requested, Approved or Rejected, plus the Inspector Comments and Supervisor Notes.", "When a submission is Rejected or Changes Requested, read the numbered comments, fix your document and press Resubmit with the new file or link. It goes back to Submitted.", "Approval of your Research Proposal, Progress Report or Final Thesis moves your stage forward automatically and you are notified."]}, {"t": "Ask for a stage update", "s": ["If your stage is wrong, go to My Journey Stage, choose the stage you are at, add an optional note and press Request stage update.", "Only one stage request can wait at a time. The PG Coordinator approves or declines it and you are notified."]}, {"t": "Message your supervisors", "s": ["Press Message my supervisors on the Dashboard to open your conversation thread.", "Type a message, optionally attach a PDF, Word, PNG or JPG file (under 5 MB) and press Send. Your Main and Co-Supervisor are notified by bell and email.", "Replies appear in the same thread. The PG Coordinator and HoD can also read supervisor threads."]}, {"t": "Supervision meetings: scheduled meetings and notes", "s": ["When your supervisor schedules a meeting you get a bell notification and an email with a calendar file. Open that file to add the meeting to your calendar. Scheduled meetings show on your Dashboard with date, time and venue.", "After the meeting your supervisor records notes and action points. Read them under Supervision Meetings and press Acknowledge notes to confirm you have seen them.", "A cancelled meeting is shown crossed out and you are notified."]}, {"t": "Send an inquiry to the PG Coordinator / HoD", "s": ["Open Inquiries in the menu. Choose a Category, write a short Subject and your Message (10–2000 characters), then press Send inquiry.", "You can attach one file (PDF, Word, PNG or JPG, up to 5 MB), for example an admission letter. You can also attach a file when you send a follow-up.", "Your inquiry appears in the list as Open. When the PG Coordinator or HoD replies it becomes Answered and you are notified by bell and email.", "Open an inquiry to read the whole conversation, send a follow-up (it returns to Open), or press Mark as resolved to close it. A closed inquiry cannot be reopened by you; send a new one instead.", "You can have at most 10 unresolved inquiries at a time, so close the ones that are settled.", "Which one to use: Messages are for your supervisors, Inquiries are for general questions and requests to the PG Coordinator/HoD, and the Requests form is for a formal Supervisor change or Stage extension."]}, {"t": "Make a formal request (supervisor change or stage extension)", "s": ["In Requests on the Dashboard choose the Type, explain your reason (at least 10 characters) and press Send request.", "The PG Coordinator or HoD decides it. The decision and their note appear in your Requests table and you are notified."]}], "Staff": [{"t": "See the students you supervise", "s": ["Open My Students. It lists every student for whom you are Main Supervisor or Co-Supervisor, with photo, programme, stage, your role, the other supervisor and contact details.", "Needs attention lists students with no progress for over 90 days, submissions that were Rejected or sent back with Changes Requested, and submissions that have waited 3 or more days for your endorsement.", "You can see only your own assigned students."]}, {"t": "Log a supervision meeting", "s": ["Press Log meeting beside the student, set the date, write the meeting notes and the action points, and save.", "The student is notified, and the meeting appears under Supervision Meetings on their dashboard."]}, {"t": "Schedule a meeting and record the notes", "s": ["Press Schedule beside the student. Choose the date, time, venue and an optional agenda, then press Schedule.", "The student, you and the supervisors receive an email with a calendar file to add the meeting to a calendar.", "Under Supervision Meetings (bottom of the page) press Record notes after the meeting. Enter the notes and action points; the student is asked to acknowledge them. You can see who has acknowledged.", "Press Cancel if the meeting will not take place; the student is notified. Use Log meeting when the meeting already took place and you only need to record it."]}, {"t": "Message a student", "s": ["Press Messages beside a student to open your thread. Type, optionally attach a file, and press Send. Students are notified by bell and email.", "To write to one student or to all your assigned students at once, use the Send Message form and choose One of my assigned students or All my assigned students.", "Press Journey to see the student’s full timeline."]}, {"t": "Saved texts for messages", "s": ["Above a message box you will see Insert saved text. Pick a ready-made text or one of your own (marked with a star); it is added to the message so you can edit it.", "Write something you use often and press Save this text to keep it. My saved texts lets you delete texts you no longer need."]}, {"t": "Read, comment on and endorse submissions", "s": ["Submissions from My Students lists your students’ documents with status, files and inspector comments.", "Press Read / Edit to open the files inside the portal. You can edit Word files in Google Docs, and you have edit access in Drive.", "Press Add Note to record a supervisory note on a submission; the student can see it.", "Press Endorse once you are satisfied with a document. Several inspector checklists include Supervisor endorsement attached, so endorse before the inspector reviews it. The student is notified.", "If a submission waits for your endorsement, you get a bell notification and a reminder email every 3 days until you endorse it."]}, {"t": "When you are assigned or removed", "s": ["You get a bell notification and an email whenever the PG Coordinator assigns you to, or removes you from, a student, showing the student’s details and the other supervisor.", "Your Drive access to that student’s files is updated automatically."]}], "Submission_Inspector": [{"t": "Find submissions to review", "s": ["Open Submissions Review. Awaiting review lists new and in-progress submissions, oldest first, with the number of days each has waited. Reviewed history keeps your past decisions.", "Items waiting more than 7 days are flagged as overdue. If the PG Coordinator assigned a submission to you, you also get a notification.", "If a submission is assigned to you and you cannot take it, press Decline assignment and give a reason. It goes back to the PG Coordinator and HoD, who assign another inspector."]}, {"t": "Read the files and run the format check", "s": ["Press Read files to open the documents in the in-portal reader (you can also download them). You have comment access in Drive, not edit access.", "For Research Proposal, Progress Report, Final Thesis/Dissertation and Final Correction, the portal checks Word files automatically. Press Re-run format check to run it again.", "The result is Pass or Flagged. It checks margins (left 4.0 cm; top, right and bottom 2.5 cm) and compares in-text citations with the reference list. PDFs and old .doc files cannot be checked automatically, so read them yourself."]}, {"t": "Record the similarity (plagiarism) result", "s": ["On proposals, progress reports, theses and final corrections you will see a Similarity block. Enter the percentage from your similarity report, optionally paste the link to the report, and press Record.", "A result above the allowed limit (20% unless the department changed it) is marked in red. Use it when you request changes.", "If the department switched on the rule, a Final Thesis/Dissertation cannot be approved until a result within the limit is recorded."]}, {"t": "Approve, reject or request changes", "s": ["Tick every checklist item for the submission. All items must be ticked before you can Approve. Use Under Review to show a student you have started.", "To Reject or use Request Changes, comments are required. Write one issue per line; the portal numbers them for the student.", "Above the comment box, Insert saved text adds ready-made comments (for example about margins or missing references). Write a comment you reuse often and press Save this text to keep your own snippet.", "Approving a Research Proposal, Progress Report or Final Thesis automatically advances the student’s stage.", "The student is emailed your decision and comments, and the PG Coordinator and HoD are notified."]}, {"t": "Track your own work", "s": ["My reviews per week shows how many submissions you reviewed recently.", "After a student resubmits, the item returns to Awaiting review with the earlier history kept."]}], "PG_Coordinator": [{"t": "Approve or reject new registrations", "s": ["Open Coordinator. Pending Approvals lists new registrations.", "The Checks column warns about possible duplicates (the same phone number or name as another student) and links to the admission letter when the student attached one.", "Press Approve, or Reject and give a reason. The student is emailed either way.", "Approve all pending registrations approves everything waiting in one step; use it only after checking the list."]}, {"t": "Add or remove a student", "s": ["Use Add Student to register a student directly: fill in the form and save. The session is set from the registration number, and the student is emailed a one-time password. An email address already used by another account is refused.", "Remove deletes the student account and their submissions. It cannot be undone, so use it with care."]}, {"t": "Import many students from a CSV file", "s": ["In Import Students from CSV press Download template, fill it in (Excel can save as CSV), choose the file and press Import.", "Required columns: Reg Number, Surname, First Name, Gender, Phone, Email, Programme, Specialisation. Optional: Other Names, Faculty, Department (blank means Faculty of Physical Sciences / Physics).", "At most 60 students per file. Each valid row creates an approved student and emails a one-time password. A summary lists every row that failed and why, so you can fix and import only those rows."]}, {"t": "Assign supervisors", "s": ["Press Assign supervisors beside a student, choose the Main Supervisor and the Co-Supervisor (they must be different people) and save.", "The list shows each supervisor’s current number of students; you are warned before assigning someone who already has 8 or more.", "The student and both supervisors are notified, and Drive access to the student’s files is updated."]}, {"t": "Bulk actions on selected students", "s": ["Tick the box beside each student (cards or table). Select all shown ticks everyone matching the current filters; Clear unticks all.", "Set stage changes the journey stage for every selected student and notifies each one.", "Assign supervisors sets the Main and/or Co-Supervisor for everyone selected. Leave a role on Keep to change only the other one. Each supervisor receives one summary email instead of one per student.", "A result window lists any student the action could not be applied to."]}, {"t": "Update stages and handle stage requests", "s": ["Change a student’s stage with the Update journey stage drop-down on their card or row. The student is notified.", "Stage Update Requests lists students who asked for a change. Press Approve to move them to the requested stage, or Decline with a reason."]}, {"t": "Confirm thesis / dissertation titles", "s": ["Titles typed by students show as Awaiting confirmation in the Thesis Title column, and you get a notification.", "Press Confirm title once you have checked it. The student can then no longer change it before stage 11 (External Defence).", "Title Change Requests lists students who asked to change a confirmed title, showing the current title, the requested title and the reason. Press Approve to replace the title (it stays confirmed) or Decline with a reason."]}, {"t": "Find and filter students", "s": ["In the student list, filter by registration number, first name, last name, session, programme, specialisation, stage or main supervisor, then press Apply filters. Clear filters resets them.", "Switch between Cards view and Table view as you prefer."]}, {"t": "Manage staff and logins", "s": ["Staff List (Supervisors) shows rank and specialisation. Use Add Staff Member to add a supervisor, or Remove to take one off the list (their students become unassigned).", "Use Staff Logins & Roles to create or change a staff login. The staff ID must look like ACA1234. Choose the role (Staff, HoD, PG Coordinator or Submission Inspector); the person gets an email with an initial password.", "Deactivate or reactivate a login with the toggle beside it."]}, {"t": "Reset a student’s password", "s": ["Press Reset PW beside the student. A new one-time password is emailed to them and they must choose their own password at next sign-in. If the email cannot be sent, the page shows you the one-time password so you can give it to the student."]}, {"t": "Review submissions and assign inspectors", "s": ["Open Submissions Review to see all submissions. You can approve, reject or request changes there just like an inspector.", "Press Assign inspector to give a submission to a specific inspector; they are notified.", "Read / Edit opens a submission’s files, with edit access to Word documents."]}, {"t": "Answer student inquiries", "s": ["Open Inquiries. It starts on Open, the inquiries still waiting for a reply. Use the filter buttons for Answered, Closed or All.", "Press Reply to read the conversation, type your answer and press Send reply. The inquiry becomes Answered and the student is notified. The HoD can see and answer it too.", "Above the reply box, Insert saved text adds a ready-made reply; Save this text keeps your own. You can attach a file (PDF, Word, PNG or JPG, up to 5 MB) to a reply.", "Press Close inquiry when it is settled, or Reopen to continue a closed one. A closed inquiry must be reopened before anyone can reply.", "Forward to supervisor sends the conversation to a supervisor for input (the student only sees that it was forwarded).", "The Response time card at the top shows the average time to first reply, overall and for each category."]}, {"t": "Post announcements and send messages", "s": ["Post Announcement: write a title and body, choose the audience (Students only, Staff only or Every user), optionally tick the email option and pick a programme for the email, then post.", "Send Message: choose Individual, All students, All staff or Every user, add a subject and message, and send. Individual messages also appear in the student’s Messages thread."]}, {"t": "Deadlines, seminars, examiners and requests", "s": ["Open Overview & Reports. Add Deadline publishes a deadline that students see on their dashboard and can add to their calendar.", "Seminars: schedule a seminar with its presenters, then use Attendance to record who attended.", "Examiners & Defence Scores: assign an Internal or External examiner to a student (they receive an appointment email if you give an address), then use Record result to enter the score (0–100) and comments.", "Requests lists Supervisor change and Stage extension requests. Press Approve or Decline (a note is required to decline). Stage update requests are decided on the Coordinator page.", "If your department wants the HoD to approve examiners, set EXAMINER_APPROVAL_REQUIRED to yes in the Config tab. Examiners you assign then show as awaiting HoD approval and nobody is emailed until the HoD approves."]}, {"t": "Reports, exports, backup and audit", "s": ["Overview & Reports has charts by programme, gender, session, stage and submission status. Generate Report prints a statistics report, Print card prints a student card, and Export CSV downloads the student list.", "Supervisor List for HoD: choose a session and programme, press Generate, then print or save as PDF. It shows Reg No, Full Names, Programme, Session, Main Supervisor, Co-Supervisor and Title.", "Export Data (Coordinator page) has a Download CSV button for the students and submissions. Back up all data now copies the spreadsheet into the Backups folder; a nightly copy is made automatically and the newest 30 are kept.", "Audit Log lists who did what and when."]}, {"t": "Settings, reminders and privacy (Config tab)", "s": ["Run installAllTriggers once from the Apps Script editor (or the spreadsheet menu). It schedules the daily reminders, digests, weekly time-limit alert, nightly backup and housekeeping, and adds the settings below to the Config tab. It is safe to run again; after a schedule change, run reinstallAllTriggers instead so the times are replaced.", "Settings (Config tab): SIMILARITY_LIMIT (default 20), REQUIRE_SIMILARITY (yes/no), EXAMINER_APPROVAL_REQUIRED (yes/no), ENDORSE_REMIND_DAYS (3), NUDGE_DAYS (30) and TIME_ALERT_MONTHS (6).", "Time limits: the LIMIT_MONTHS values for MSc, MPhil and PhD are placeholders. Enter your department’s real limits, then set TIME_LIMITS_ENABLED to yes. Until then no time-limit information is shown to anyone.", "Students with no progress for 90 days get a gentle reminder email at most every NUDGE_DAYS days, and supervisors are reminded about submissions waiting for their endorsement.", "Optional: run rotateLegacyDefaultPasswords (try it with dryRun = true first) to replace the old shared default password on accounts that never changed it.", "Passport photos, submissions, admission letters and attachments are private: only the people allowed to see them can open them, through the portal. Run restrictExistingPassports once to remove the old link sharing from photos already uploaded. Printed student cards cannot show private photos.", "Old audit log rows (24 months) and read notifications (90 days) are tidied automatically every month."]}], "HoD": [{"t": "Read the Overview & Reports page", "s": ["Open Overview & Reports. The top cards show total, approved and pending students and total submissions. Charts break students down by programme, gender, session and journey stage, and submissions by status.", "All Students lists every student with session, stage, supervisors and thesis title. Buttons beside each row open the student’s Card, Messages thread and Journey timeline.", "As HoD you have read access to student records. Registrations, adding or removing students, stages, thesis-title confirmation and password resets are handled by the PG Coordinator.", "Below the tables you will find Time-limit alerts (students close to or past their programme limit, once the PG Coordinator switches the limits on), Students at risk (no progress for 90 days), Supervisor workload (students per supervisor) and Average days to reach each stage."]}, {"t": "Print the supervisor list and reports", "s": ["Press Supervisor List for HoD, choose a session and programme (or leave them on All), then press Generate. Print it or save it as PDF.", "It lists S/N, Reg No, Full Names, Programme, Session, Main Supervisor, Co-Supervisor and Title. Titles still awaiting confirmation are marked.", "Generate Report prints the statistics report, Print card prints a student card, and Export CSV downloads the student list."]}, {"t": "Assign supervisors", "s": ["Press Assign supervisors beside a student, choose Main Supervisor and Co-Supervisor (different people) and save. You are warned if someone already supervises 8 or more students.", "The student and the supervisors are notified."]}, {"t": "Answer student inquiries", "s": ["Open Inquiries. It starts on Open (awaiting reply). Press Reply, read the conversation, write your answer and press Send reply.", "The student is notified and the inquiry becomes Answered. The PG Coordinator sees your reply and may also answer. Use Close inquiry when settled, or Reopen for a closed one.", "The Response time card shows how quickly inquiries get a first reply, overall and by category. Saved replies and attachments work the same way as for the PG Coordinator."]}, {"t": "Decide requests", "s": ["In Requests (Overview & Reports) you will see students’ Supervisor change and Stage extension requests. Press Approve or Decline; a note is required to decline.", "Stage update requests are decided by the PG Coordinator."]}, {"t": "Deadlines, seminars and examiners", "s": ["Add Deadline publishes a deadline to students. Seminars lets you schedule a seminar with presenters and record attendance afterwards.", "Examiners & Defence Scores lets you appoint Internal or External examiners and record each score and comments.", "If your department uses HoD approval for examiners, examiners proposed by the PG Coordinator appear as awaiting HoD approval. Press Approve (the examiner and student are notified) or Decline (the PG Coordinator is told to propose another)."]}, {"t": "Announcements and messages", "s": ["Post Announcement to Students only, Staff only or Every user, with an optional email.", "Send Message to an individual, all students, all staff or every user."]}, {"t": "Review submissions and the audit trail", "s": ["All Submissions & Review Decisions shows every submission, its status, who reviewed it, their comments and the files (read-only for you).", "You are notified when submissions are approved or rejected. Audit Log shows who did what and when."]}]};
     function howToHtml(role) {
       var block = function (title, list, open) {
         return '<div class="card"><h4 style="margin:0 0 8px">' + esc(title) + '</h4>' + list.map(function (g, i) {
@@ -3727,6 +3968,39 @@
         }
         return next();
       });
+    }
+    /** Config-driven document upload: the catalogue entry decides formats, target type and resubmit behaviour. */
+    function pickLocalFile_(accept, cb) {
+      var inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = accept || '';
+      inp.addEventListener('change', function () { var f = inp.files && inp.files[0]; if (f) cb(f); });
+      inp.click();
+    }
+    function doDocUpload_(doc, f) {
+      if (!doc) return;
+      var ext = String(f.name || '').split('.').pop().toLowerCase(), p;
+      if ((doc.formats || []).indexOf(ext) === -1) { setError(new Error('Upload ' + (doc.formats || []).join(', ').toUpperCase() + ' for ' + doc.name + '.')); return; }
+      if (doc.type === '__passport__') {
+        p = passportPayloadFromFile_(f).then(function (payload) { return authed('api_updateProfilePhoto', payload); }).then(function (r) {
+          if (state.dashboard && state.dashboard.student) {
+            state.dashboard.student.passportUrl = r.url; state.dashboard.student.passportFileId = r.id;
+          }
+          return { ok: true };
+        });
+        act(p, 'Passport photograph updated.', function () { loadView('dashboard'); });
+        return;
+      }
+      if (doc.type === '__admission__') {
+        if (f.size > 3 * 1024 * 1024) { setError(new Error('The admission letter must be under 3 MB.')); return; }
+        p = readDataUrl(f.slice(0, f.size, 'application/pdf')).then(function (u) { return authed('api_uploadAdmissionLetter', { dataUrl: u }); });
+      } else {
+        p = uploadDoc_(f, doc.type).then(function (url) {
+          if (doc.submissionId && doc.canReplace) return authed('api_replaceSubmission', doc.submissionId, url);
+          if (doc.submissionId && docStatusKey_(doc.status) === 'correction') return authed('api_resubmit', doc.submissionId, url);
+          return authed('api_createSubmission', { type: doc.type, driveFileUrls: url });
+        });
+      }
+      act(p, doc.name + ' uploaded.', function () { loadView('dashboard'); });
     }
     function readDataUrl(f) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = function () { rej(new Error('Could not read file.')); }; r.readAsDataURL(f); }); }
     function driveFileId(u) { var m = /\/d\/([A-Za-z0-9_-]{15,})|[?&]id=([A-Za-z0-9_-]{15,})/.exec(String(u || '')); return m ? (m[1] || m[2]) : ''; }
@@ -4005,20 +4279,28 @@ function linkify(t) {
     }
     function loginsCard(c) {
       var o = '<div class="card"><h4 style="margin:0 0 12px">Staff Logins &amp; Roles</h4><div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>' + (c.logins || []).map(function (u) { return '<tr><td>' + esc(u.regNumber) + '</td><td>' + esc(u.fullName) + '<br><span class="small muted">' + esc(u.email) + '</span></td><td>' + esc(ROLE_LABELS[u.role] || u.role) + '</td><td>' + (u.active ? '<span class="badge ok">Active</span>' : '<span class="badge bad">Inactive</span>') + '</td><td>' + (String(u.id) === String(state.user.id) ? '' : '<button class="btn btn-outline btn-sm" data-action="login-toggle" data-id="' + esc(u.id) + '" data-on="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
-      o += '<h4 style="margin:16px 0 8px">Create or update a login</h4><form id="login-form"><div class="row-cols" style="--cols:4"><div class="field"><label>Staff ID</label><input type="text" name="regNumber" required placeholder="ACA1234"></div><div class="field"><label>Full name</label><input type="text" name="fullName" required></div><div class="field"><label>Email</label><input type="email" name="email" required></div><div class="field"><label>Role</label><select name="role"><option value="Staff">Staff</option><option value="Submission_Inspector">Submission Inspector</option><option value="HoD">Head of Department</option><option value="PG_Coordinator">PG Coordinator</option></select></div></div><button class="btn btn-primary btn-sm" type="submit">Save login</button></form>' +
+      o += '<h4 style="margin:16px 0 8px">Create or update a login</h4><form id="stafflogin-form"><div class="row-cols" style="--cols:4"><div class="field"><label>Staff ID</label><input type="text" name="regNumber" required placeholder="ACA1234"></div><div class="field"><label>Full name</label><input type="text" name="fullName" required></div><div class="field"><label>Email</label><input type="email" name="email" required></div><div class="field"><label>Role</label><select name="role"><option value="Staff">Staff</option><option value="Submission_Inspector">Submission Inspector</option><option value="HoD">Head of Department</option><option value="PG_Coordinator">PG Coordinator</option></select></div></div><button class="btn btn-primary btn-sm" type="submit">Save login</button></form>' +
         '</div>';
       return o;
     }
     function viewAudit() {
       if (!state.audit) return skeletonHtml();
-      return '<h2 style="margin:0 0 20px">Audit Log <span class="muted small">(latest 300)</span></h2><div class="table-wrap"><table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead><tbody>' +
-        state.audit.map(function (r) { return '<tr><td class="small">' + esc(r.at) + '</td><td>' + esc(r.actor) + '</td><td>' + esc(r.action) + '</td><td>' + esc(r.target) + '</td><td class="small">' + esc(r.detail) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      return '<h2 style="margin:0 0 20px">Audit Log <span class="muted small">(latest 300)</span></h2><div class="field" style="max-width:360px"><input type="search" id="audit-q" placeholder="Filter by student reg. no., actor or action"></div><div class="table-wrap"><table><thead><tr><th>When</th><th>Who</th><th>Student</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead><tbody>' +
+        state.audit.map(function (r) { return '<tr data-aq="' + esc((r.student + ' ' + r.actor + ' ' + r.action + ' ' + r.target).toLowerCase()) + '"><td class="small">' + esc(r.at) + '</td><td>' + esc(r.actor) + '</td><td><strong>' + esc(r.student || '') + '</strong></td><td>' + esc(r.action) + '</td><td>' + esc(r.target) + '</td><td class="small">' + esc(r.detail) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     }
+    document.addEventListener('input', function (e) {
+      if (!e.target || e.target.id !== 'audit-q') return;
+      var q = String(e.target.value || '').toLowerCase().trim();
+      document.querySelectorAll('tr[data-aq]').forEach(function (tr) { tr.style.display = !q || tr.getAttribute('data-aq').indexOf(q) !== -1 ? '' : 'none'; });
+    });
+
+
     /* ---- Super Admin: sign in as any user ---- */
     function resetData_() {
       ['dashboard', 'coordinator', 'hod', 'staff', 'submissions', 'inspector', 'audit', 'annc', 'msgRecipients', 'impUsers', 'calendar'].forEach(function (k) { state[k] = null; });
       state.calMonth = '';
       state.unread = 0;
+      invalidateViewCache_();
     }
     function viewSuperAdmin() {
       if (!state.impUsers) return skeletonHtml();
@@ -4197,6 +4479,7 @@ function linkify(t) {
       DLGFOCUS.push(document.activeElement);
       document.body.appendChild(d);
       var inp = d.querySelector('#dlg-input'), optional = /optional/i.test(opts.msg);
+      if (inp && opts.dflt) inp.value = String(opts.dflt);
       var yes = function () {
         var val = true;
         if (isPrompt) {
@@ -4221,7 +4504,7 @@ function linkify(t) {
     window.prompt = (function (native) { return function (msg, dflt) {
       if (!DLG.cur) return native.call(window, msg, dflt);
       if (DLG.idx < DLG.answers.length) { var v = DLG.answers[DLG.idx++]; return typeof v === 'string' ? v : null; }
-      openDlg_({ kind: 'prompt', msg: String(msg), run: DLG.cur.run }); throw DLG_PENDING;
+      openDlg_({ kind: 'prompt', msg: String(msg), dflt: dflt, run: DLG.cur.run }); throw DLG_PENDING;
     }; })(window.prompt);
     window.alert = function (msg) {
       msg = String(msg === undefined || msg === null ? '' : msg);
@@ -4332,6 +4615,18 @@ function linkify(t) {
             act(authed('api_removeStudent', id), 'Student removed.', function () { loadView('coordinator'); });
           }
           break;
+        case 'edit-reg':
+          openRegNumberModal(id);
+          break;
+        case 'edit-reg-save': {
+          var erOld = document.getElementById('reg-old'), erNew = document.getElementById('reg-new');
+          var erFrom = erOld ? erOld.value.trim() : '', erTo = erNew ? erNew.value.trim() : '';
+          if (!erTo) { alert('Enter the new registration number.'); break; }
+          if (erTo.replace(/\s+/g, '').toUpperCase() === erFrom.replace(/\s+/g, '').toUpperCase()) { alert('Enter a different registration number.'); break; }
+          if (!confirm('Change ' + erFrom + ' to ' + erTo + ' across all portal records?\n\nThe password stays the same, but the student must sign in with the NEW number. Session and year of admission are recalculated from it.')) break;
+          act(authed('api_changeStudentRegNumber', erFrom, erTo).then(function (r) { regChangeResultModal(r); return r; }), 'Registration number updated.', function () { loadView('coordinator'); });
+          break;
+        }
         case 'close-modal': closeModal(); break;
         case 'add-note':
           var note = prompt('Enter supervisory note:');
@@ -4416,7 +4711,7 @@ function linkify(t) {
         case 'sel-clear': state.sel = {}; render(); break;
         case 'bulk-stage':
           if (!selCount()) { alert('Select at least one student first.'); break; }
-          showModal('<h3 style="margin:0 0 12px">Set journey stage for ' + selCount() + ' student(s)</h3><div class="field"><label>New stage</label><select id="bulk-stage-pick">' + optionsHtml(JOURNEY_STAGES, null, '') + '</select></div><p class="small muted">Each student is notified.</p><div class="row"><button class="btn btn-primary" data-action="bulk-stage-save">Apply</button><button class="btn btn-outline" data-action="close-modal">Cancel</button></div>');
+          showModal('<h3 style="margin:0 0 12px">Set journey stage for ' + selCount() + ' student(s)</h3><div class="field"><label>New stage</label><select id="bulk-stage-pick">' + optionsHtml(JOURNEY_STAGES.filter(function (st) { return st !== SECOND_INTERNAL_STAGE; }), null, '') + '</select></div><p class="small muted">Each student is notified. The PhD-only second internal examination is recorded individually from a student card.</p><div class="row"><button class="btn btn-primary" data-action="bulk-stage-save">Apply</button><button class="btn btn-outline" data-action="close-modal">Cancel</button></div>');
           break;
         case 'bulk-stage-save': {
           var bsRegs = Object.keys(selMap()).filter(function (k) { return selMap()[k]; }), bsStage = document.getElementById('bulk-stage-pick').value;
@@ -4529,13 +4824,30 @@ function linkify(t) {
           if (gsel) { gsel.value = el.getAttribute('data-type'); gsel.dispatchEvent(new Event('change', { bubbles: true })); gsel.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
           break;
         }
+        case 'doc-upload': {
+          var dc = ((state.dashboard || {}).documents || []).filter(function (x) { return x.id === id; })[0];
+          if (dc) pickLocalFile_(dc.accept, function (f) { doDocUpload_(dc, f); });
+          break;
+        }
+        case 'doc-file':
+          authed('api_getFileAccess', el.getAttribute('data-file') || id).then(function (r) { window.open(r.url, '_blank', 'noopener'); }).catch(setError);
+          break;
+        case 'assign-second-internal':
+          if (confirm('Open the PhD second internal examination for this student? The current Internal Examiner will receive a separate second-cycle assessment.'))
+            act(authed('api_assignSecondInternal', id), 'Second internal examiner assigned.', function () { loadView(state.user.role === 'PG_Coordinator' ? 'coordinator' : 'hod'); });
+          break;
         case 'examiner-assign': openExaminerModal(el.getAttribute('data-kind'), el.getAttribute('data-reg'), el.getAttribute('data-sub')); break;
+        case 'examiner-replace': openExaminerModal(el.getAttribute('data-kind'), el.getAttribute('data-reg'), el.getAttribute('data-sub'), id); break;
         case 'examiner-view': showExaminerAssessment_(id); break;
+        case 'examiner-history': openExaminerHistory_(el.getAttribute('data-reg'), el.getAttribute('data-kind')); break;
+        case 'examiner-access-grant': changeExaminerAccess_(el, true); break;
+        case 'examiner-access-end': changeExaminerAccess_(el, false); break;
         case 'notice-generate': generateNotice_(el); break;
         case 'examiner-revoke':
           if (confirm('Revoke this examiner? Their access ends and a replacement can be assigned.')) act(authed('api_revokeExaminer', id), 'Examiner revoked.', function () { loadView('hod'); });
           break;
         case 'defence-outcome': openDefenceModal(id); break;
+        case 'second-internal': openSecondInternalModal(id); break;
         case 'read-files': openViewer(id); break;
         case 'viewer-pick': if (state.viewer) showViewer(state.viewer, parseInt(id, 10)); break;
         case 'stu-check':
@@ -4695,6 +5007,12 @@ function linkify(t) {
           var ma = prompt('Action points (optional):') || '';
           act(authed('api_addMeeting', id, new Date().toISOString().slice(0, 10), mn, ma), 'Meeting logged.', function () { loadView('staffdash'); });
           break;
+        case 'title-edit':
+          var teStu = [].concat((state.coordinator && state.coordinator.students) || [], (state.hod && state.hod.students) || []).filter(function (x) { return String(x.regNumber) === String(id); })[0] || {};
+          var teNew = prompt('Enter the thesis/dissertation title for ' + id + ':', teStu.thesisTitle || ''); if (!teNew) break;
+          var teConf = teStu.titleStatus === 'Confirmed' ? true : confirm('Also confirm this title now? Choose Cancel to save it as awaiting confirmation.');
+          act(authed('api_setThesisTitleByCoordinator', id, teNew, teConf), 'Title saved.', function () { loadView(state.view === 'hod' ? 'hod' : 'coordinator'); });
+          break;
         case 'title-confirm':
           if (confirm('Confirm this thesis/dissertation title? The student will not be able to change it before the external defence.')) act(authed('api_confirmThesisTitle', id), 'Title confirmed.', function () { loadView(state.view === 'hod' ? 'hod' : 'coordinator'); });
           break;
@@ -4755,19 +5073,39 @@ function linkify(t) {
       }
       else if (form.id === 'examiner-assign-form') {
         if (!enforceForm(form)) return;
-        var ea = collect(form), ek = form.getAttribute('data-kind');
+        var ea = collect(form), ek = form.getAttribute('data-kind'), replaceId = form.getAttribute('data-replace') || '';
         ea.type = ek; if (ek === 'Internal') ea.regNumber = form.getAttribute('data-reg'); else ea.submissionId = form.getAttribute('data-sub');
-        act(authed('api_assignExaminer', ea), 'Examiner assigned. Login details were emailed to them.', function () { closeModal(); loadView('hod'); });
+        var call = replaceId ? authed('api_replaceExaminer', replaceId, ea) : authed('api_assignExaminer', ea);
+        act(call, replaceId ? 'Examiner replaced. Login details were emailed to them.' : 'Examiner assigned. Login details were emailed to them.', function () { closeModal(); loadView('hod'); });
       }
       else if (form.id === 'defence-form') {
         var dfm = collect(form);
         act(authed('api_recordProposalDefence', form.getAttribute('data-reg'), dfm.outcome, dfm.note || ''), 'Defence outcome recorded.', function () { closeModal(); loadView('hod'); });
       }
+      else if (form.id === 'second-internal-form') {
+        var sim = collect(form);
+        act(authed('api_recordSecondInternal', form.getAttribute('data-reg'), sim.outcome, sim.note || ''), 'Second internal examination outcome recorded.', function () { closeModal(); loadView(state.user.role === 'PG_Coordinator' ? 'coordinator' : 'hod'); });
+      }
       else if (form.id === 'exam-assess-form') {
-        var xa = collect(form), xt = form.getAttribute('data-type'), crit = (state.examiner.criteria[xt] || []), sc = {};
+        var xa = collect(form), xt = form.getAttribute('data-type'), crit = (state.examiner.criteria[xt] || state.examiner.criteria.Internal || []), sc = {};
         crit.forEach(function (c, i) { sc[c] = xa['score' + i]; });
+        var xnote = String(xa.comments || '').trim(), xrep = String(xa.reportUrl || '').trim();
+        var rfEl = form.querySelector('[name=reportFile]'), rf = rfEl && rfEl.files && rfEl.files[0];
+        if (!xnote && !xrep && !rf) { alert('Enter your comments in the text field, or upload / link to your Word report (or both).'); return; }
+        if (xnote && xnote.length < 30 && !xrep && !rf) { alert('Write your comments (a few sentences at least), or upload your Word report instead.'); return; }
         if (!confirm('Submit this assessment? You will not be able to edit it afterwards.')) return;
-        act(authed('api_submitExaminerAssessment', form.getAttribute('data-id'), { scores: sc, recommendation: xa.recommendation, comments: xa.comments, reportUrl: xa.reportUrl || '' }), 'Assessment submitted. Thank you.', function () { loadView('examiner'); });
+        var aid = form.getAttribute('data-id'), p = Promise.resolve();
+        if (rf) {
+          var rext = String(rf.name || '').split('.').pop().toLowerCase();
+          if (['doc', 'docx'].indexOf(rext) === -1) { alert('Upload a Word (.doc or .docx) report.'); return; }
+          if (rf.size > 10 * 1024 * 1024) { alert('The report must be under 10 MB.'); return; }
+          p = readDataUrl(rf.slice(0, rf.size, DOC_MIME[rext])).then(function (u) {
+            return authed('api_uploadExaminerReport', { assignmentId: aid, dataUrl: u });
+          }).then(function (r) { xrep = r.url; });
+        }
+        act(p.then(function () {
+          return authed('api_submitExaminerAssessment', aid, { scores: sc, recommendation: xa.recommendation, comments: xa.comments, reportUrl: xrep });
+        }), 'Assessment submitted. Thank you.', function () { loadView('examiner'); });
       }
       else if (form.id === 'staff-form') {
         if (!enforceForm(form)) return;
@@ -4797,7 +5135,7 @@ function linkify(t) {
         act(authed('api_saveProgrammeSession', cf), cf.id ? 'Session updated.' : 'Session added.', function () { closeModal(); loadView('calendar'); });
       }
       else if (form.id === 'exm-form') { var ex = collect(form); act(authed('api_addExaminer', ex.regNumber, ex.examinerName, ex.type, ex.email), 'Examiner saved (if HoD approval is required it now waits for the HoD).', function () { loadView('hod'); }); }
-      else if (form.id === 'login-form') { var lg = collect(form); act(authed('api_saveStaffLogin', lg), 'Login saved.', function () { loadView('coordinator'); }); }
+      else if (form.id === 'stafflogin-form') { var lg = collect(form); act(authed('api_saveStaffLogin', lg), 'Login saved.', function () { loadView('coordinator'); }); }
       else if (form.id === 'dl-form') { var dd = collect(form); act(authed('api_addDeadline', dd.title, dd.date), 'Deadline added.', function () { loadView('hod'); }); }
       else if (form.id === 'msg-form') {
         var mm = collect(form);
@@ -4828,6 +5166,22 @@ function linkify(t) {
       if (warn) warn.innerHTML = intentWarningHtml(t.value, warn.getAttribute('data-stage'));
     });
 
+    function openRegNumberModal(regNumber) {
+      showModal('<h3 style="margin:0 0 12px">Edit registration number</h3>' +
+        '<p class="small muted" style="margin:0 0 12px">This number is the key linking the student to their submissions, meetings and messages. Changing it renames it in every linked record. The password is unchanged, but the student must sign in with the new number. Year of admission and session are recalculated from it.</p>' +
+        '<div class="field"><label>Current number</label><input id="reg-old" type="text" value="' + esc(regNumber) + '" readonly></div>' +
+        '<div class="field"><label>New number</label><input id="reg-new" type="text" required autocomplete="off" placeholder="UA/pg2026/003531"></div>' +
+        '<p class="small muted" style="margin:0 0 12px">Accepted formats: UA/pg2026/003531, 26/408PHYX/040, Phd/sci/16586006 or 1750806006. The new number must not belong to another account.</p>' +
+        '<div class="row"><button class="btn btn-primary" data-action="edit-reg-save">Change number</button><button class="btn btn-outline" data-action="close-modal">Cancel</button></div>');
+    }
+    function regChangeResultModal(r) {
+      var cells = r && r.cells ? Object.keys(r.cells) : [];
+      showModal('<h3 style="margin:0 0 10px">Registration number updated</h3>' +
+        '<p style="margin:0 0 8px"><strong>' + esc(r && r.from) + '</strong> &rarr; <strong>' + esc(r && r.to) + '</strong></p>' +
+        '<p class="small muted" style="margin:0 0 10px">' + esc(r && r.total) + ' cell(s) updated across ' + esc(cells.length) + ' tab(s). The student has been emailed and must sign in with the new number.</p>' +
+        (cells.length ? '<div class="table-wrap"><table><thead><tr><th>Record</th><th>Cells</th></tr></thead><tbody>' + cells.map(function (k) { return '<tr><td>' + esc(k) + '</td><td>' + esc(r.cells[k]) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '') +
+        '<div class="row" style="margin-top:12px"><button class="btn btn-primary" data-action="close-modal">Close</button></div>');
+    }
     function openAssignModal(regNumber) {
       var staffSrc = (state.coordinator && state.coordinator.staff) || (state.hod && state.hod.staff) || [];
       var modal = document.createElement('div');
@@ -5027,7 +5381,7 @@ function linkify(t) {
         var lf = form.querySelector('[name=admissionLetter]'), lfile = lf && lf.files[0];
         if (!lfile) return [file, null];
         if (lfile.size > 3 * 1024 * 1024) throw new Error('The admission letter must be under 3 MB.');
-        if (['application/pdf', 'image/jpeg', 'image/png'].indexOf(lfile.type) === -1) throw new Error('The admission letter must be a PDF, JPG or PNG file.');
+        if (lfile.type !== 'application/pdf' && !/\.pdf$/i.test(lfile.name || '')) throw new Error('The admission letter must be a PDF file.');
         return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res([file, { name: lfile.name, mimeType: lfile.type, dataUrl: r.result }]); }; r.onerror = function () { rej(new Error('Could not read the admission letter.')); }; r.readAsDataURL(lfile); });
       }).then(function (pair) {
         var file = pair[0]; d.passportPhoto = file; if (pair[1]) d.admissionLetter = pair[1];

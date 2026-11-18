@@ -287,6 +287,26 @@
                 <!-- Javascript will populate 16 grid buttons -->
             </div>
         </div>
+
+        <!-- This reference diagram keeps the original 16-stage 4x4 layout. The portal and the
+             animated poster add a PhD-only gate, Step 10b, between Steps 10 and 11. -->
+        <div class="glass-panel rounded-2xl p-4 md:p-6 mt-4 shadow-xl border-l-4 border-l-amber-500">
+            <h3 class="text-sm font-semibold text-amber-300 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-amber-400"></i> PhD students: extra Step 10b
+            </h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+                Step 10 (Progress Presentation) is the <strong>first</strong> internal examination for
+                MSc, MPhil and PhD students. PhD students then sit a <strong>second</strong> internal
+                examination at <strong>Step 10b — Second Internal Examination (PhD)</strong>, before
+                everyone proceeds to Step 11 (Final Examination Intent). The PG Coordinator records
+                the Step 10b outcome in the portal: a pass advances the student to Stage 11,
+                "Passed with corrections" advances with corrections noted, and "Not passed" keeps
+                the student at Step 10b. The old stage numbers 11–16 are unchanged, so no stored
+                stage values needed migrating. This diagram's 16-node grid omits Step 10b; see
+                <code>images/PG_Journey_Animated.svg</code> and <code>CFG.JOURNEY_STAGES</code>
+                for the authoritative 17-stage sequence.
+            </p>
+        </div>
     </main>
 
     <!-- Footer -->

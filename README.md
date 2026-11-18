@@ -12,8 +12,9 @@ token auth, `HEADERS` schema, `_locked_` wrappers).
 ## Tech Stack
 
 - **Public site (this repo → Cloudflare Pages)** — one combined `index.html`
-  (all five public views) pre-rendered by `project/tools/build-pg.js`; announcements and
-  contact enquiries reach the portal through JSONP.
+  (the three public views: home, register, contact) pre-rendered by
+  `project/tools/build-pg.js`; announcements and contact enquiries reach the portal
+  through JSONP.
 - **Portal (Google Apps Script)** — HtmlService (`doGet` + `createTemplateFromFile('index')`),
   2 files total: the combined `index.html` template + `Code.gs`. All transactions
   (login, registration + passport upload, approvals, submissions, dashboards) run here.
@@ -78,8 +79,8 @@ Physics-pg/
 │   │                          (?page=login)
 │   ├── images/
 │   │   ├── Phy_Complex.png  ← hero background photo (set HERO_IMAGE_URL — see below)
-│   │   ├── PG_Journey_Animated.svg ← animated journey poster on Home (set JOURNEY_IMAGE_URL)
-│   │   └── PG_Journey_Infographic.png ← older 15-step poster (not shown; kept for its URL)
+│   │   ├── PG_Journey_Animated.svg ← animated 17-stage poster on Home (set JOURNEY_IMAGE_URL)
+│   │   └── PG_Journey_Infographic.png ← older 15-step poster (shown beneath it)
 │   ├── audio/
 │   │   ├── music1.mp3       ← background music (TRACKS; copied to dist/audio/ by the build)
 │   │   └── music2.mp3       ← alternate track (copied, not referenced yet)
@@ -92,7 +93,9 @@ Physics-pg/
 │   └── dist/                ← build output (gitignored; Cloudflare deploys this)
 ├── docs/
 │   ├── guides/              ← generated role guides (.docx/.pdf) + training programme
-│   │   └── …                ← produced by project/tools/make-guides.ps1
+│   │   └── …                ← produced by project/tools/make-guides.ps1; the checked-in
+│   │                          files predate Step 10b and the document catalogue, so
+│   │                          regenerate them before handing them to a new role
 │   ├── reference/           ← PG_Journey_Stages.docx + pg_journey_roadmap.html
 │   └── Staff.xlsx           ← internal staff roster (local only, never committed)
 ├── AGENTS.md                ← conventions, gotchas + deploy runbook for coding agents
@@ -114,9 +117,9 @@ Physics-pg/
 
 - **Home** — hero (department photo background) + live announcements from the
   Announcements tab (`api_publicAnnouncements`), then directly **Your Postgraduate
-  Journey**: the animated 16-stage poster (opens full size in a new tab) with the five
-  phases summarised as cards and the decision gates (Steps 7, 10, 12, 13, 15)
-  highlighted. Then **About the Department**, three highlight cards (Register Online /
+  Journey**: the animated 17-stage poster (16 core stages plus the PhD-only Step
+  10b; opens full size in a new tab) with the five phases summarised as cards and the
+  decision gates (Steps 7, 10, 10b PhD, 12, 13, 15) highlighted. Then **About the Department**, three highlight cards (Register Online /
   Track Your Journey / Supervision & Submissions), and the **Please note** callout last,
   just above the footer.
 - **Notice / caveat** — the site is strictly for journey navigation and departmental
@@ -148,13 +151,13 @@ Physics-pg/
   Script Property `HERO_IMAGE_URL` to its direct image URL (`brand_()` reads it as
   `heroBgUrl`; the local harness serves the file from `images/` automatically).
 - Journey poster: the repo ships `images/PG_Journey_Animated.svg` (a 1000×900
-  animated loop: serpentine path, 16 nodes, phase colours, gate badges, honours
-  `prefers-reduced-motion`) and the static build bakes it in as
+  animated loop: serpentine path, 17 nodes (including the PhD-only Step 10b), phase
+  colours, gate badges, honours `prefers-reduced-motion`) and the static build bakes it in as
   `/images/PG_Journey_Animated.svg`. On the portal, set the Script Property
   `JOURNEY_IMAGE_URL` to an image URL (`brand_()` → `brand.journeyImgUrl`); until
   then the portal's Home poster is hidden (the phase cards still show). The local
   harness serves `/images/…` from `images/`.
-  `npm run build` fails if the poster's 16 labels drift from `CFG.JOURNEY_STAGES`.
+  `npm run build` fails if the poster's 17 labels drift from `CFG.JOURNEY_STAGES`.
 - The older 15-step poster `images/PG_Journey_Infographic.png` is shown in its own
   card directly beneath the animated poster on the public site (its step names
   differ from the 16 canonical stages). The build copies it to
@@ -186,14 +189,18 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 
 ---
 
-## Step 2 — Drive folders
+## Step 2 — Drive folders and templates
 
-1. Passport photos folder (default ID already in Config): `1Bz3EtP8euZF3W2L4oLY_EoHHXxLLZl2Y`
-2. Upload the three student templates and note their file IDs (already wired in
-   `Code.gs` CONFIG):
-   - Research Plan Form (PDF) — `18LZ-3c0rrMPrpuJbrGgngJp9ALzpPetS`
-   - PG Journey Roadmap (PDF) — `1ToBmrpIYu-5hvRHy3SVTxxgHSOnIMBp1`
-   - Seminar Template (PPTX) — `1e1Ep8-LvFlxXP8VBLPiWnP-lVqCq_lFH`
+1. Passport / admission-letter / attachment folder: the Config sheet row
+   `PASSPORT_FOLDER_ID` (default `1Bz3EtP8euZF3W2L4oLY_EoHHXxLLZl2Y`). The
+   `DRIVE_FOLDER_ID` Script Property is **not read** by the portal.
+2. Put the two admin-controlled template file IDs in the Config sheet:
+   - `TEMPLATE_PROGRESS_PPTX` — the official presentation template (PPTX).
+   - `TEMPLATE_PROPOSAL_DEFENCE_FORM` — the official Proposal Defence Form (PDF).
+
+   These are the only two files in the student **Downloads** card. An empty key hides
+   that download; there is no silent fallback to the old Seminar Template. Other IDs
+   left in `TEMPLATES` are legacy/operational and are not offered as student downloads.
 
 ---
 
@@ -205,8 +212,10 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
    paste `project/GAS_Files/index.html`. **Delete every other HTML file** in the project
    (`login`, `styles`, `common`, and any old standalone `about`, `programmes`,
    `register`, `contact`) — the single template supersedes all of them.
-4. (Optional) Script Properties: `SPREADSHEET_ID`, `PASSPORT_FOLDER_ID`,
-   `HERO_IMAGE_URL` (public hero photo), `JOURNEY_IMAGE_URL` (journey infographic).
+4. (Optional) Script Properties actually read: `SPREADSHEET_ID`, `SCHOOL_NAME`,
+   `FOOTER_TEXT`, `SCHOOL_LOGO_URL`, `CBS_LOGO_URL`, `HERO_IMAGE_URL`,
+   `JOURNEY_IMAGE_URL`, `ENQUIRIES_EMAIL`, `SENDER_DISPLAY_NAME`. The Drive folder
+   and template IDs belong in the Config sheet, not in Script Properties.
 5. Run `setUp()` once, authorize.
 
 ---
@@ -228,8 +237,8 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 
 | Role | Can Do |
 |------|--------|
-| **Student** | Register (pending approval), dashboard: profile + photo update, supervisors, 16-stage journey bar, announcements, templates, new submissions; view own submissions |
-| **PG_Coordinator** | Approve/reject registrations, assign main + co-supervisor, manage staff list, post announcements, export CSV |
+| **Student** | Register (pending approval), dashboard: profile + photo update, supervisors, 17-stage journey bar (Step 10b is PhD-only), announcements, templates, new submissions; view own submissions |
+| **PG_Coordinator** | Approve/reject registrations, add/import/remove students, correct a student's registration number (cascades to every linked record), assign main + co-supervisor, record the Proposal Defence and PhD-only Second Internal Examination outcomes (Passed / Passed with corrections / Not passed), manage staff list, post announcements, export CSV |
 | **HoD** | Read-only: stats, programme/status breakdowns, all submissions |
 | **Staff** | See students they supervise, add supervisory notes on submissions |
 | **Submission_Inspector** | Review queue: Approve / Reject / Request Changes / Under Review (comments mandatory for Reject & Request Changes) — emails student via branded `sendPortalMail_` |
@@ -258,25 +267,89 @@ Accepts **both** patterns:
 
 ## Submission Types
 
-Research Plan Form · Seminar Presentation · Research Proposal · Progress Report ·
-Final Thesis/Dissertation
+The catalogue `DOCUMENT_CONFIG` in `Code.gs` (exposed by `api_getDocumentCatalog()`)
+is the single source of truth — see the table under **Journey Stages**. Retired labels
+such as *Research Plan Form* and *Seminar Presentation* remain only for legacy sheet
+rows and are never offered as new uploads. Examiner reports live in
+`Examiners.reportUrl`, not in `Submissions`.
 
-Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes Requested
+Statuses: Draft → Submitted → Under Review → Approved / Rejected / Changes Requested,
+plus the catalogue labels *Not Yet Available*, *Correction Required*,
+*Awaiting examiner feedback* and *Feedback received*.
 
 ---
 
-## Journey Stages (from PG_Journey_Stages.docx — 16 stages, 5 phases)
+## Journey Stages (16 core stages + PhD Step 10b, 5 phases)
+
+`CFG.JOURNEY_STAGES` (Code.gs) is authoritative and matches the client-side
+`JOURNEY_STAGES` in `index.html` and the animated poster. 10b was inserted without
+renumbering 11–16, so existing students' stored stage strings stay valid and no data
+migration is needed. Approving the Progress Presentation (PPTX) moves PhD students to
+10b and everyone else straight to stage 11; only the PG Coordinator records the 10b
+outcome (a pass advances to stage 11, "Not passed" keeps the student at 10b).
 
 | # | Stage | | # | Stage |
 |---|-------|-|---|-------|
 | 1 | Admission | | 9 | Internal Examiner Assignment |
-| 2 | Lecture Attendance (MSc only) | | 10 | Progress Presentation ← gate |
-| 3 | Supervisor Allocation | | 11 | Final Examination Intent |
-| 4 | Title Approval | | 12 | Thesis Submission ← gate |
-| 5 | Proposal Submission | | 13 | External Examiner Assignment ← gate |
-| 6 | Defence Readiness | | 14 | Examiners Comments |
-| 7 | Proposal Defence ← gate | | 15 | Final Compliance ← gate |
-| 8 | Progress Report Intent | | 16 | Signed Copies and Completion |
+| 2 | Lecture Attendance (MSc only) | | 10 | Progress Presentation (first internal examination) ← gate |
+| 3 | Supervisor Allocation | | 10b | Second Internal Examination (PhD only) ← gate, Coordinator records outcome |
+| 4 | Title Approval | | 11 | Final Examination Intent |
+| 5 | Proposal Submission | | 12 | Thesis Submission ← gate |
+| 6 | Defence Readiness | | 13 | External Examiner Assignment ← gate |
+| 7 | Proposal Defence ← gate | | 14 | Examiners Comments |
+| 8 | Progress Report Intent | | 15 | Final Compliance ← gate |
+| | | | 16 | Signed Copies and Completion |
+
+### Student documents: central config, formats, stages and status
+
+There is **one** document catalogue: `DOCUMENT_CONFIG`, `DOWNLOAD_CONFIG` and
+`DOCUMENT_STATUS_LABELS` in `Code.gs`. `api_getDocumentCatalog()` exposes it to signed-in
+users, and the student dashboard is rendered from the resolved `documents` /
+`downloads` rows returned by `api_getStudentDashboard()` — there are no hardcoded
+per-document upload cards left in `index.html`. Each entry carries id, name, section,
+stage, programme applicability, trigger, uploader role, formats, required flag,
+examiner-dependency, viewers and resubmission permission. Availability, status and
+file access are decided on the server; the client only renders them.
+
+Formats are enforced by `checkUploadKind_()` on both the small and chunked upload paths
+and on Drive-link pastes (`assertUploadLinkKind_()`), so the picker and the server agree.
+
+| Spec item | Portal type | Format | Opens at |
+|---|---|---|---|
+| 1 Passport photograph | Students row `passportFileId` / `passportUrl` (registration) | image | registration |
+| 2 Admission letter | Students row `admissionLetterUrl` (registration) | PDF | registration |
+| 3 Research proposal | `Research Proposal` | Word | 5 |
+| 4 Proposal defence presentation | `Proposal Defence Presentation (PPTX)` (plus `Signed Proposal Defence Form` / readiness intent for the signing route) | PPTX (form PDF) | 6 |
+| 5 Progress report | `Progress Report` | Word | 8 (readable by the assigned Internal Examiner) |
+| 6 Progress presentation | `Progress Presentation (PPTX)` | PPTX | 10 |
+| 7 Internal examiner report/comments | examiner assessment comments + optional Word report uploaded to `Examiners.reportUrl` | Word / text | after assignment |
+| 8 Response to internal comments | `Comment-by-Comment Response (Internal Examiner)` | Word | 10 |
+| 9 Clean copy after internal comments | `Corrected Clean Copy (Internal Examiner)` | Word | 10 |
+| 5–9 second cycle (PhD only) | `… (Second Internal)` variants, plus a separate `Internal (Second)` assessment row | as above | 10b, PhD students only |
+| 10 School fees receipt | `Receipt of Fees` | PDF | 11 |
+| 11 External examination fee receipt | `Evidence of Payment for Examination` | PDF | 11 |
+| 12 Plagiarism certificate | `Plagiarism Certificate` | PDF | 11 |
+| 13 Final thesis/dissertation | `Final Thesis/Dissertation` | Word | 12 (readable by the assigned External Examiner) |
+| 14 External examiner report/comments | examiner assessment comments + optional Word report uploaded to `Examiners.reportUrl` (legacy `External Examiner Comments` rows stay readable, but students no longer upload that type) | Word / text | 14 |
+| 15 Response to external comments | `Comment-by-Comment Response (External Examiner)` | Word | 14 |
+| 16 Clean copy after external comments | `Final Correction` | Word | 14 |
+
+The student dashboard groups those rows into expandable **Documents by Journey Stage**
+sections and a separate **Downloads** card. Downloads are admin-controlled through the
+Config keys `TEMPLATE_PROGRESS_PPTX` and `TEMPLATE_PROPOSAL_DEFENCE_FORM`; an unset key
+hides that item instead of falling back to the old Seminar Template. Status labels are
+`Not Yet Available`, `Pending Submission`, `Submitted`, `Under Review`,
+`Correction Required` and `Approved/Accepted`, with `Awaiting examiner feedback` /
+`Feedback received` for examiner-dependent items. `api_replaceSubmission()` handles
+config-permitted replacements (drafts, approved documents and stage reversion), caches
+the filename plus both sides of the change in `Submissions.history`, and keeps the old
+file; `api_resubmit()` still handles correction requests. The final correction package
+also needs the External Examiner Assessment to be scored before Final Compliance opens.
+Every upload is private in Drive and opened through `api_getFileAccess()`.
+Second-internal types are refused for non-PhD students in both the config and
+`validateSubmissionStage_()`; assigning a second examiner notifies the student, and
+`api_replaceExaminer()` revokes the old assignment and appoints the replacement in one
+locked call.
 
 ---
 
@@ -326,7 +399,7 @@ npm run pg          →  http://localhost:8081          (Home)
 `project/tools/serve-pg.js` renders the `index.html` template scriptlets exactly like
 `doGet` and mocks `google.script.run` with in-memory demo accounts
 (registration number + password `PhysicsPG2026!`; the list is in `AGENTS.md`),
-covering 29 of the portal's `api_*` functions — anything else fails at runtime.
+covering 52 of the portal's `api_*` endpoints — anything else fails at runtime.
 
 ## Static build (Cloudflare Pages)
 
