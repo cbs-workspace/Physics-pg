@@ -63,9 +63,10 @@ output dir `dist`. `/exec` URL is baked into `GAS_EXEC` in
   `…exec?page=…&embed=1&back=%2F`, copies images + both music tracks, writes
   `_redirects`, and injects a JSONP bridge for `google.script.run` (announcements
   + enquiry only; everything else rejects *"runs on the official portal"*).
-- `serve-pg.js` renders the same template against an in-memory mock of
-  **38 of the 206** `api_*` functions in `Code.gs`. A new endpoint fails locally
-  until you add it to the mock — that is expected, not a portal bug.
+- `serve-pg.js` renders the same template against an in-memory mock of only a
+  subset of the `api_*` endpoints (including the document catalogue, replacement
+  and examiner-reassignment endpoints). A new endpoint fails locally until you
+  add it to the mock — that is expected, not a portal bug.
 
 ## Adding a public page (easy to miss one)
 
@@ -149,12 +150,11 @@ output dir `dist`. `/exec` URL is baked into `GAS_EXEC` in
   "Back to public site" landing at the top instead of mid-page.
 - "Back to public site" (`goPublicHome_`) leaves the iframe when the static
   wrapper passed `&back=%2F`; the absolute URL is resolved against
-  `embedBaseOrigin_`, which reads `location.ancestorOrigins` (own origin first,
-  top-most ancestor last). **Never use `document.referrer` for that origin** —
-  Apps Script serves the portal in a sandbox chain, so the referrer is Google's
-  panel and sent the top window to a 404ing `googleusercontent.com` URL. Never
-  assign a bare `/…` to `window.top.location` either (it resolves against the
-  frame's origin).
+  `embedBaseOrigin_`, which walks `location.ancestorOrigins` from the top-most
+  frame down. `document.referrer` is only a last-resort fallback — in Apps Script
+  it points at Google's wrapper and once sent the top window to a 404ing
+  `googleusercontent.com` URL. Never assign a bare `/…` to `window.top.location`
+  either (it resolves against the frame's origin).
 - `showView()` exists only in the public branch. On the login page `?page=` links
   do a full navigation by design; the shared click interceptor in the common
   block must stay before any listener that navigates.
@@ -186,14 +186,16 @@ output dir `dist`. `/exec` URL is baked into `GAS_EXEC` in
 
 ## Journey stages and sheet data
 
-- `CFG.JOURNEY_STAGES` is **16 stages** (`1 - Admission` … `16 - Signed Copies
-  and Completion`), with the short `S_`/`STAGE_COMPLETE` aliases derived from it.
-  They must agree in: `Code.gs` (`CFG.JOURNEY_STAGES`), `JOURNEY_STAGES` in
-  `index.html`'s portal script, the public phase-card text, and the poster's own
-  labels in `PG_Journey_Animated.svg` (the build *fails* on that one).
-- The mock's `STAGES` in `serve-pg.js` is **still the old 15-step list** — local
-  preview data uses stage names the real portal does not have. Don't "fix" the
-  portal to match the mock; that drift already happened once.
+- `CFG.JOURNEY_STAGES` has **17 entries**: 16 numbered stages (`1 - Admission` …
+  `16 - Signed Copies and Completion`) plus the inserted PhD-only `10b`. The short
+  `S_`/`STAGE_COMPLETE` aliases derive from it; new students start at stage 3.
+  Stage names must agree in four places: `Code.gs`, `JOURNEY_STAGES` in
+  `index.html`, the public phase-card text, and the poster's own labels in
+  `PG_Journey_Animated.svg` (the build *fails* on that one).
+- The mock's `STAGES` in `serve-pg.js` is **still the old 15-step list plus the
+  inserted 10b label**, with different step names — local preview data uses names
+  the real portal does not have. Don't "fix" the portal to match the mock; that
+  drift already happened once.
 - `setUp()` does not seed demo users. The 2026-10-22 go-live deleted all
   `demo.*` rows from the live sheet with `removeDemoAccounts()`. Never re-seed the
   live sheet; real credentials live with the site owner, never in this repo.
@@ -222,7 +224,7 @@ registration form.)
   Manage deployments → Edit → Version: New version → Deploy**. **Never create a
   new deployment** — a new `/exec` URL breaks every link and both JSONP feeds.
   An agent cannot do this step; hand it off.
-- **Run-once after this Phase 3 deploy** (Apps Script editor, function dropdown):
+- **Run-once after deploying these portal changes** (Apps Script editor, function dropdown):
   `reinstallAllTriggers()` (replaces the weekly backup with the nightly one and
   adds the 12:00 reminder job), `auditPublicFiles()` then `auditPublicFiles(false)`,
   then `syncAllSubmissionAccess()`. Optionally `restrictExistingPassports()` and
