@@ -20,7 +20,7 @@ var PROP_SHEET_ID = 'SPREADSHEET_ID';
 var PROP_DRIVE_ID = 'DRIVE_FOLDER_ID';
 var EMAIL_RE = /^[a-z0-9]+(?:[._%+\-][a-z0-9]+)*@[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$/i;
 
-var SENDER_DISPLAY_NAME = 'Physics Postgraduate Journey (No-Reply)';
+var SENDER_DISPLAY_NAME = 'Physics Postgraduate Journey, University of Abuja';   // no "No-Reply" wording: spam filters penalise it
 var ENQUIRIES_EMAIL = 'abel.osagie@uniabuja.edu.ng';
 var NOREPLY_FROM_ALIAS = '';
 var DEPT_ADDRESS = 'Department of Physics, University of Abuja';
@@ -61,8 +61,8 @@ var CFG = {
     '1 - Admission', '2 - Lecture Attendance', '3 - Supervisor Allocation',
     '4 - Title Approval', '5 - Proposal Submission', '6 - Defence Readiness',
     '7 - Proposal Defence', '8 - Progress Report Intent', '9 - Internal Examiner Assignment',
-    '10 - Progress Presentation/Internal Examination I', '10b - Internal Examination II (PhD)', '11 - Final Examination Intent', '12 - Thesis Submission',
-    '13 - External Examiner Assignment', '14 - External Examination', '15 - Final Compliance',
+    '10 - Progress Presentation', '10b - Second Internal Examination (PhD)', '11 - Final Examination Intent', '12 - Thesis Submission',
+    '13 - External Examiner Assignment', '14 - Examiners Comments', '15 - Final Compliance',
     '16 - Signed Copies and Completion'
   ],
   TEMPLATES: {
@@ -75,10 +75,10 @@ var CFG = {
 };
 var STAGE_COMPLETE = '16 - Signed Copies and Completion';
 var S_ = { TITLE: '4 - Title Approval', PROPOSAL: '5 - Proposal Submission', READY: '6 - Defence Readiness', DEFENCE: '7 - Proposal Defence',
-  PROG_INTENT: '8 - Progress Report Intent', INT_EXAM: '9 - Internal Examiner Assignment', PRESENT: '10 - Progress Presentation/Internal Examination I',
-  SECOND_INTERNAL: '10b - Internal Examination II (PhD)',
+  PROG_INTENT: '8 - Progress Report Intent', INT_EXAM: '9 - Internal Examiner Assignment', PRESENT: '10 - Progress Presentation',
+  SECOND_INTERNAL: '10b - Second Internal Examination (PhD)',
   FINAL_INTENT: '11 - Final Examination Intent', THESIS: '12 - Thesis Submission', EXT_EXAM: '13 - External Examiner Assignment',
-  COMMENTS: '14 - External Examination', FINAL_COMPLIANCE: '15 - Final Compliance', DONE: STAGE_COMPLETE };
+  COMMENTS: '14 - Examiners Comments', FINAL_COMPLIANCE: '15 - Final Compliance', DONE: STAGE_COMPLETE };
 
 /** Stage assigned to every new student (public registration, Add Student and CSV import). The session now begins at
  *  supervisor allocation; stages 1-2 remain in the journey list for historical records only. */
@@ -510,8 +510,9 @@ function hashCode_(value) {
   return bytesToHex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value), Utilities.Charset.UTF_8));
 }
 function hashPasswordRaw_(password, salt, iterations) {
-  var key = String(password) + ':' + String(salt), u = Utilities.computeHmacSha256Signature(key, String(salt));
-  for (var i = 1; i < iterations; i++) u = Utilities.computeHmacSha256Signature(u, key);
+  /* Apps Script only accepts (String, String) or (Byte[], Byte[]) here, never a mix, so the key is converted to bytes for the loop. */
+  var key = String(password) + ':' + String(salt), keyBytes = Utilities.newBlob(key).getBytes(), u = Utilities.computeHmacSha256Signature(key, String(salt));
+  for (var i = 1; i < iterations; i++) u = Utilities.computeHmacSha256Signature(u, keyBytes);
   return 'pbkdf2$' + iterations + '$' + bytesToHex_(u);
 }
 function hashPassword_(password, salt) { return hashPasswordRaw_(password, salt, HASH_ITERATIONS); }
@@ -1014,8 +1015,8 @@ function mailEnquiriesAddress_() {
   try { return PropertiesService.getScriptProperties().getProperty('ENQUIRIES_EMAIL') || ENQUIRIES_EMAIL; } catch (e) { return ENQUIRIES_EMAIL; }
 }
 function noReplyBanner_() {
-  return '<div style="max-width:640px;margin:0 auto;background:#b3261e;color:#ffffff;padding:10px 16px;text-align:center;font-size:12.5px;font-weight:700">' +
-    '&#9888; DO NOT REPLY &mdash; this is an automated message from ' + escHtml_(CFG.APP_NAME) + '.</div>';
+  return '<div style="max-width:640px;margin:0 auto;background:#14532d;color:#ffffff;padding:10px 16px;text-align:center;font-size:13px;font-weight:600">' +
+    escHtml_(CFG.APP_NAME) + ' &middot; ' + escHtml_(CFG.APP_SUBTITLE) + '</div>';
 }
 /** The ONLY portal address ever put in an email (every message is sent through sendPortalMail_). Change it here if the domain moves. */
 var PORTAL_LOGIN_URL_ = 'https://physics-pg.pages.dev/login/';
@@ -1023,17 +1024,17 @@ function mailFooterBlock_(contact, hideLogin) {
   var addr = (contact && contact.email) || mailEnquiriesAddress_(), who = contact && contact.label ? contact.label + ' at ' : '';
   return '<div style="max-width:640px;margin:0 auto;background:#f4f7f5;border:1px solid #dbe5df;border-top:none;padding:12px 16px;text-align:center">' +
     (hideLogin ? '' : '<p style="margin:0 0 6px;font-size:12.5px;color:#46584f">Portal login: <a href="' + PORTAL_LOGIN_URL_ + '" style="color:#14532d;font-weight:600;text-decoration:none">' + PORTAL_LOGIN_URL_ + '</a></p>') +
-    '<p style="margin:0;font-size:12px;color:#46584f">This email was generated automatically and cannot receive replies. For enquiries, contact ' + escHtml_(who) +
+    '<p style="margin:0;font-size:12px;color:#46584f">This email was generated automatically. Replies go to ' + escHtml_(who) +
     '<a href="mailto:' + addr + '" style="color:#14532d;font-weight:600;text-decoration:none">' + addr + '</a>.</p>' +
     '<p style="margin:6px 0 0;font-size:11px;color:#7a8a82">' + escHtml_(DEPT_ADDRESS) + '</p>' +
     '</div>';
 }
-function buildBrandedHtml_(innerHtml, contact) {
+function buildBrandedHtml_(innerHtml, contact, hideLoginLink) {
   return '<div style="background:#eef2f0;margin:0;padding:0;font-family:Segoe UI,Arial,Helvetica,sans-serif;color:#1b2a26">' +
-    noReplyBanner_() + '<div style="max-width:640px;margin:0 auto">' + (innerHtml || '') + '</div>' + mailFooterBlock_(contact, String(innerHtml || '').indexOf(PORTAL_LOGIN_URL_) !== -1) + '</div>';
+    noReplyBanner_() + '<div style="max-width:640px;margin:0 auto">' + (innerHtml || '') + '</div>' + mailFooterBlock_(contact, hideLoginLink || String(innerHtml || '').indexOf(PORTAL_LOGIN_URL_) !== -1) + '</div>';
 }
 function mailTextFooter_(contact) {
-  return '\n\n—\nThis is an automated message — please do not reply.\nFor enquiries, contact ' + (contact && contact.label ? contact.label + ' at ' : '') + ((contact && contact.email) || mailEnquiriesAddress()) + '.';
+  return '\n\n—\nThis is an automated message from the Department of Physics. Replies go to ' + (contact && contact.label ? contact.label + ' at ' : '') + ((contact && contact.email) || mailEnquiriesAddress()) + '.';
 }
 function mailEnquiriesAddress() { return mailEnquiriesAddress_(); }
 /* P3: email is slow (about 0.3-1 s each) and the script lock is global. While the lock is held, sendPortalMail_ only queues the message
@@ -1054,12 +1055,12 @@ function sendPortalMailNow_(opts) {
   if (!opts.to) return false;
   try { if (MailApp.getRemainingDailyQuota() < 1) { Logger.log('Mail quota exhausted; not sent: ' + opts.subject); return false; } } catch (qe) {}
   var text = String(opts.body || '');
-  if (text.indexOf(PORTAL_LOGIN_URL_) === -1) text += '\n\nPortal login: ' + PORTAL_LOGIN_URL_;   // every email carries the one official address
+  if (!opts.noLoginLink && text.indexOf(PORTAL_LOGIN_URL_) === -1) text += '\n\nPortal login: ' + PORTAL_LOGIN_URL_;   // every email carries the one official address, except those flagged noLoginLink
   var contact = opts.contactEmail ? { email: opts.contactEmail, label: opts.contactLabel || '' } : null;
   if (text.indexOf('automated message') === -1) text += mailTextFooter_(contact);
   var html = opts.htmlBody || '';
   if (html && html.indexOf('generated automatically') === -1) {
-    html = buildBrandedHtml_('<div style="background:#ffffff;border:1px solid #dbe5df;border-top:none;padding:24px;font-size:14px;line-height:1.5">' + html + '</div>', contact);
+    html = buildBrandedHtml_('<div style="background:#ffffff;border:1px solid #dbe5df;border-top:none;padding:24px;font-size:14px;line-height:1.5">' + html + '</div>', contact, !!opts.noLoginLink);
   }
   var o = { to: opts.to, subject: opts.subject || CFG.APP_NAME, body: text };
   if (html) o.htmlBody = html;
@@ -1177,9 +1178,11 @@ function api_login(regNumber, password) {
   if (isLoginLocked_(key)) throw new Error('Too many failed attempts. Try again in 15 minutes, or use "Forgot password" to unlock now with an emailed code.');
   var user = findUserByReg_(key);
   if (!user || !toBool_(user.active)) { recordLoginFailure_(key); throw new Error('Invalid registration number / staff ID or password.'); }
+  if (!verifyPassword_(password, user.salt, user.passwordHash)) { recordLoginFailure_(key); throw new Error('Invalid registration number / staff ID or password.'); }
+  /* Status is revealed only after the password is proved, so a stranger cannot probe which IDs are pending, rejected or active. */
   if (String(user.status) === 'Pending') throw new Error('Awaiting PG Coordinator approval. You cannot log in yet.');
   if (String(user.status) === 'Rejected') throw new Error('Your registration was rejected. Please contact the PG Coordinator.');
-  if (!verifyPassword_(password, user.salt, user.passwordHash)) { recordLoginFailure_(key); throw new Error('Invalid registration number / staff ID or password.'); }
+  if (String(user.status) !== 'Approved') throw new Error('This account cannot sign in yet. Please contact the PG Coordinator.');
   clearLoginFailures_(key);
   if (needsRehash_(user.passwordHash)) {   // upgrade an old single-round hash in place, at the next successful sign-in
     try { updateRow_('Users', user.id, { passwordHash: hashPassword_(password, user.salt) }); } catch (e) { Logger.log('rehash ' + user.regNumber + ': ' + e); }
@@ -1230,8 +1233,7 @@ function api_impersonate(token, regNumber) {
   var admin = requireUser_(token);
   if (__actor) throw new Error('Return to Super Admin first.');
   assertRole_(admin, ['SuperAdmin'], 'Only a Super Admin can sign in as another user.');
-  var key = String(regNumber || '').trim();
-  var target = findWhere_('Users', function (u) { return String(u.regNumber) === key; });
+  var target = findUserByReg_(regNumber);
   if (!target || !toBool_(target.active)) throw new Error('That user was not found or is not active.');
   if (target.role === 'SuperAdmin') throw new Error('You cannot sign in as another Super Admin.');
   if (String(target.status) !== 'Approved') throw new Error('That account is not approved yet.');
@@ -1265,8 +1267,7 @@ function api_previewAsUser(token, regNumber) {
   var admin = requireUser_(token);
   assertRole_(admin, ['SuperAdmin'], 'Only a Super Admin can preview another account.');
   if (__actor) throw new Error('Return to Super Admin first.');
-  var key = String(regNumber || '').trim();
-  var target = findWhere_('Users', function (u) { return String(u.regNumber) === key; });
+  var target = findUserByReg_(regNumber);
   if (!target || !toBool_(target.active)) throw new Error('That user was not found or is not active.');
   if (target.role === 'SuperAdmin') throw new Error('You cannot preview another Super Admin.');
   if (String(target.status) !== 'Approved') throw new Error('That account is not approved yet.');
@@ -1278,93 +1279,75 @@ function api_previewAsUser(token, regNumber) {
   var u = publicUser_(target); u.firstLogin = false; u.previewReadOnly = true;
   return { token: tok, user: u, impersonator: { regNumber: admin.regNumber, fullName: admin.fullName }, expiresInSeconds: PREVIEW_TTL };
 }
-/** Run ONCE from the Apps Script editor to create (or reset) a Super Admin login, e.g.
- *    createSuperAdmin('SUPER001', 'Your Name', 'you@example.com', 'A-Strong-Passw0rd')
- *  You will be asked to change the password at first sign-in. There is deliberately no in-app way to create one. */
-function createSuperAdmin(regNumber, fullName, email, password, forceConvert) {
-  var reg = String(regNumber || '').trim().toUpperCase(), em = cleanEmail_(email), name = String(fullName || '').trim();
-  if (!reg || name.length < 2 || !validateEmail_(em)) throw new Error('Provide a staff ID, full name and valid email.');
-  assertStrongPassword_(password, reg);
-  var existing = findWhere_('Users', function (u) { return normReg_(u.regNumber) === reg; });
-  if (existing && existing.role !== 'SuperAdmin' && forceConvert !== true) throw new Error(reg + ' already belongs to a ' + existing.role + '. Use a different ID, or pass true as the 5th argument to convert it to a Super Admin.');
-  var salt = makeSalt_(), hash = hashPassword_(password, salt);
-  if (existing) { updateRow_('Users', existing.id, { regNumber: reg, role: 'SuperAdmin', passwordHash: hash, salt: salt, fullName: name, email: em, active: true, status: 'Approved', firstLogin: true }); bumpSessionEpoch_(existing.id); }
-  else appendRow_('Users', { regNumber: reg, email: em, passwordHash: hash, salt: salt, role: 'SuperAdmin', fullName: name, firstLogin: true, active: true, status: 'Approved', createdAt: nowIso_() });
-  clearLoginFailures_(reg);
-  logAudit_('system', 'setup', 'CREATE_SUPERADMIN', reg, name);
-  Logger.log('Super Admin ready: ' + reg + ' - sign in with the password you just set.');
-}
+/* ---- Super Admin set-up: run from the Apps Script editor ----
+ * There is deliberately no in-app way to create or repair a Super Admin. Three entry points share ONE core (saveSuperAdmin_):
+ *   setupSuperAdmin()                       no arguments (works from the Run dropdown): creates SUPERADMIN_DEFAULT_ID_ if missing, otherwise repairs it
+ *   createSuperAdmin(id, name, email, pw)   creates a login (or resets one); pass true as 5th argument to convert an existing non-Super-Admin ID
+ *   repairSuperAdmin(id, pw, keepPassword)  repairs an existing login. With no pw a one-time password is generated and emailed;
+ *                                           pass keepPassword = true to leave the current password untouched
+ * Every run restores role / active / Approved status, clears any sign-in lockout, ends open sessions, and finishes with a self-test
+ * that re-reads the row from the sheet and checks that the sign-in checks used by api_login would accept it. */
+var SUPERADMIN_DEFAULT_ID_ = 'ACA8888';
 
-/** RUN ONCE from the Apps Script editor to repair the Super Admin ACA8888 without changing its password:
- *  it re-activates the login, restores the SuperAdmin role and Approved status, and clears any login lockout.
- *  If the password has also been lost, run fixSuperAdminACA8888() instead (or afterwards). */
-function restoreSuperAdmin(regNumber) {
-  var reg = String(regNumber || 'ACA8888').trim().toUpperCase();
-  var u = findWhere_('Users', function (x) { return normReg_(x.regNumber) === reg; });
-  if (!u) throw new Error(reg + ' was not found in the Users sheet. Run createSuperAdmin(\'' + reg + '\', \'Your Name\', \'you@example.com\', \'A-Strong-Passw0rd\') instead.');
-  updateRow_('Users', u.id, { role: 'SuperAdmin', active: true, status: 'Approved' });
-  bumpSessionEpoch_(u.id);
-  clearLoginFailures_(reg);
-  logAudit_('system', 'setup', 'RESTORE_SUPERADMIN', reg, 'Role, active and status restored');
-  Logger.log('Super Admin restored: ' + reg + ' (password unchanged)');
-}
-
-/** RUN ONCE from the Apps Script editor when a Super Admin login no longer works:
- *    fixSuperAdminACA8888()
- *  Restores the exact SuperAdmin role, active + Approved status and normalised ID, clears any login lockout,
- *  invalidates existing sessions, then sets a fresh one-time password and emails it to the address in the Users
- *  row. If mail cannot be sent, the one-time password is printed in the Execution log. Sign in with it once;
- *  the portal will force a password change. To set a known password instead, pass it as the second argument:
- *    fixSuperAdminACA8888('ACA8888', 'A-Strong-Passw0rd')
- */
-function fixSuperAdminACA8888(regNumber, password) {
-  var reg = String(regNumber || 'ACA8888').trim().toUpperCase();
+function saveSuperAdmin_(opts) {
+  var reg = normReg_(opts.reg || SUPERADMIN_DEFAULT_ID_);
+  if (!reg) throw new Error('Provide a staff ID.');
   return withScriptLock_(function () {
-    var u = findWhere_('Users', function (x) { return normReg_(x.regNumber) === reg; });
-    if (!u) throw new Error(reg + ' was not found in the Users sheet. Run createSuperAdmin(\'' + reg + '\', \'Your Name\', \'you@example.com\', \'A-Strong-Passw0rd\') instead.');
-    var supplied = String(password || '');
-    var salt = makeSalt_(), tempPw = '';
-    if (supplied) {
-      assertStrongPassword_(supplied, reg);
-      updateRow_('Users', u.id, { regNumber: reg, role: 'SuperAdmin', active: true, status: 'Approved',
-        passwordHash: hashPassword_(supplied, salt), salt: salt, firstLogin: true });
-    } else {
-      tempPw = genTempPassword_();
-      updateRow_('Users', u.id, { regNumber: reg, role: 'SuperAdmin', active: true, status: 'Approved',
-        passwordHash: hashPassword_(tempPw, salt), salt: salt, firstLogin: true });
+    invalidateTable_('Users');   // always start from the sheet, never from a cached copy
+    var existing = findUserByReg_(reg);
+    if (opts.mustExist && !existing) throw new Error(reg + ' was not found in the Users sheet. Run setupSuperAdmin() or createSuperAdmin(\'' + reg + '\', \'Your Name\', \'you@example.com\', \'A-Strong-Passw0rd\') instead.');
+    if (existing && existing.role !== 'SuperAdmin' && opts.forceConvert !== true && reg !== SUPERADMIN_DEFAULT_ID_) throw new Error(reg + ' already belongs to a ' + existing.role + '. Use a different ID, or pass true as the 5th argument to convert it to a Super Admin.');
+    var name = String(opts.fullName || (existing && existing.fullName) || 'Super Admin').trim();
+    var email = cleanEmail_(opts.email || (existing && existing.email) || '');
+    if (!opts.mustExist && (name.length < 2 || !validateEmail_(email))) throw new Error('Provide a staff ID, full name and valid email.');
+    var keep = opts.keepPassword === true && !!existing, supplied = String(opts.password || ''), tempPw = '', pw = '';
+    var patch = { regNumber: reg, role: 'SuperAdmin', active: true, status: 'Approved', fullName: name, email: email };
+    if (!keep) {
+      if (supplied) { assertStrongPassword_(supplied, reg); pw = supplied; } else { tempPw = genTempPassword_(); pw = tempPw; }
+      var salt = makeSalt_();
+      patch.salt = salt; patch.passwordHash = hashPassword_(pw, salt); patch.firstLogin = true;
     }
-    bumpSessionEpoch_(u.id);
+    if (existing) { updateRow_('Users', existing.id, patch); bumpSessionEpoch_(existing.id); }
+    else { patch.createdAt = nowIso_(); appendRow_('Users', patch); }
     clearLoginFailures_(reg);
-    logAudit_('system', 'setup', 'FIX_SUPERADMIN', reg, 'Role, status, active, lockout and password repaired');
-    var emailed = false;
-    if (!supplied && validateEmail_(cleanEmail_(u.email))) {
-      try {
-        emailed = notifyStaffLogin_(u.email, u.fullName || u.regNumber, reg, 'SuperAdmin', tempPw) === true;
-      } catch (e) { Logger.log('fixSuperAdminACA8888 mail failed for ' + reg + ': ' + e); }
+    logAudit_('system', 'setup', existing ? 'REPAIR_SUPERADMIN' : 'CREATE_SUPERADMIN', reg, name);
+
+    /* Self-test: the same checks api_login makes, against a fresh read of the sheet. */
+    invalidateTable_('Users');
+    var chk = findUserByReg_(reg), problems = [];
+    if (!chk) problems.push('the row cannot be found by ID ' + reg);
+    else {
+      if (chk.role !== 'SuperAdmin') problems.push('role is "' + chk.role + '"');
+      if (!toBool_(chk.active)) problems.push('active is off');
+      if (String(chk.status) !== 'Approved') problems.push('status is "' + chk.status + '"');
+      if (!keep && !verifyPassword_(pw, chk.salt, chk.passwordHash)) problems.push('the stored password hash does not match (check that the Users tab has passwordHash and salt columns and that no formula or format rule alters them)');
+      if (isLoginLocked_(reg)) problems.push('the account is still locked out');
     }
-    Logger.log('Super Admin repaired: ' + reg + '. Sign in with ' + (supplied ? 'the password you supplied' : (emailed ? 'the one-time password emailed to ' + (u.email || '') : 'the one-time password below')) + ', then choose a new password when prompted.');
-    if (!supplied && !emailed) Logger.log('One-time password for ' + reg + ': ' + tempPw);
-    return { ok: true, regNumber: reg, emailed: emailed, tempPassword: (!supplied && !emailed) ? tempPw : '' };
+    if (problems.length) throw new Error('Super Admin ' + reg + ' was written but the self-test failed: ' + problems.join('; ') + '.');
+
+    var emailed = false;
+    if (tempPw && validateEmail_(email)) {
+      try { emailed = notifyStaffLogin_(email, name, reg, 'SuperAdmin', tempPw) === true; } catch (e) { Logger.log('Super Admin mail failed for ' + reg + ': ' + e); }
+    }
+    Logger.log('Super Admin ' + (existing ? 'repaired' : 'created') + ': ' + reg + '. Self-test passed. ' + (keep ? 'Password unchanged.' :
+      (supplied ? 'Sign in with the password you supplied, then choose a new one when prompted.' :
+        (emailed ? 'A one-time password was emailed to ' + email + '; sign in with it, then choose a new password.' : 'One-time password (not emailed): ' + tempPw + ' - sign in with it, then choose a new password.'))));
+    return { ok: true, regNumber: reg, created: !existing, emailed: emailed, tempPassword: (tempPw && !emailed) ? tempPw : '' };
   }, 30000);
 }
-/** Generic alias so another Super Admin ID can be repaired the same way. */
-function repairSuperAdmin(regNumber, password) { return fixSuperAdminACA8888(regNumber, password); }
-
-/** RUN ONCE from the Apps Script editor with NO arguments. Use this if the function dropdown is easier than passing arguments.
- *  Repairs ACA8888 when the row already exists; creates it when the row is missing. The email defaults to the editor account,
- *  then to the portal enquiries address. A generated one-time password is logged (and emailed when mail is available). */
-function setupSuperAdminACA8888() {
-  var reg = 'ACA8888', email = '';
+function createSuperAdmin(regNumber, fullName, email, password, forceConvert) {
+  return saveSuperAdmin_({ reg: regNumber, fullName: fullName, email: email, password: password, forceConvert: forceConvert });
+}
+function repairSuperAdmin(regNumber, password, keepPassword, forceConvert) {
+  return saveSuperAdmin_({ reg: regNumber, password: password, keepPassword: keepPassword, forceConvert: forceConvert, mustExist: true });
+}
+function setupSuperAdmin() {
+  var reg = SUPERADMIN_DEFAULT_ID_;
+  if (findUserByReg_(reg)) return repairSuperAdmin(reg);
+  var email = '';
   try { email = cleanEmail_(Session.getActiveUser().getEmail() || ''); } catch (e) {}
-  if (!validateEmail_(email)) email = mailEnquiriesAddress_();
-  var existing = findWhere_('Users', function (u) { return normReg_(u.regNumber) === reg; });
-  if (existing) return fixSuperAdminACA8888(reg);
-  var pw = genTempPassword_();
-  createSuperAdmin(reg, 'Super Admin', email, pw);
-  var emailed = false;
-  try { emailed = notifyStaffLogin_(email, 'Super Admin', reg, 'SuperAdmin', pw) === true; } catch (e) { Logger.log('setupSuperAdminACA8888 mail failed: ' + e); }
-  Logger.log('Created Super Admin ' + reg + ' for ' + email + '. One-time password: ' + pw + (emailed ? ' (also emailed)' : '') + '. Sign in and change it when prompted.');
-  return { ok: true, created: true, regNumber: reg, email: email, emailed: emailed, tempPassword: pw };
+  if (!validateEmail_(email)) email = cleanEmail_(mailEnquiriesAddress_());
+  return createSuperAdmin(reg, 'Super Admin', email);
 }
 
 /* =========================== 5. SETUP / SEED =========================== */
@@ -1420,6 +1403,156 @@ function setSetting_(key, value) {
   invalidateTable_('Config');
 }
 
+/* =========================== DRIVE FOLDERS (one per upload) =========================== */
+/** Every kind of upload has its own Drive folder, created under the root folder (Config: PASSPORT_FOLDER_ID).
+ *  The id of each folder is kept in the Config tab as FOLDER_<key>, so you can see them there, and you can point a row
+ *  at a different folder by pasting its id. Run setupDriveFolders() ONCE from the editor (or use the sheet menu
+ *  Postgraduate Journey -> Create Drive folders) to create them all; it is safe to run again.
+ *  types = submission document types that go in the folder; examiners = examiner-report types.
+ *  Existing files are never moved: they stay where they are and keep working. Only new uploads use the new folders.
+ *  A folder that is missing or trashed is recreated automatically; if that is impossible the upload falls back to the root folder. */
+var DRIVE_FOLDER_PLAN_ = [
+  /* Registration */
+  { key: 'PASSPORTS', name: 'Passport Photographs' },
+  { key: 'ADMISSION_LETTERS', name: 'Admission Letters' },
+  /* Journey documents live inside "Submissions", numbered in the order a student meets them */
+  { key: 'SUBMISSIONS', name: 'Submissions' },
+  { key: 'RESEARCH_PROPOSALS', parent: 'SUBMISSIONS', name: '01 Research Proposals', types: ['Research Proposal'] },
+  { key: 'PROPOSAL_DEFENCE_FORMS', parent: 'SUBMISSIONS', name: '02 Proposal Defence Forms', types: ['Signed Proposal Defence Form'] },
+  { key: 'PROPOSAL_DEFENCE_PRESENTATIONS', parent: 'SUBMISSIONS', name: '03 Proposal Defence Presentations', types: ['Proposal Defence Presentation (PPTX)'] },
+  { key: 'PROGRESS_REPORTS', parent: 'SUBMISSIONS', name: '04 Progress Reports', types: ['Progress Report'] },
+  { key: 'PROGRESS_PRESENTATIONS', parent: 'SUBMISSIONS', name: '05 Progress Presentations', types: ['Progress Presentation (PPTX)'] },
+  { key: 'INTERNAL_EXAMINER_REPORTS', parent: 'SUBMISSIONS', name: '06 Internal Examiner Reports', examiners: ['Internal'] },
+  { key: 'INTERNAL_RESPONSES', parent: 'SUBMISSIONS', name: '07 Responses to Internal Examiner', types: ['Comment-by-Comment Response (Internal Examiner)'] },
+  { key: 'INTERNAL_CLEAN_COPIES', parent: 'SUBMISSIONS', name: '08 Corrected Clean Copies (Internal)', types: ['Corrected Clean Copy (Internal Examiner)'] },
+  { key: 'SECOND_PROGRESS_REPORTS', parent: 'SUBMISSIONS', name: '09 Second Progress Reports (PhD)', types: ['Progress Report (Second Internal)'] },
+  { key: 'SECOND_PROGRESS_PRESENTATIONS', parent: 'SUBMISSIONS', name: '10 Second Progress Presentations (PhD)', types: ['Progress Presentation (PPTX) (Second Internal)'] },
+  { key: 'SECOND_INTERNAL_EXAMINER_REPORTS', parent: 'SUBMISSIONS', name: '11 Second Internal Examiner Reports (PhD)', examiners: ['Internal (Second)'] },
+  { key: 'SECOND_INTERNAL_RESPONSES', parent: 'SUBMISSIONS', name: '12 Responses to Second Internal Examiner (PhD)', types: ['Comment-by-Comment Response (Internal Examiner) (Second Internal)'] },
+  { key: 'SECOND_INTERNAL_CLEAN_COPIES', parent: 'SUBMISSIONS', name: '13 Corrected Clean Copies (Second Internal)', types: ['Corrected Clean Copy (Internal Examiner) (Second Internal)'] },
+  { key: 'FEE_RECEIPTS', parent: 'SUBMISSIONS', name: '14 School Fees Receipts', types: ['Receipt of Fees'] },
+  { key: 'EXAM_FEE_RECEIPTS', parent: 'SUBMISSIONS', name: '15 Examination Fee Receipts', types: ['Evidence of Payment for Examination'] },
+  { key: 'PLAGIARISM_CERTIFICATES', parent: 'SUBMISSIONS', name: '16 Plagiarism Certificates', types: ['Plagiarism Certificate'] },
+  { key: 'FINAL_THESES', parent: 'SUBMISSIONS', name: '17 Final Theses and Dissertations', types: ['Final Thesis/Dissertation'] },
+  { key: 'EXTERNAL_EXAMINER_REPORTS', parent: 'SUBMISSIONS', name: '18 External Examiner Reports', examiners: ['External'] },
+  { key: 'EXTERNAL_RESPONSES', parent: 'SUBMISSIONS', name: '19 Responses to External Examiner', types: ['Comment-by-Comment Response (External Examiner)'] },
+  { key: 'FINAL_CORRECTIONS', parent: 'SUBMISSIONS', name: '20 Final Corrections', types: ['Final Correction'] },
+  { key: 'OTHER_DOCUMENTS', parent: 'SUBMISSIONS', name: '99 Other Documents', types: [] },   // any type not listed above
+  /* Messages, inquiries and letters */
+  { key: 'ATTACHMENTS', name: 'Attachments' },
+  { key: 'EXAM_NOTICES', name: 'Examination Notices' },
+  /* Nightly spreadsheet copies (not an upload, but its id is kept in Config with the rest) */
+  { key: 'BACKUPS', name: 'Backups' }
+];
+var DRIVE_FOLDER_BY_KEY_ = (function () { var m = {}; DRIVE_FOLDER_PLAN_.forEach(function (f) { m[f.key] = f; }); return m; })();
+function driveRootFolder_() { return DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)); }
+
+/** The Drive folder for a plan key: the id in Config if it still works, else find (by name) or create it and remember the id. */
+function driveFolder_(key) {
+  var item = DRIVE_FOLDER_BY_KEY_[key];
+  if (!item) throw new Error('Unknown Drive folder key: ' + key);
+  var cfgKey = 'FOLDER_' + key, id = getSetting_(cfgKey, '');
+  if (id) {
+    try { var f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; }
+    catch (e) { Logger.log('driveFolder_ ' + key + ': configured folder not usable (' + e + '); recreating.'); }
+  }
+  var parent = item.parent ? driveFolder_(item.parent) : driveRootFolder_();
+  var it = parent.getFoldersByName(item.name), found = null;
+  while (it.hasNext()) { var c = it.next(); if (!c.isTrashed()) { found = c; break; } }
+  var folder = found || parent.createFolder(item.name);
+  try { setSetting_(cfgKey, folder.getId()); } catch (e) { Logger.log('driveFolder_ could not record ' + cfgKey + ': ' + e); }
+  return folder;
+}
+/** Never let a missing folder stop an upload: use the folder, else the root. */
+function driveFolderOrRoot_(key) {
+  try { return driveFolder_(key); }
+  catch (e) { Logger.log('driveFolderOrRoot_ ' + key + ' -> root folder: ' + e); return driveRootFolder_(); }
+}
+/** Folder key for a submission document type (student upload) or an examiner type ('Internal', 'Internal (Second)', 'External'). */
+function driveKeyForUpload_(type, examinerType) {
+  var t = String(type || ''), x = String(examinerType || ''), hit = '';
+  DRIVE_FOLDER_PLAN_.forEach(function (f) {
+    if (hit) return;
+    if (t && f.types && f.types.indexOf(t) !== -1) hit = f.key;
+    else if (x && f.examiners && f.examiners.indexOf(x) !== -1) hit = f.key;
+  });
+  return hit || 'OTHER_DOCUMENTS';
+}
+/** RUN ONCE from the Apps Script editor: creates every upload folder under the root folder and writes each id to the
+ *  Config tab (FOLDER_<name>). Existing folders with the same name are reused, ids you already set in Config are kept. */
+function setupDriveFolders() {
+  var made = [], reused = [], failed = [];
+  DRIVE_FOLDER_PLAN_.forEach(function (item) {
+    try {
+      var before = getSetting_('FOLDER_' + item.key, '');
+      var parent = item.parent ? driveFolder_(item.parent) : driveRootFolder_();
+      var had = false, it = parent.getFoldersByName(item.name); while (it.hasNext()) { if (!it.next().isTrashed()) { had = true; break; } }
+      var f = driveFolder_(item.key);
+      (before || had ? reused : made).push((item.parent ? DRIVE_FOLDER_BY_KEY_[item.parent].name + ' / ' : '') + f.getName());
+    } catch (e) { failed.push(item.name + ': ' + e); }
+  });
+  invalidateTable_('Config');
+  var msg = 'setupDriveFolders: ' + made.length + ' created, ' + reused.length + ' already existed, ' + failed.length + ' failed.\n' +
+    (made.length ? 'Created: ' + made.join('; ') + '\n' : '') + (failed.length ? 'FAILED: ' + failed.join(' | ') + '\n' : '') +
+    'The ids are in the Config tab (rows FOLDER_...). New uploads now go to these folders; existing files stay where they are.';
+  Logger.log(msg);
+  return { created: made, existing: reused, failed: failed };
+}
+
+/** The planned folder for a key if it exists and is usable, else null. Never creates anything. */
+function driveFolderIfExists_(key) {
+  var id = getSetting_('FOLDER_' + key, '');
+  if (!id) return null;
+  try { var f = DriveApp.getFolderById(id); return f.isTrashed() ? null : f; } catch (e) { return null; }
+}
+function driveFolderIsEmpty_(f) { return !f.getFiles().hasNext() && !f.getFolders().hasNext(); }
+/** Compares Drive with DRIVE_FOLDER_PLAN_. Looks at the root folder and at "Submissions" (where the numbered folders live):
+ *    ok         folders recorded in Config (these are the ones the portal uses, whatever they are called)
+ *    missing    planned folders not found (run setupDriveFolders)
+ *    duplicates a second folder with a planned name that Config does not use
+ *    strays     folders the plan does not know about
+ *    loose      files sitting directly in the root or in "Submissions" instead of a proper folder (reported, never moved)
+ *  With apply=true, duplicates and strays are moved to the Drive trash ONLY IF EMPTY and not named in Config (restorable
+ *  for 30 days). A folder holding anything is never touched, only reported. */
+function reviewDriveFolders_(apply) {
+  var rep = { ok: 0, missing: [], unrecorded: [], duplicates: [], strays: [], loose: [], trashed: [], kept: [] };
+  var inConfig = {};                                         // exact ids the portal is configured to use: the root and every FOLDER_ row
+  inConfig[String(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID))] = 1;
+  DRIVE_FOLDER_PLAN_.forEach(function (item) { var cid = getSetting_('FOLDER_' + item.key, ''); if (cid) inConfig[String(cid)] = 1; });
+  var root = driveRootFolder_(), subs = driveFolderIfExists_('SUBMISSIONS');
+  DRIVE_FOLDER_PLAN_.forEach(function (item) { if (!driveFolderIfExists_(item.key)) rep.missing.push(item.name); });
+  var scan = function (parentKey, parent, label) {
+    var planned = {}; DRIVE_FOLDER_PLAN_.forEach(function (f) { if ((f.parent || '') === parentKey) planned[f.name] = f; });
+    var it = parent.getFolders();
+    while (it.hasNext()) {
+      var f = it.next(), id = f.getId(), nm = f.getName(), item = planned[nm];
+      if (f.isTrashed()) continue;
+      if (inConfig[id]) { rep.ok++; continue; }
+      if (item && !getSetting_('FOLDER_' + item.key, '')) { rep.unrecorded.push(label + nm); continue; }   // right name, id not in Config yet
+      var tag = label + nm, empty = driveFolderIsEmpty_(f);
+      (item ? rep.duplicates : rep.strays).push(tag + (empty ? ' (empty)' : ' (HAS CONTENT)'));
+      if (empty) { if (apply) { try { f.setTrashed(true); rep.trashed.push(tag); } catch (e) { rep.kept.push(tag + ': ' + e); } } }
+      else rep.kept.push(tag);
+    }
+    var fl = parent.getFiles(), n = 0;
+    while (fl.hasNext() && n < 25) { rep.loose.push(label + fl.next().getName()); n++; }
+  };
+  scan('', root, '');
+  if (subs) scan('SUBMISSIONS', subs, 'Submissions / ');
+  rep.summary = 'Drive folders: ' + rep.ok + ' in use, ' + rep.missing.length + ' missing, ' + rep.duplicates.length + ' duplicate(s), ' + rep.strays.length + ' stray folder(s), ' +
+    rep.loose.length + ' loose file(s)' + (apply ? '; ' + rep.trashed.length + ' empty folder(s) moved to trash.' : '.');
+  Logger.log(rep.summary + '\n' +
+    (rep.missing.length ? 'MISSING (run setupDriveFolders): ' + rep.missing.join('; ') + '\n' : '') +
+    (rep.unrecorded.length ? 'Not yet recorded in Config (run setupDriveFolders): ' + rep.unrecorded.join('; ') + '\n' : '') +
+    (rep.duplicates.length ? 'Duplicates: ' + rep.duplicates.join('; ') + '\n' : '') + (rep.strays.length ? 'Strays: ' + rep.strays.join('; ') + '\n' : '') +
+    (rep.loose.length ? 'Loose files (not moved): ' + rep.loose.join('; ') + '\n' : '') + (rep.kept.length ? 'Left alone: ' + rep.kept.join('; ') : ''));
+  return rep;
+}
+/** Read-only: reports what is out of place. Changes nothing. */
+function checkDriveFolders() { return reviewDriveFolders_(false); }
+/** Tidy-up. Default is a DRY RUN (nothing changes); run tidyDriveFolders(false) to move EMPTY duplicate/stray folders to the trash. */
+function tidyDriveFolders(dryRun) { return reviewDriveFolders_(dryRun === false); }
+
 /* =========================== 6. PUBLIC REGISTRATION =========================== */
 
 var REG_RE_1 = /^UA\/pg20\d{2}\/\d{6}$/;
@@ -1428,7 +1561,18 @@ var REG_RE_2 = /^\d{2}\/\d{3}[A-Z]{3,4}\/\d{3,4}$/;
 var REG_RE_3 = /^(PHD|MSC|MPHIL)\/[A-Z]{2,6}\/\d{5,10}$/i;
 var REG_RE_4 = /^\d{9,10}$/;
 
-function validateRegNumber_(reg) { return REG_RE_1.test(reg) || REG_RE_2.test(reg) || REG_RE_3.test(reg) || REG_RE_4.test(reg); }
+/** Tidy a typed registration number: strip all whitespace and, for the NN/NNNLLLL/NNN form (e.g. 25/408PHYX/040),
+ *  force every letter to UPPER case. Other formats (UA/pg2026/..., Phd/sci/...) keep the case they were typed in. */
+function cleanRegInput_(reg) {
+  var r = String(reg === undefined || reg === null ? '' : reg).replace(/\s+/g, '');
+  return /^\d{2}\/\d{3}[A-Za-z]{3,4}\/\d{3,4}$/.test(r) ? r.toUpperCase() : r;
+}
+/** In the NN/NNNLLLL/NNN form the first two digits are the admission year (25 -> 2025); a year in the future is refused. */
+function regYearOk_(reg) {
+  var m = /^(\d{2})\/\d{3}[A-Z]{3,4}\/\d{3,4}$/.exec(String(reg || ''));
+  return !m || parseInt(m[1], 10) <= (new Date().getFullYear() % 100);
+}
+function validateRegNumber_(reg) { return (REG_RE_1.test(reg) || REG_RE_2.test(reg) || REG_RE_3.test(reg) || REG_RE_4.test(reg)) && regYearOk_(reg); }
 /** Academic year from the registration / admission number:
  *    UA/pg2026/003531  -> 2026  (the four digits after "pg")
  *    26/408PHYX/040    -> 2026  (the first two digits, read as 20xx)
@@ -1482,9 +1626,10 @@ function validateEmail_(email) { var e = String(email || '').trim(); return e.le
 function cleanEmail_(email) { return String(email || '').replace(/\s+/g, '').toLowerCase(); }
 /** Nigerian mobile: returns 11-digit local format (08012345678) or null. Accepts +234 / 234 / missing leading 0. */
 function validatePhone_(phone) {
+  // Nigerian mobile: exactly 11 digits starting with 0 (08123456789). The country-code forms +234 8123 456 789,
+  // 234 8123456789 and 00234... are accepted and stored in the 11-digit form. A number without the leading 0 is refused.
   var s = String(phone || '').replace(/[\s\-().]/g, '');
-  if (/^\+?234/.test(s)) s = '0' + s.replace(/^\+?234/, '').replace(/^0/, '');
-  else if (/^[789]\d{9}$/.test(s)) s = '0' + s;
+  if (/^(\+|00)?234/.test(s)) s = '0' + s.replace(/^(\+|00)?234/, '').replace(/^0/, '');
   return /^0[789][01]\d{8}$/.test(s) ? s : null;
 }
 function validateName_(name) { var s = String(name || '').trim(); return s.length >= 2 && /^[A-Za-z\s'\-]+$/.test(s); }
@@ -1520,8 +1665,8 @@ function toTitleText_(v) {
 /** Serialised wrapper: one writer at a time so read-check-write cannot interleave. */
 function api_register_locked_(payload) {
   if (!payload) throw new Error('Missing form data.');
-  var reg = String(payload.regNumber || '').replace(/\s+/g, '');
-  if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531, 26/408PHYX/040, Phd/sci/16586006 or 1750806006.');
+  var reg = cleanRegInput_(payload.regNumber);
+  if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531, 26/408PHYX/040 (capital letters; the first two digits are the admission year and cannot be in the future), Phd/sci/16586006 or 1750806006.');
   payload.surname = toUpperName_(payload.surname);
   payload.firstName = toTitleCase_(payload.firstName);
   payload.otherNames = toTitleCase_(payload.otherNames);
@@ -1531,7 +1676,7 @@ function api_register_locked_(payload) {
   var email = cleanEmail_(payload.email);
   if (!validateEmail_(email)) throw new Error('Invalid email address. Use the form name@example.com.');
   var phone = validatePhone_(payload.phoneNumber);
-  if (!phone) throw new Error('Invalid phone number. Use a Nigerian mobile number such as 08012345678.');
+  if (!phone) throw new Error('Invalid phone number. Use 11 digits starting with 0 (e.g. 08123456789), or the +234 form (e.g. +234 8123 456 789).');
   if (CFG.PROGRAMMES.indexOf(payload.programme) === -1) throw new Error('Invalid programme.');
   if (CFG.SPECIALISATIONS.indexOf(payload.specialisation) === -1) throw new Error('Invalid specialisation.');
   if (['Male', 'Female'].indexOf(payload.gender) === -1) throw new Error('Gender must be Male or Female.');
@@ -1543,7 +1688,16 @@ function api_register_locked_(payload) {
   // Upload passport
   if (!payload.passportPhoto || !payload.passportPhoto.dataUrl) throw new Error('Passport photo is required.');
   var fileInfo = savePassportPhoto_(payload.passportPhoto, reg);
-  var letterInfo = (payload.admissionLetter && payload.admissionLetter.dataUrl) ? saveAdmissionLetter_(payload.admissionLetter, reg) : null;   // optional
+  // Optional. A problem with the letter must not cost the student their registration (the passport is already saved):
+  // register without it and tell the student, so the PG Coordinator is not left thinking none was attached.
+  var letterInfo = null, letterNote = '';
+  if (payload.admissionLetter && payload.admissionLetter.dataUrl) {
+    try { letterInfo = saveAdmissionLetter_(payload.admissionLetter, reg); }
+    catch (letterErr) {
+      Logger.log('Registration ' + reg + ': admission letter not saved: ' + (letterErr && letterErr.message ? letterErr.message : letterErr));
+      letterNote = ' Your admission letter could NOT be saved (' + (letterErr && letterErr.message ? letterErr.message : 'upload failed') + '). Please send it to the PG Coordinator through Inquiries after you sign in.';
+    }
+  }
 
   var salt = makeSalt_();
   var now = nowIso_();
@@ -1600,7 +1754,7 @@ function api_register_locked_(payload) {
       specialisation: payload.specialisation
     });
   } catch (mailErr) { Logger.log('Registration email failed for ' + reg + ': ' + (mailErr && mailErr.message ? mailErr.message : mailErr)); }
-  return { ok: true, message: 'Registration submitted. Awaiting PG Coordinator approval.' };
+  return { ok: true, message: 'Registration submitted. Awaiting PG Coordinator approval.' + letterNote, letterSaved: !!letterInfo || !letterNote };
 }
 function api_register() { var a = arguments; return withScriptLock_(function () { return api_register_locked_.apply(null, a); }, 30000); }
 
@@ -1631,10 +1785,13 @@ function notifyRegistrationReceived_(p) {
       return '<tr><td style="padding:6px 8px;border:1px solid #e2e8e4;background:#f4f7f5;color:#14532d;white-space:nowrap"><strong>' + escHtml_(r[0]) + '</strong></td><td style="padding:6px 8px;border:1px solid #e2e8e4">' + escHtml_(String(r[1] || '—')) + '</td></tr>';
     }).join('') +
     '</table><p style="color:#66756f;font-size:13px;margin-top:12px">You will receive another email once your registration has been reviewed. You can also check your status on the Register page at any time.</p>';
-  var opts = { to: p.email, subject: 'Registration received — ' + p.regNumber + ' (' + CFG.APP_NAME + ')', body: text, htmlBody: html };
+  // Sent to the student alone (no BCC, no portal link): BCC'ing a third party and links to a free-hosting domain both raise the spam score.
+  sendPortalMail_({ to: p.email, subject: 'Registration received — ' + p.regNumber, body: text, htmlBody: html, noLoginLink: true });
   var coord = coordinatorEmail_();
-  if (coord && String(coord).toLowerCase() !== String(p.email).toLowerCase()) opts.bcc = coord;
-  sendPortalMail_(opts);
+  if (coord && String(coord).toLowerCase() !== String(p.email).toLowerCase()) {
+    sendPortalMail_({ to: coord, subject: 'New registration awaiting approval — ' + p.regNumber,
+      body: 'A new student registration (' + p.regNumber + ', ' + p.firstName + ' ' + p.surname + ', ' + p.programme + ') is awaiting your approval on the portal.' });
+  }
 }
 
 /** Branded approve/reject decision email to the student. */
@@ -1738,15 +1895,14 @@ function formatLinkColumns() {
 
 /** Optional admission letter (PDF only, up to 3 MB). Not public: only the PG Coordinator(s) and HoD get view access in Drive. */
 function saveAdmissionLetter_(filePayload, regNumber) {
-  var parts = String(filePayload.dataUrl).split(','), mm = parts[0].match(/data:(.*?);/), mime = mm ? mm[1] : '';
-  var ext = { 'application/pdf': 'pdf' }[mime];
-  if (!ext) throw new Error('The admission letter must be a PDF file.');
+  // The letter is PDF-only, so the type is decided by the file CONTENT (the %PDF- signature checked below),
+  // not by the browser-reported MIME type, which is empty or application/octet-stream on many phones/PCs.
+  var parts = String(filePayload.dataUrl).split(','), mime = 'application/pdf', ext = 'pdf';
   var bytes = Utilities.base64Decode(parts[1] || '');
-  assertMagicBytes_(ext, bytes);
+  try { assertMagicBytes_(ext, bytes); } catch (e) { throw new Error('The admission letter must be a PDF file.'); }
   if (bytes.length > 3 * 1024 * 1024) throw new Error('The admission letter must be under 3 MB.');
   try {
-    var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Admission Letters');
-    var folder = it.hasNext() ? it.next() : root.createFolder('Admission Letters');
+    var folder = driveFolderOrRoot_('ADMISSION_LETTERS');
     var file = folder.createFile(Utilities.newBlob(bytes, mime, String(regNumber).replace(/[\/\\]/g, '-') + '_admission_' + new Date().getTime() + '.' + ext));
     readTable_('Users').forEach(function (u) {
       if ((u.role === 'PG_Coordinator' || u.role === 'HoD') && toBool_(u.active) && EMAIL_RE.test(String(u.email || ''))) { try { grantFileRole_(file.getId(), u.email, 'reader'); } catch (e) {} }
@@ -1894,10 +2050,13 @@ function savePassportPhoto_(filePayload, regNumber) {
   if (bytes.length > CFG.UPLOAD_MAX_BYTES) throw new Error('Passport photo must be under 5 MB.');
   var blob = Utilities.newBlob(bytes, mime, regNumber.replace(/[\/\\]/g, '-') + '_passport_' + new Date().getTime() + '.' + ext);
   try {
-    var folderId = getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID);
-    var folder = DriveApp.getFolderById(folderId);
+    var folder = driveFolderOrRoot_('PASSPORTS');
     var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);   // photos are served through api_getPhotos only
+    // Photos are served through api_getPhotos only. Locking is BEST-EFFORT: the file is already saved at this
+    // point, and setSharing can be refused (Workspace sharing policy, or the folder owned by another account)
+    // even when uploading works. Failing registration here made students see an "authorisation" error although
+    // the photo had uploaded, and every retry left another orphan copy in the folder.
+    lockFile_(file);
     return { id: file.getId(), url: file.getUrl() };
   } catch (e) {
     Logger.log('savePassportPhoto_ failed: ' + e);
@@ -1983,7 +2142,7 @@ var REG_LIST_COLS_ = { seenBy: 1, readBy: 1, presenters: 1, attendees: 1 };
 function changeRegNumber(oldReg, newReg, dryRun) {
   if (dryRun === undefined) dryRun = true;
   var ss = getSpreadsheet_();
-  var oldIn = String(oldReg || '').trim(), nw = String(newReg || '').trim();
+  var oldIn = String(oldReg || '').trim(), nw = cleanRegInput_(newReg);
   if (!oldIn || !nw) throw new Error('Usage: changeRegNumber("OLD", "NEW"). Both numbers are required.');
   var acct = findUserByReg_(oldIn);
   var stu = findWhere_('Students', function (r) { return normReg_(r.regNumber) === normReg_(oldIn); });
@@ -2101,7 +2260,7 @@ var TRAINING_WIPE_TABS_ = ['Students', 'Submissions', 'SubComments', 'Meetings',
   'PresentationIntents', 'Examiners', 'Reviews', 'Concerns', 'CheckIns', 'Notifications', 'AuditLog'];
 var TRAINING_CALENDAR_TABS_ = ['Announcements', 'Deadlines', 'Seminars'];
 var TRAINING_WIPE_ROLES_ = ['student', 'examiner'];
-var TRAINING_DRIVE_FOLDERS_ = ['Submissions', 'Admission Letters', 'Attachments', 'Examination Notices'];
+var TRAINING_DRIVE_FOLDERS_ = ['Submissions', 'Admission Letters', 'Attachments', 'Examination Notices', 'Passport Photographs'];   // 'Submissions' holds the numbered per-upload folders; they are cleared with it
 
 /** Drive file ids that must never be trashed: anything named in Config, Script Properties or the default logo URLs. */
 function trainingProtectedIds_() {
@@ -2388,8 +2547,8 @@ function api_removeStaff() { var a = arguments; return withScriptLock_(function 
  *  password. Shared by "Add Student" and the CSV import. Returns what is needed to email the student. */
 function createStudentAccount_(actor, payload, auditNote) {
   if (!payload) throw new Error('Missing form data.');
-  var reg = String(payload.regNumber || '').replace(/\s+/g, '');
-  if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531, 26/408PHYX/040, Phd/sci/16586006 or 1750806006.');
+  var reg = cleanRegInput_(payload.regNumber);
+  if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531, 26/408PHYX/040 (capital letters; the first two digits are the admission year and cannot be in the future), Phd/sci/16586006 or 1750806006.');
   payload.surname = toUpperName_(payload.surname);
   payload.firstName = toTitleCase_(payload.firstName);
   payload.otherNames = toTitleCase_(payload.otherNames);
@@ -2399,7 +2558,7 @@ function createStudentAccount_(actor, payload, auditNote) {
   var email = cleanEmail_(payload.email);
   if (!validateEmail_(email)) throw new Error('Invalid email address. Use the form name@example.com.');
   var phone = validatePhone_(payload.phoneNumber);
-  if (!phone) throw new Error('Invalid phone number. Use a Nigerian mobile number such as 08012345678.');
+  if (!phone) throw new Error('Invalid phone number. Use 11 digits starting with 0 (e.g. 08123456789), or the +234 form (e.g. +234 8123 456 789).');
   if (CFG.PROGRAMMES.indexOf(payload.programme) === -1) throw new Error('Invalid programme.');
   if (CFG.SPECIALISATIONS.indexOf(payload.specialisation) === -1) throw new Error('Invalid specialisation.');
   if (['Male', 'Female'].indexOf(payload.gender) === -1) throw new Error('Gender must be Male or Female.');
@@ -2866,7 +3025,7 @@ function importStaff_locked_() {
       var key = String(u.regNumber).trim();
       if (presentAca[key] === true) return;
       var r = String(u.role || '');
-      if (r === 'SuperAdmin') return;   // never deactivate a Super Admin (e.g. ACA8888): it is not listed in the Staff tab
+      if (r === 'SuperAdmin') return;   // never deactivate a Super Admin: it is not listed in the Staff tab
       if (r === 'PG_Coordinator' || r === 'HoD') {
         warnOnce('Login ' + key + ' (' + r + ') is ' + (presentAca[key] === false ? 'inactive in the Staff tab' : 'missing from the Staff tab') +
           ' but was NOT deactivated (protected role \u2014 review it manually).');
@@ -2925,7 +3084,7 @@ function api_assignSupervisors() {
 /** 10b exists only for PhD students; everyone else skips it between the first internal exam and stage 11. */
 function assertStageAllowedForStudent_(student, stage) {
   if (stage === S_.SECOND_INTERNAL && !isPhd_(student.programme))
-    throw new Error('Internal Examination II is a PhD-only stage. ' + (student.fullName || student.regNumber) + ' is on ' + (student.programme || 'a non-PhD') + ' programme.');
+    throw new Error('The second internal examination is a PhD-only stage. ' + (student.fullName || student.regNumber) + ' is on ' + (student.programme || 'a non-PhD') + ' programme.');
 }
 function api_updateStudentStage_locked_(token, regNumber, stage) {
   var user = requireUser_(token);
@@ -3656,12 +3815,12 @@ function api_publicAnnouncements() {
 
 /** Status check on the public Register page: Pending / Approved / Rejected / Not Found. */
 function api_checkRegistrationStatus(regNumber) {
-  var reg = String(regNumber || '').replace(/\s+/g, '');
-  if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531, 26/408PHYX/040, Phd/sci/16586006 or 1750806006.');
+  var reg = cleanRegInput_(regNumber);
+  if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531, 26/408PHYX/040 (capital letters; the first two digits are the admission year and cannot be in the future), Phd/sci/16586006 or 1750806006.');
   var user = findWhere_('Users', function (u) { return normReg_(u.regNumber) === normReg_(reg) && u.role === 'Student'; });
   if (!user) return { status: 'Not Found', message: 'No registration found with that number. Please check and try again.' };
   var st = String(user.status || 'Pending');
-  var msg = st === 'Approved' ? 'Your registration has been approved. You can now log in.'
+  var msg = st === 'Approved' ? 'Your registration has been approved. Your one-time password was emailed to you. Check your Spam/Junk folder, or use Forgot password on the sign-in page.'
     : st === 'Rejected' ? 'Your registration was rejected. Please contact the PG Coordinator.'
     : 'Your registration is awaiting PG Coordinator approval.';
   return { status: st, message: msg };
@@ -4210,7 +4369,7 @@ function api_resetWithCode(regNumber, code, newPassword) {
   if (!stored || tries >= 5) throw new Error('Code expired or too many attempts. Request a new code.');
   if (!safeEqual_(hashCode_(String(code || '').trim() + ':' + key), String(stored))) { cache.put('rsta_' + key, String(tries + 1), 1800); throw new Error('Incorrect code.'); }
   var u = findUserByReg_(key);
-  if (!u) throw new Error('Account not found.');
+  if (!u || !toBool_(u.active) || String(u.status) !== 'Approved') throw new Error('Account not found.');
   assertStrongPassword_(newPassword, u.regNumber);
   var salt = makeSalt_();
   updateRow_('Users', u.id, { passwordHash: hashPassword_(newPassword, salt), salt: salt, firstLogin: false });
@@ -4272,10 +4431,12 @@ function renameSubmissionFiles_(regNumber, type, urls) {
 }
 /* ---- submission file upload ---- */
 var SUB_MIME_BY_EXT = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
-function submissionsFolder_() {
-  var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID));
-  var it = root.getFoldersByName('Submissions');
-  return it.hasNext() ? it.next() : root.createFolder('Submissions');
+/** The folder for one kind of upload (see DRIVE_FOLDER_PLAN_): by document type, or by examiner type for examiner reports.
+ *  Falls back to the general "Submissions" folder, then the root folder, so an upload is never lost over a folder problem. */
+function submissionsFolder_(type, examinerType) {
+  try { return driveFolder_(driveKeyForUpload_(type, examinerType)); }
+  catch (e) { Logger.log('submissionsFolder_ ' + type + '/' + examinerType + ': ' + e); }
+  return driveFolderOrRoot_('SUBMISSIONS');
 }
 /* Every uploaded file is private in Drive. Named people are granted access on demand
  * (accessPlanFor_ at upload time, grantFileRole_ when someone opens it through the API).
@@ -4292,7 +4453,7 @@ function api_uploadSubmissionFile(token, p) {
   assertMagicBytes_(ok[mime], bytes);
   assertOfficePackage_(ok[mime], bytes);
   if (bytes.length > CFG.SMALL_UPLOAD_BYTES) throw new Error('Use the large-file upload for files over 10 MB.');
-  var file = submissionsFolder_().createFile(Utilities.newBlob(bytes, mime, String(user.regNumber).replace(/[\/\\]/g, '-') + '_' + typeSlug_(p && p.type) + '_' + new Date().getTime() + '.' + ok[mime]));
+  var file = submissionsFolder_(p && p.type).createFile(Utilities.newBlob(bytes, mime, String(user.regNumber).replace(/[\/\\]/g, '-') + '_' + typeSlug_(p && p.type) + '_' + new Date().getTime() + '.' + ok[mime]));
   lockFile_(file);
   return { url: file.getUrl(), id: file.getId(), name: file.getName() };
 }
@@ -4313,7 +4474,7 @@ function api_uploadExaminerReport(token, p) {
   assertMagicBytes_(ok[mime], bytes);
   assertOfficePackage_(ok[mime], bytes);
   if (bytes.length > CFG.SMALL_UPLOAD_BYTES) throw new Error('The report must be under 10 MB. Split large reports across the assessment comments field, or contact the PG Coordinator.');
-  var file = submissionsFolder_().createFile(Utilities.newBlob(bytes, mime, String(ex.regNumber).replace(/[\/\\]/g, '-') + '_' + typeSlug_(ex.type) + '_report_' + new Date().getTime() + '.' + ok[mime]));
+  var file = submissionsFolder_(null, ex.type).createFile(Utilities.newBlob(bytes, mime, String(ex.regNumber).replace(/[\/\\]/g, '-') + '_' + typeSlug_(ex.type) + '_report_' + new Date().getTime() + '.' + ok[mime]));
   lockFile_(file);
   var url = file.getUrl();
   updateRow_('Examiners', ex.id, { reportUrl: url });
@@ -4332,7 +4493,7 @@ function api_beginLargeUpload(token, meta) {
   var size = Number(meta && meta.size);
   if (!size || size < 1) throw new Error('That file is empty.');
   if (size > CFG.SUBMISSION_MAX_BYTES) throw new Error('File must be 50 MB or smaller.');
-  var folder = submissionsFolder_();
+  var folder = submissionsFolder_(meta && meta.type);
   var fname = String(user.regNumber).replace(/[\/\\]/g, '-') + '_' + typeSlug_(meta && meta.type) + '_' + new Date().getTime() + '.' + ext;
   var resp = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id', {
     method: 'post', contentType: 'application/json; charset=UTF-8', muteHttpExceptions: true,
@@ -4480,7 +4641,7 @@ function api_uploadInquiryFile(token, p) {
   var ok = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' };
   if (!ok[mime]) throw new Error('Attach a PDF, Word document, PNG or JPG.');
   var bytes = Utilities.base64Decode(parts[1] || ''); if (bytes.length > 5 * 1024 * 1024) throw new Error('Attachment must be under 5 MB.');
-  var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Attachments'), folder = it.hasNext() ? it.next() : root.createFolder('Attachments');
+  var folder = driveFolderOrRoot_('ATTACHMENTS');
   var file = folder.createFile(Utilities.newBlob(bytes, mime, 'inq_' + new Date().getTime() + '.' + ok[mime]));
   lockFile_(file);
   return { url: file.getUrl(), id: file.getId() };
@@ -4705,7 +4866,7 @@ function api_requestStageChange_l(token, stage, note) {
   var user = requireUser_(token); assertRole_(user, ['Student'], 'Only students can request a stage update.');
   stage = String(stage || '');
   if (CFG.JOURNEY_STAGES.indexOf(stage) === -1) throw new Error('Choose a valid stage.');
-  if (stage === S_.SECOND_INTERNAL) throw new Error('Internal Examination II is recorded by the PG Coordinator after the examination; it cannot be requested here.');
+  if (stage === S_.SECOND_INTERNAL) throw new Error('The second internal examination is recorded by the PG Coordinator after the examination; it cannot be requested here.');
   var stu = studentByReg_(user.regNumber);
   if (!stu) throw new Error('Student profile not found.');
   if (stu.currentStage === stage) throw new Error('That is already your current stage.');
@@ -5121,7 +5282,7 @@ function api_uploadMessageFile(token, p, reg) {
   var ok = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' };
   if (!ok[mime]) throw new Error('Attach a PDF, Word document, PNG or JPG.');
   var bytes = Utilities.base64Decode(parts[1]); if (bytes.length > 5 * 1024 * 1024) throw new Error('Attachment must be under 5 MB.');
-  var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Attachments'), folder = it.hasNext() ? it.next() : root.createFolder('Attachments');
+  var folder = driveFolderOrRoot_('ATTACHMENTS');
   var file = folder.createFile(Utilities.newBlob(bytes, mime, 'msg_' + new Date().getTime() + '.' + ok[mime]));
   lockFile_(file);
   return { url: file.getUrl(), id: file.getId() };
@@ -5261,7 +5422,7 @@ function sendDailyDigest() {
 }
 var BACKUP_KEEP = 30;   // nightly copies kept in the Backups folder
 function backupCore_() {
-  var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Backups'), folder = it.hasNext() ? it.next() : root.createFolder('Backups');
+  var folder = driveFolderOrRoot_('BACKUPS');
   var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HHmmss');
   var copy = DriveApp.getFileById(getSpreadsheet_().getId()).makeCopy('PG Backup ' + stamp, folder);
   try {
@@ -5746,6 +5907,13 @@ function auditPublicFiles(dryRun) {
   var folders = [root], t0 = Date.now(), out = [];
   ['Submissions', 'Admission Letters', 'Attachments'].forEach(function (n) {
     var it = root.getFoldersByName(n); if (it.hasNext()) folders.push(it.next());
+  });
+  DRIVE_FOLDER_PLAN_.forEach(function (item) {   // every per-upload folder recorded in Config (passports, each journey document ...)
+    try {
+      var fid = getSetting_('FOLDER_' + item.key, ''); if (!fid) return;
+      var fo = DriveApp.getFolderById(fid);
+      if (folders.every(function (x) { return x.getId() !== fo.getId(); })) folders.push(fo);
+    } catch (e) { Logger.log('auditPublicFiles folder ' + item.key + ': ' + e); }
   });
   folders.forEach(function (folder) {
     var files = folder.getFiles();
@@ -6644,6 +6812,8 @@ function onOpen() {
     if (!eff || eff !== act) return;
     SpreadsheetApp.getUi().createMenu('Postgraduate Journey')
       .addItem('Set up tabs & seed', 'setUp')
+      .addItem('Create Drive folders for uploads', 'setupDriveFolders')
+      .addItem('Check Drive folders (report only)', 'checkDriveFolders')
       .addItem('Install scheduled jobs (reminders, digests, backup)', 'installAllTriggers')
       .addToUi();
   } catch (e) { /* not container-bound */ }
@@ -6651,11 +6821,12 @@ function onOpen() {
 
 /* =========================== 16. EXAMINATION WORKFLOW (v2) =========================== */
 /* Journey: 4 Title Approval -> 5 Proposal -> 6 Defence Readiness -> 7 Proposal Defence -> 8 Progress Report Intent ->
- * 9 Internal Examiner Assignment -> 10 Progress Presentation/Internal Examination I (PPTX) ->
- * 10b Internal Examination II (PhD only; the PG Coordinator records the outcome) ->
- * 11 Final Examination Intent -> 12 Thesis Submission -> 13 External Examiner Assignment -> 14 External Examination ->
+ * 9 Internal Examiner Assignment -> 10 Progress Presentation (PPTX, the first internal examination) ->
+ * 10b Second Internal Examination (PhD only; the PG Coordinator records the outcome) ->
+ * 11 Final Examination Intent -> 12 Thesis Submission -> 13 External Examiner Assignment -> 14 Examiners Comments ->
  * 15 Final Compliance -> 16 Signed Copies and Completion.
- * migrateJourneyStagesV2() remains the run-once migration from the older 15-stage list. */
+ * Existing students keep their stored stage labels: 10b was inserted without renumbering 11-16, so no data migration
+ * is required for this change. migrateJourneyStagesV2() remains the run-once migration from the older 15-stage list. */
 
 var RESTRICTED_TYPES = ['Proposal Defence Presentation (PPTX)', 'Progress Presentation (PPTX)', 'Progress Presentation (PPTX) (Second Internal)'];  // student + PG Coordinator + HoD + Submission Inspector only
 var PAYMENT_TYPES = ['Receipt of Fees', 'Evidence of Payment for Examination'];   // student + PG Coordinator + HoD only
@@ -6780,7 +6951,7 @@ function stageEntered_(stu, stage) {
   } else if (stage === S_.DEFENCE) {
     notifyCoordinators_('Proposal defence \u2014 ' + stu.regNumber, who + ' is cleared for the proposal defence. Record the outcome after the defence.', who + ' is cleared for the proposal defence. Record the outcome in Overview & Reports \u2192 Pipeline.');
   } else if (stage === S_.SECOND_INTERNAL) {
-    notifyCoordinators_('Internal Examination II \u2014 ' + stu.regNumber, who + ' has completed the first internal examination and is waiting for the PhD-only Internal Examination II. Record the outcome in the coordinator dashboard.', who + ' is waiting for the PhD-only Internal Examination II. Record the outcome in the PG Coordinator dashboard.');
+    notifyCoordinators_('Second internal examination \u2014 ' + stu.regNumber, who + ' has completed the first internal examination and is waiting for the PhD-only second internal examination. Record the outcome in the coordinator dashboard.', who + ' is waiting for the PhD-only second internal examination. Record the outcome in the PG Coordinator dashboard.');
   }
 }
 
@@ -6872,21 +7043,21 @@ function api_recordProposalDefence_l(token, reg, outcome, note) {
 }
 function api_recordProposalDefence() { return L_(api_recordProposalDefence_l, arguments); }
 
-/* ---- Internal Examination II outcome (PhD only, PG Coordinator) ----
- *  Stage 10b is a PhD-only gate between Progress Presentation/Internal Examination I (stage 10) and stage 11.
+/* ---- Second internal examination outcome (PhD only, PG Coordinator) ----
+ *  Stage 10b is a PhD-only gate between the shared first internal examination (stage 10) and stage 11.
  *  MSc/MPhil students never enter it: approving their progress presentation moves them straight to stage 11. */
 function api_recordSecondInternal_l(token, reg, outcome, note) {
-  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can record the Internal Examination II outcome.');
+  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can record the second internal examination outcome.');
   if (['Passed', 'Passed with corrections', 'Not passed'].indexOf(outcome) === -1) throw new Error('Choose an outcome.');
   var stu = studentByReg_(reg); if (!stu) throw new Error('Student not found.');
-  if (!isPhd_(stu.programme)) throw new Error('Internal Examination II is a PhD-only stage.');
-  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at Internal Examination II.');
+  if (!isPhd_(stu.programme)) throw new Error('The second internal examination is a PhD-only stage.');
+  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at the Second Internal Examination stage.');
   note = String(note || '').trim().slice(0, 800);
   if (outcome !== 'Passed' && !note) throw new Error('Add a note (corrections required, or reason).');
-  var moved = outcome === 'Not passed' ? '' : advanceStageTo_(stu, S_.FINAL_INTENT, 'Internal Examination II ' + outcome.toLowerCase());
+  var moved = outcome === 'Not passed' ? '' : advanceStageTo_(stu, S_.FINAL_INTENT, 'second internal examination ' + outcome.toLowerCase());
   logAudit_(user.id, user.regNumber, 'SECOND_INTERNAL', reg, outcome + (note ? ': ' + note : ''));
-  notifyStudent_(reg, 'Internal Examination II outcome: ' + outcome, 'The PG Coordinator recorded your PhD Internal Examination II as \u201C' + outcome + '\u201D.' + (note ? '\n' + note : '') + (moved ? '\nYour stage is now: ' + moved + '.' : '\nYou remain at Internal Examination II.'));
-  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Internal Examination II ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
+  notifyStudent_(reg, 'Second internal examination outcome: ' + outcome, 'The PG Coordinator recorded your PhD second internal examination as \u201C' + outcome + '\u201D.' + (note ? '\n' + note : '') + (moved ? '\nYour stage is now: ' + moved + '.' : '\nYou remain at the Second Internal Examination stage.'));
+  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Second internal examination ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
   return { ok: true, stage: moved || stu.currentStage };
 }
 function api_recordSecondInternal() { return L_(api_recordSecondInternal_l, arguments); }
@@ -7052,10 +7223,10 @@ function deactivateExaminerIfUnused_(loginId) {
 /** PhD second internal cycle: a separate assessment row (no new sheet columns) for the same Internal Examiner.
  *  It is created only at stage 10b and only after a first Internal Examiner assignment exists. */
 function api_assignSecondInternal_l(token, reg) {
-  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can open Internal Examination II.');
+  var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can open the second internal examination.');
   var stu = studentByReg_(reg); if (!stu) throw new Error('Student not found.');
-  if (!isPhd_(stu.programme)) throw new Error('Internal Examination II is PhD-only.');
-  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at Internal Examination II.');
+  if (!isPhd_(stu.programme)) throw new Error('The second internal examination is PhD-only.');
+  if (String(stu.currentStage) !== S_.SECOND_INTERNAL) throw new Error('This student is not at the second internal examination stage.');
   var existing = findWhere_('Examiners', function (x) { return String(x.regNumber) === String(stu.regNumber) && x.type === 'Internal (Second)' && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; });
   if (existing) throw new Error('The second internal examiner has already been assigned.');
   var first = readTable_('Examiners').filter(function (x) { return String(x.regNumber) === String(stu.regNumber) && x.type === 'Internal' && ['Declined', 'Revoked'].indexOf(String(x.status)) === -1; })
@@ -7068,8 +7239,8 @@ function api_assignSecondInternal_l(token, reg) {
     recommendation: '', scores: '', reportUrl: '', submittedAt: '', profileUrl: ''
   });
   examinerEachFileId_(r, function (id) { try { grantFileRole_(id, first.email, 'reader'); } catch (e) { Logger.log('second examiner share: ' + e); } });
-  notifyStudent_(stu.regNumber, 'Second internal examiner assigned', 'An Internal Examiner has been assigned for your PhD Internal Examination II. Examiner identities are kept confidential. The second progress report is now available on your examiner\u2019s dashboard.');
-  addNote_(first.examLogin, 'You have been assigned a PhD Internal Examination II for ' + fullNameOf_(stu) + ' (' + stu.regNumber + '). Open My Assignments to submit your assessment.');
+  notifyStudent_(stu.regNumber, 'Second internal examiner assigned', 'An Internal Examiner has been assigned for your PhD second internal examination. Examiner identities are kept confidential. The second progress report is now available on your examiner\u2019s dashboard.');
+  addNote_(first.examLogin, 'You have been assigned a PhD second internal examination for ' + fullNameOf_(stu) + ' (' + stu.regNumber + '). Open My Assignments to submit your assessment.');
   logAudit_(user.id, user.regNumber, 'ASSIGN_SECOND_INTERNAL', stu.regNumber, 'Cycle 2 opened from first internal assignment ' + first.id);
   return { id: r.id, loginId: first.examLogin };
 }
@@ -7240,7 +7411,7 @@ function api_getPipeline(token) {
       else if (s.currentStage === S_.EXT_EXAM && !myEx.some(function (e) { return e.type === 'External'; })) waiting = 'Coordinator / HoD: assign External Examiner';
       else if (s.currentStage === S_.EXT_EXAM) waiting = 'External Examiner (assessment)';
       else if (s.currentStage === S_.DEFENCE) waiting = 'PG Coordinator: record defence outcome';
-      else if (s.currentStage === S_.SECOND_INTERNAL) waiting = myEx.some(function (e) { return e.type === 'Internal (Second)'; }) ? 'PG Coordinator: record Internal Examination II outcome' : 'PG Coordinator: assign second internal examiner';
+      else if (s.currentStage === S_.SECOND_INTERNAL) waiting = myEx.some(function (e) { return e.type === 'Internal (Second)'; }) ? 'PG Coordinator: record second internal examination outcome' : 'PG Coordinator: assign second internal examiner';
       else if (s.currentStage === S_.PRESENT) waiting = 'Student: upload progress presentation (PPTX)';
       else if (s.currentStage === S_.COMMENTS) waiting = 'Student: comments file, response and final correction';
       else waiting = 'Student';
@@ -7256,8 +7427,8 @@ function api_getPipeline(token) {
 /* ---- one-off maintenance (run from the Apps Script editor) ---- */
 /** Maps every student's stage from the old 15-stage list to the new 16-stage list. Safe to run twice. */
 var OLD_STAGE_MAP_ = { '4 - Proposal Submission': '5 - Proposal Submission', '5 - Proposal Defence Form': '6 - Defence Readiness', '6 - Proposal Defence': '7 - Proposal Defence',
-  '7 - Progression Clearance': '8 - Progress Report Intent', '8 - Progress Report': '8 - Progress Report Intent', '9 - Compliance Inspection': '10 - Progress Presentation/Internal Examination I',
-  '10 - Plagiarism Check': '11 - Final Examination Intent', '11 - External Defence': '12 - Thesis Submission', '12 - Examiners Comments': '14 - External Examination',
+  '7 - Progression Clearance': '8 - Progress Report Intent', '8 - Progress Report': '8 - Progress Report Intent', '9 - Compliance Inspection': '10 - Progress Presentation',
+  '10 - Plagiarism Check': '11 - Final Examination Intent', '11 - External Defence': '12 - Thesis Submission', '12 - Examiners Comments': '14 - Examiners Comments',
   '13 - Final Compliance': '15 - Final Compliance', '14 - Signed Copies': '16 - Signed Copies and Completion', '15 - Completion': '16 - Signed Copies and Completion' };
 /** Turns an old 15-stage name into its 16-stage equivalent; new-list names pass through unchanged. */
 function normStage_(name) { name = String(name || '').trim(); return CFG.JOURNEY_STAGES.indexOf(name) !== -1 ? name : (OLD_STAGE_MAP_[name] || name); }
@@ -7780,7 +7951,7 @@ function api_generateExamNotice_l(token, p) {
   var out = noticeDocxBlob_(d, fileName);
   if (auto) noticeNextRef_(true);   // the number is used only once the letter has been built
   try {   // keep a private archive copy for the HoD and PG Coordinator(s)
-    var root = DriveApp.getFolderById(getSetting_('PASSPORT_FOLDER_ID', DEFAULT_PASSPORT_FOLDER_ID)), it = root.getFoldersByName('Examination Notices'), folder = it.hasNext() ? it.next() : root.createFolder('Examination Notices');
+    var folder = driveFolderOrRoot_('EXAM_NOTICES');
     var file = folder.createFile(out.blob); lockFile_(file);
     readTable_('Users').forEach(function (u) { if ((u.role === 'PG_Coordinator' || u.role === 'HoD') && toBool_(u.active) && String(u.status) === 'Approved') grantFileRole_(file.getId(), u.email, 'reader'); });
   } catch (e) { Logger.log('notice archive: ' + e); }

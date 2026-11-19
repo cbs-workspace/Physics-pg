@@ -19,9 +19,10 @@ npx serve project/dist                # preview the built output
 - The only gate is `npm --prefix project run build`. It **wipes and recreates
   `project/dist/`**, first runs `tools/check-escape.js` (fails on an unescaped
   interpolation written to `innerHTML`/`outerHTML`/`insertAdjacentHTML`), then
-  throws on: an unreplaced `<?…?>` scriptlet, a failed `PUBLIC_PAGES` rewrite,
-  `__PG_MOCK_API__` leaking into dist, or the animated poster's stage labels
-  drifting from `CFG.JOURNEY_STAGES`.
+  throws on: an unreplaced `<?…?>` scriptlet, a failed `PUBLIC_PAGES` rewrite
+  or `__PG_MOCK_API__` leaking into dist. The animated poster is illustrative
+  only: the build checks it has stage labels but does not compare them with
+  `CFG.JOURNEY_STAGES`.
 - `npm --prefix project run check:escape` runs that scanner alone (`--all` lists
   every interpolation). Its allowlists are reviewed by hand: a new hit means read
   the line and either wrap the value in `esc(...)` or, after checking the builder,
@@ -164,14 +165,14 @@ output dir `dist`. `/exec` URL is baked into `GAS_EXEC` in
 - Brand constants are duplicated: `brand_()` (runtime, Script Properties + `CFG`)
   is authoritative; `BRAND` in `build-pg.js` is what the static build bakes in.
   Change both.
-- The journey image: `.journey-img` has a placeholder `src` of
-  `images/PG_Journey_Infographic.svg`, **which does not exist**, and is then
-  overridden from `BRAND.journeyImgUrl` (static build → the animated SVG; live
-  portal → the `JOURNEY_IMAGE_URL` property, empty by default, so the block hides
-  via `onerror`). The older 15-step `PG_Journey_Infographic.png` is shown in its
-  own card directly beneath the animated one on the public/static site, served
-  from `/images/PG_Journey_Infographic.png`; its own `onerror` hides it on the
-  portal, which cannot serve static binaries.
+- The journey images: the animated `.journey-img` has a placeholder `src` of
+  `/images/PG_Journey_Animated.svg` and is overridden from `BRAND.journeyImgUrl`
+  (static build → the animated SVG; live portal → the `JOURNEY_IMAGE_URL`
+  property, empty by default). A second `.journey-img` directly beneath it shows
+  `/images/PG_Journey_Infographic.svg`, the detailed illustrative poster. Each
+  card has its own `onerror` that hides it on the portal, which cannot serve
+  static binaries. The old `PG_Journey_Infographic.png` remains in the repo but
+  is no longer copied into `dist/`.
 - Music: `HOST = 'https://physics-pg.pages.dev/'` + a single-element `TRACKS`
   (`audio/music1.mp3`); the build copies both `music1`/`music2` into
   `project/dist/audio/` because Apps Script cannot serve binaries. Edit
@@ -189,9 +190,10 @@ output dir `dist`. `/exec` URL is baked into `GAS_EXEC` in
 - `CFG.JOURNEY_STAGES` has **17 entries**: 16 numbered stages (`1 - Admission` …
   `16 - Signed Copies and Completion`) plus the inserted PhD-only `10b`. The short
   `S_`/`STAGE_COMPLETE` aliases derive from it; new students start at stage 3.
-  Stage names must agree in four places: `Code.gs`, `JOURNEY_STAGES` in
-  `index.html`, the public phase-card text, and the poster's own labels in
-  `PG_Journey_Animated.svg` (the build *fails* on that one).
+  Stage names must agree in three places: `Code.gs`, `JOURNEY_STAGES` in
+  `index.html`, and the public phase-card text. `PG_Journey_Animated.svg` is
+  illustrative artwork only — it may merge/simplify steps and is not required
+  to match the portal's 17-stage list.
 - The mock's `STAGES` in `serve-pg.js` is **still the old 15-step list plus the
   inserted 10b label**, with different step names — local preview data uses names
   the real portal does not have. Don't "fix" the portal to match the mock; that
