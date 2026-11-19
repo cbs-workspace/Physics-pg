@@ -361,7 +361,7 @@ var REGNUM_KEYED_ = { Users: 1, Students: 1 };
 /** Sheet tabs and their column order (fields). Order is authoritative. */
 var HEADERS = {
   Users: ['regNumber', 'email', 'passwordHash', 'salt', 'role', 'fullName', 'firstLogin', 'active', 'status', 'createdAt', 'emailPref'],
-  Students: ['regNumber', 'surname', 'firstName', 'otherNames', 'gender', 'phoneNumber', 'email', 'faculty', 'department', 'programme', 'specialisation', 'passportFileId', 'passportUrl', 'mainSupervisorId', 'coSupervisorId', 'currentStage', 'yearOfAdmission', 'createdAt', 'updatedAt', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt', 'admissionLetterUrl', 'lastNudgeAt', 'File - Research Plan Form', 'File - Seminar Presentation', 'File - Research Proposal', 'File - Progress Report', 'File - Final Thesis or Dissertation', 'File - Internal Examiner Observations', 'File - Final Correction', 'File - Response to External Examiner', 'File - Response to Internal Examiner', 'File - Signed Proposal Defence Form', 'File - External Examiner Comments', 'Latest Upload Date', 'Latest Upload Type'],
+  Students: ['regNumber', 'surname', 'firstName', 'otherNames', 'gender', 'phoneNumber', 'email', 'faculty', 'department', 'programme', 'specialisation', 'passportFileId', 'passportUrl', 'mainSupervisorId', 'coSupervisorId', 'coSupervisor2Id', 'currentStage', 'yearOfAdmission', 'createdAt', 'updatedAt', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt', 'admissionLetterUrl', 'lastNudgeAt', 'File - Research Plan Form', 'File - Seminar Presentation', 'File - Research Proposal', 'File - Progress Report', 'File - Final Thesis or Dissertation', 'File - Internal Examiner Observations', 'File - Final Correction', 'File - Response to External Examiner', 'File - Response to Internal Examiner', 'File - Signed Proposal Defence Form', 'File - External Examiner Comments', 'Latest Upload Date', 'Latest Upload Type'],
   Staff: ['id', 'fullName', 'email', 'rank', 'specialisation', 'active', 'createdAt', 'role'],
   Submissions: ['id', 'regNumber', 'type', 'driveFileUrls', 'status', 'inspectorComments', 'supervisorNotes', 'createdBy', 'createdAt', 'updatedAt', 'reviewedBy', 'reviewedAt', 'checklist', 'endorsedBy', 'assignedTo', 'history', 'compliance', 'similarity', 'similarityUrl', 'similarityBy', 'similarityAt', 'lastRemindedAt'],
   Announcements: ['id', 'title', 'body', 'active', 'createdBy', 'createdAt', 'audience'],
@@ -376,6 +376,7 @@ var HEADERS = {
   PresentationIntents: ['id', 'regNumber', 'kind', 'preferredMonth', 'note', 'status',
     'mainStatus', 'mainBy', 'mainAt', 'mainNote',
     'coStatus', 'coBy', 'coAt', 'coNote',
+    'co2Status', 'co2By', 'co2At', 'co2Note',
     'coordinatorStatus', 'coordinatorBy', 'coordinatorAt', 'coordinatorNote',
     'stageApplied', 'history', 'createdAt', 'updatedAt', 'title'],
   Seminars: ['id', 'title', 'date', 'venue', 'presenters', 'attendees', 'createdBy', 'createdAt'],
@@ -1076,7 +1077,22 @@ function sendPortalMailNow_(opts) {
 
 /** Roles that may also be assigned as a student's Main / Co-supervisor and then act as one (PG Coordinator and HoD included). */
 var SUPERVISOR_ROLES_ = ['Staff', 'PG_Coordinator', 'HoD'];
+var SUPERVISOR_ROLE_LABELS_ = ['Main Supervisor', 'Co-Supervisor', 'Second Co-supervisor'];
 function canSupervise_(user) { return !!user && SUPERVISOR_ROLES_.indexOf(user.role) !== -1; }
+/** The third supervisor slot is PhD-only: older/non-PhD rows with a value must never use it. */
+function co2IdFor_(stu) { return stu && isPhd_(stu.programme) ? String(stu.coSupervisor2Id || '') : ''; }
+/** All assigned supervisor IDs for a student, in approval order. */
+function supervisorIdsFor_(stu) {
+  if (!stu) return [];
+  return [stu.mainSupervisorId || '', stu.coSupervisorId || '', co2IdFor_(stu)].filter(function (id, i, a) { return !!id && a.indexOf(id) === i; });
+}
+function supervisorRoleFor_(stu, staffId) {
+  if (!stu || !staffId) return '';
+  if (String(stu.mainSupervisorId) === String(staffId)) return SUPERVISOR_ROLE_LABELS_[0];
+  if (String(stu.coSupervisorId) === String(staffId)) return SUPERVISOR_ROLE_LABELS_[1];
+  if (String(co2IdFor_(stu)) === String(staffId)) return SUPERVISOR_ROLE_LABELS_[2];
+  return '';
+}
 /** True when the login supervises at least one student (always true for plain Staff, so their dashboard never disappears). */
 function supervisesAny_(u) {
   if (!u) return false;
@@ -1589,8 +1605,8 @@ function academicYearFromReg_(reg) {
   }
   return null;
 }
-/** Academic session label: admission year 2026 -> "2025/2026". */
-function sessionLabel_(year) { var y = parseInt(year, 10); return y ? (y - 1) + '/' + y : ''; }
+/** Academic session label: admission year 2024 -> "2024/2025". */
+function sessionLabel_(year) { var y = parseInt(year, 10); return y ? y + '/' + (y + 1) : ''; }
 function studentSession_(s) { return sessionLabel_(academicYearFromReg_(s.regNumber) || s.yearOfAdmission); }
 /** Supervisor name with rank. Names that already start with a title (Prof., Dr., Engr. ...) are not given a second one. */
 function supWithRank_(st) {
@@ -1719,6 +1735,7 @@ function api_register_locked_(payload) {
     admissionLetterUrl: letterInfo ? letterInfo.url : '',
     mainSupervisorId: '',
     coSupervisorId: '',
+    coSupervisor2Id: '',
     currentStage: START_STAGE_,
     yearOfAdmission: academicYearFromReg_(reg) || new Date().getFullYear(),
     createdAt: now,
@@ -2409,13 +2426,13 @@ function trainingResetStudentRows_(ss, dryRun) {
   var heads = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); });
   var col = function (name) { return heads.indexOf(name) + 1; };
   out.students = n;
-  var mainCol = col('mainSupervisorId'), coCol = col('coSupervisorId');
-  if (mainCol || coCol) {
-    var mains = mainCol ? sheet.getRange(2, mainCol, n, 1).getValues() : [], cos = coCol ? sheet.getRange(2, coCol, n, 1).getValues() : [];
-    for (var i = 0; i < n; i++) if ((mains[i] && String(mains[i][0]).trim()) || (cos[i] && String(cos[i][0]).trim())) out.withSupervisor++;
+  var mainCol = col('mainSupervisorId'), coCol = col('coSupervisorId'), co2Col = col('coSupervisor2Id');
+  if (mainCol || coCol || co2Col) {
+    var mains = mainCol ? sheet.getRange(2, mainCol, n, 1).getValues() : [], cos = coCol ? sheet.getRange(2, coCol, n, 1).getValues() : [], co2s = co2Col ? sheet.getRange(2, co2Col, n, 1).getValues() : [];
+    for (var i = 0; i < n; i++) if ((mains[i] && String(mains[i][0]).trim()) || (cos[i] && String(cos[i][0]).trim()) || (co2s[i] && String(co2s[i][0]).trim())) out.withSupervisor++;
   }
   if (dryRun) return out;
-  var blank = ['mainSupervisorId', 'coSupervisorId', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt',
+  var blank = ['mainSupervisorId', 'coSupervisorId', 'coSupervisor2Id', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt',
     'lastNudgeAt', 'Latest Upload Date', 'Latest Upload Type'];
   heads.forEach(function (h) { if (h.indexOf('File - ') === 0) blank.push(h); });
   blank.forEach(function (h) { var c = col(h); if (c) sheet.getRange(2, c, n, 1).clearContent(); });
@@ -2518,12 +2535,13 @@ function api_removeStaff_locked_(token, staffId) {
   if (!staff) throw new Error('Staff member not found.');
   if (String(staffId) === String(user.id)) throw new Error('You cannot remove your own staff record.');
   var affected = filterWhere_('Students', function (s) {
-    return String(s.mainSupervisorId) === String(staffId) || String(s.coSupervisorId) === String(staffId);
+    return String(s.mainSupervisorId) === String(staffId) || String(s.coSupervisorId) === String(staffId) || String(s.coSupervisor2Id) === String(staffId);
   });
   affected.forEach(function (s) {
     updateRow_('Students', s.id, {
       mainSupervisorId: String(s.mainSupervisorId) === String(staffId) ? '' : s.mainSupervisorId,
       coSupervisorId: String(s.coSupervisorId) === String(staffId) ? '' : s.coSupervisorId,
+      coSupervisor2Id: String(s.coSupervisor2Id) === String(staffId) ? '' : s.coSupervisor2Id,
       updatedAt: nowIso_()
     });
   });
@@ -2571,7 +2589,7 @@ function createStudentAccount_(actor, payload, auditNote) {
     regNumber: reg, surname: String(payload.surname).trim(), firstName: String(payload.firstName).trim(), otherNames: String(payload.otherNames || '').trim(),
     gender: payload.gender, phoneNumber: phone, email: email, faculty: fd.faculty, department: fd.department,
     programme: payload.programme, specialisation: payload.specialisation, passportFileId: '', passportUrl: '',
-    mainSupervisorId: '', coSupervisorId: '', currentStage: START_STAGE_, yearOfAdmission: year, createdAt: now, updatedAt: now
+    mainSupervisorId: '', coSupervisorId: '', coSupervisor2Id: '', currentStage: START_STAGE_, yearOfAdmission: year, createdAt: now, updatedAt: now
   });
   appendRow_('Users', {
     regNumber: reg, email: email, passwordHash: hashPassword_(pw, salt), salt: salt, role: 'Student',
@@ -3056,7 +3074,7 @@ function logImportSummary_(s) {
 
 /* =========================== 8. SUPERVISOR ASSIGNMENT =========================== */
 
-function api_assignSupervisors_locked_(token, regNumber, mainSupervisorId, coSupervisorId) {
+function api_assignSupervisors_locked_(token, regNumber, mainSupervisorId, coSupervisorId, secondCoSupervisorId) {
   var user = requireUser_(token);
   assertRole_(user, ['PG_Coordinator', 'HoD'], 'Only the PG Coordinator or HoD can assign supervisors.');
   if (!regNumber) throw new Error('Reg number required.');
@@ -3064,16 +3082,25 @@ function api_assignSupervisors_locked_(token, regNumber, mainSupervisorId, coSup
   if (!student) throw new Error('Student not found.');
   if (mainSupervisorId && !findById_('Staff', mainSupervisorId)) throw new Error('Main supervisor not found in Staff list.');
   if (coSupervisorId && !findById_('Staff', coSupervisorId)) throw new Error('Co-supervisor not found in Staff list.');
-  if (mainSupervisorId && String(mainSupervisorId) === String(coSupervisorId)) throw new Error('Main supervisor and co-supervisor must be different people.');
-  updateRow_('Students', student.id, { mainSupervisorId: mainSupervisorId || '', coSupervisorId: coSupervisorId || '', updatedAt: nowIso_() });
+  if (secondCoSupervisorId && !isPhd_(student.programme)) throw new Error('A second co-supervisor can only be assigned to a PhD student.');
+  if (secondCoSupervisorId && !findById_('Staff', secondCoSupervisorId)) throw new Error('Second co-supervisor not found in Staff list.');
+  var ids = [mainSupervisorId || '', coSupervisorId || '', secondCoSupervisorId || ''].filter(Boolean);
+  for (var i = 0; i < ids.length; i++) for (var j = i + 1; j < ids.length; j++) {
+    if (String(ids[i]) === String(ids[j])) throw new Error('Each supervisor role must be a different person.');
+  }
+  var co2 = isPhd_(student.programme) ? (secondCoSupervisorId || '') : '';
+  var patch = { mainSupervisorId: mainSupervisorId || '', coSupervisorId: coSupervisorId || '', coSupervisor2Id: co2, updatedAt: nowIso_() };
+  var oldIds = supervisorIdsFor_(student);
+  updateRow_('Students', student.id, patch);
   if (mainSupervisorId && stageIdx_(student.currentStage) <= stageIdx_('3 - Supervisor Allocation')) { try { advanceStageTo_(student, S_.TITLE, 'supervisors assigned'); } catch (e) { Logger.log(e); } }
   var mainName = mainSupervisorId ? (findById_('Staff', mainSupervisorId) || {}).fullName || '' : 'None';
   var coName = coSupervisorId ? (findById_('Staff', coSupervisorId) || {}).fullName || '' : 'None';
-  logAudit_(user.id, user.regNumber, 'ASSIGN_SUPERVISORS', regNumber, 'Main: ' + mainName + ', Co: ' + coName);
-  notifyStudent_(regNumber, 'Supervisors assigned', 'Main supervisor: ' + supLabel_(mainSupervisorId) + '\nCo-supervisor: ' + supLabel_(coSupervisorId));
-  notifySupervisors_(student, student.mainSupervisorId, student.coSupervisorId, mainSupervisorId, coSupervisorId);
+  var co2Name = co2 ? (findById_('Staff', co2) || {}).fullName || '' : 'None';
+  logAudit_(user.id, user.regNumber, 'ASSIGN_SUPERVISORS', regNumber, 'Main: ' + mainName + ', Co: ' + coName + ', Second Co: ' + co2Name);
+  notifyStudent_(regNumber, 'Supervisors assigned', 'Main supervisor: ' + supLabel_(mainSupervisorId) + '\nCo-supervisor: ' + supLabel_(coSupervisorId) + (co2 ? '\nSecond co-supervisor (PhD): ' + supLabel_(co2) : ''));
+  notifySupervisors_(student, student.mainSupervisorId, student.coSupervisorId, student.coSupervisor2Id, mainSupervisorId, coSupervisorId, co2);
   try { var fresh = findById_('Students', student.id); intentsResyncSupervisors_(fresh, user); } catch (e) { Logger.log('intent resync: ' + e); }
-  return { ok: true, _syncReg: String(regNumber), _oldEmails: supervisorEmails_([student.mainSupervisorId, student.coSupervisorId]) };
+  return { ok: true, _syncReg: String(regNumber), _oldEmails: supervisorEmails_(oldIds) };
 }
 function api_assignSupervisors() {
   var a = arguments, res = withScriptLock_(function () { return api_assignSupervisors_locked_.apply(null, a); }, 30000);
@@ -3111,32 +3138,37 @@ function api_bulkUpdateStage_l(token, regs, stage) {
   return { updated: ok, failed: failed };
 }
 function api_bulkUpdateStage() { return L_(api_bulkUpdateStage_l, arguments); }
-/** Assigns the chosen supervisor(s) to many students. A blank choice keeps each student's existing supervisor in that role. */
-function api_bulkAssignSupervisors_l(token, regs, mainId, coId) {
+/** Assigns the chosen supervisor(s) to many students. A blank choice keeps each student's existing supervisor in that role.
+ *  The second co-supervisor is PhD-only: non-PhD students are skipped for that slot with a warning. */
+function api_bulkAssignSupervisors_l(token, regs, mainId, coId, secondCoSupervisorId) {
   var user = requireUser_(token); assertRole_(user, ['PG_Coordinator', 'HoD'], 'Only the PG Coordinator or HoD can assign supervisors.');
   regs = (regs || []).map(String).slice(0, 100);
   if (!regs.length) throw new Error('Select at least one student.');
-  if (!mainId && !coId) throw new Error('Choose at least one supervisor.');
-  var ok = [], failed = [], sync = [], names = {};
+  if (!mainId && !coId && !secondCoSupervisorId) throw new Error('Choose at least one supervisor.');
+  var ok = [], failed = [], warnings = [], sync = [], names = {};
+  var co2Regs = [];
   BULK_QUIET_ = true;
   try {
     regs.forEach(function (r) {
       try {
         var stu = studentByReg_(r);
         if (!stu) throw new Error('Student not found.');
-        var res = api_assignSupervisors_locked_(token, r, mainId || stu.mainSupervisorId || '', coId || stu.coSupervisorId || '');
+        var phd = isPhd_(stu.programme);
+        if (secondCoSupervisorId && !phd) warnings.push({ regNumber: r, error: 'Second co-supervisor is PhD-only; skipped for ' + (stu.programme || 'this programme') + '.' });
+        var res = api_assignSupervisors_locked_(token, r, mainId || stu.mainSupervisorId || '', coId || stu.coSupervisorId || '', phd ? secondCoSupervisorId || '' : '');
         ok.push(r); sync.push({ reg: res._syncReg, old: res._oldEmails }); names[r] = fullNameOf_(stu);
+        if (phd && secondCoSupervisorId) co2Regs.push(r);
       } catch (e) { failed.push({ regNumber: r, error: String((e && e.message) || e) }); }
     });
   } finally { BULK_QUIET_ = false; }
-  [[mainId, 'Main Supervisor'], [coId, 'Co-Supervisor']].forEach(function (p) {
-    if (!p[0] || !ok.length) return;
+  [[mainId, SUPERVISOR_ROLE_LABELS_[0], ok], [coId, SUPERVISOR_ROLE_LABELS_[1], ok], [secondCoSupervisorId, SUPERVISOR_ROLE_LABELS_[2], co2Regs]].forEach(function (p) {
+    if (!p[0] || !p[2].length) return;
     var st = findById_('Staff', p[0]), su = staffUserFor_(p[0]);
-    if (su) addNote_(su.regNumber, 'Assigned as ' + p[1] + ' to ' + ok.length + ' student(s).');
-    if (st && EMAIL_RE.test(String(st.email || ''))) { try { sendPortalMail_({ to: st.email, subject: 'You were assigned ' + ok.length + ' student(s) as ' + p[1], body: 'Dear ' + st.fullName + ',\n\nYou were assigned as ' + p[1] + ' to:\n\n' + ok.map(function (r) { return '- ' + names[r] + ' (' + r + ')'; }).join('\n') + '\n\nOpen My Students in the portal for details.' }); } catch (e) {} }
+    if (su) addNote_(su.regNumber, 'Assigned as ' + p[1] + ' to ' + p[2].length + ' student(s).');
+    if (st && EMAIL_RE.test(String(st.email || ''))) { try { sendPortalMail_({ to: st.email, subject: 'You were assigned ' + p[2].length + ' student(s) as ' + p[1], body: 'Dear ' + st.fullName + ',\n\nYou were assigned as ' + p[1] + ' to:\n\n' + p[2].map(function (r) { return '- ' + names[r] + ' (' + r + ')'; }).join('\n') + '\n\nOpen My Students in the portal for details.' }); } catch (e) {} }
   });
   logAudit_(user.id, user.regNumber, 'BULK_ASSIGN', 'Students', ok.length + ' students');
-  return { updated: ok.length, failed: failed, _sync: sync };
+  return { updated: ok.length, failed: failed, warnings: warnings, _sync: sync };
 }
 function api_bulkAssignSupervisors() {
   var a = arguments, res = L_(api_bulkAssignSupervisors_l, a), t0 = Date.now();
@@ -3179,6 +3211,7 @@ function api_getStudentDashboardBase_(token) {
   if (!student) throw new Error('Student profile not found.');
   var mainSup = student.mainSupervisorId ? findById_('Staff', student.mainSupervisorId) : null;
   var coSup = student.coSupervisorId ? findById_('Staff', student.coSupervisorId) : null;
+  var coSup2 = co2IdFor_(student) ? findById_('Staff', co2IdFor_(student)) : null;
   var subs = filterWhere_('Submissions', function (s) { return String(s.regNumber) === String(user.regNumber); });
   subs.sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
   var anns = filterWhere_('Announcements', function (a) { return toBool_(a.active) && annVisibleTo_(a, 'Student'); });
@@ -3193,7 +3226,8 @@ function api_getStudentDashboardBase_(token) {
       session: studentSession_(student), thesisTitle: student.thesisTitle || '', titleStatus: titleState_(student).status,
       titleOpen: titleState_(student).open, titleLocked: titleState_(student).locked,
       mainSupervisor: mainSup ? { id: mainSup.id, fullName: mainSup.fullName, email: mainSup.email, rank: mainSup.rank } : null,
-      coSupervisor: coSup ? { id: coSup.id, fullName: coSup.fullName, email: coSup.email, rank: coSup.rank } : null
+      coSupervisor: coSup ? { id: coSup.id, fullName: coSup.fullName, email: coSup.email, rank: coSup.rank } : null,
+      secondCoSupervisor: coSup2 ? { id: coSup2.id, fullName: coSup2.fullName, email: coSup2.email, rank: coSup2.rank } : null
     },
     submissions: subs.map(function (s) { return { id: s.id, regNumber: s.regNumber, type: s.type, status: s.status, inspectorComments: s.inspectorComments, supervisorNotes: s.supervisorNotes, createdAt: s.createdAt }; }),
     announcements: anns.slice(0, 10).map(annItem_),
@@ -3521,13 +3555,14 @@ function api_getCoordinatorDashboard(token) {
   var allStudents = students.map(function (s) {
     var main = s.mainSupervisorId ? findById_('Staff', s.mainSupervisorId) : null;
     var co = s.coSupervisorId ? findById_('Staff', s.coSupervisorId) : null;
+    var co2 = co2IdFor_(s) ? findById_('Staff', co2IdFor_(s)) : null;
     var u = userByRegExact_(s.regNumber);
     return {
       regNumber: String(s.regNumber || '').trim(), fullName: fullNameOf_(s), firstName: s.firstName || '', surname: s.surname || '', programme: s.programme, specialisation: s.specialisation,
       gender: s.gender || '', yearOfAdmission: academicYearFromReg_(s.regNumber) || s.yearOfAdmission || '', email: s.email || (u && u.email) || '',
       phoneNumber: s.phoneNumber || '', faculty: normFaculty_(s.faculty), department: s.department || '',
-      passportFileId: s.passportFileId || '', admissionLetterUrl: s.admissionLetterUrl || '', mainSupervisor: main ? main.fullName : '', coSupervisor: co ? co.fullName : '',
-      mainSupervisorId: s.mainSupervisorId || '', coSupervisorId: s.coSupervisorId || '',
+      passportFileId: s.passportFileId || '', admissionLetterUrl: s.admissionLetterUrl || '', mainSupervisor: main ? main.fullName : '', coSupervisor: co ? co.fullName : '', secondCoSupervisor: co2 ? co2.fullName : '',
+      mainSupervisorId: s.mainSupervisorId || '', coSupervisorId: s.coSupervisorId || '', secondCoSupervisorId: co2IdFor_(s),
       currentStage: s.currentStage, status: u ? u.status : '',
       session: studentSession_(s), thesisTitle: s.thesisTitle || '', titleStatus: titleState_(s).status
     };
@@ -3630,12 +3665,13 @@ function api_exportData(token) {
   var students = readTable_('Students');
   var users = readTable_('Users');
   var subs = readTable_('Submissions');
-  var csv = 'RegNumber,Surname,FirstName,OtherNames,Gender,Phone,Programme,Specialisation,Session,MainSupervisor,CoSupervisor,ThesisTitle,TitleStatus,Stage,Status\n';
+  var csv = 'RegNumber,Surname,FirstName,OtherNames,Gender,Phone,Programme,Specialisation,Session,MainSupervisor,CoSupervisor,SecondCoSupervisor,ThesisTitle,TitleStatus,Stage,Status\n';
   students.forEach(function (s) {
     var u = userByRegExact_(s.regNumber) || {};
     var main = s.mainSupervisorId ? (findById_('Staff', s.mainSupervisorId) || {}).fullName || '' : '';
     var co = s.coSupervisorId ? (findById_('Staff', s.coSupervisorId) || {}).fullName || '' : '';
-    csv += [s.regNumber, s.surname, s.firstName, s.otherNames, s.gender, s.phoneNumber, s.programme, s.specialisation, studentSession_(s), main, co, s.thesisTitle || '', titleState_(s).status, s.currentStage, u.status || ''].map(function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(',') + '\n';
+    var co2 = co2IdFor_(s) ? (findById_('Staff', co2IdFor_(s)) || {}).fullName || '' : '';
+    csv += [s.regNumber, s.surname, s.firstName, s.otherNames, s.gender, s.phoneNumber, s.programme, s.specialisation, studentSession_(s), main, co, co2, s.thesisTitle || '', titleState_(s).status, s.currentStage, u.status || ''].map(function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(',') + '\n';
   });
   csv += '\n\nSubmissions:\nSubmissionID,RegNumber,Type,Status,CreatedAt\n';
   subs.forEach(function (s) {
@@ -3649,7 +3685,7 @@ function api_exportData(token) {
 /** Student types / edits the title. Open from stage 6 (Proposal Defence) onward; locked once the PG Coordinator confirms it
  *  and until stage 11 (External Defence). Every save puts the title back to "Pending" for the Coordinator to confirm. */
 function api_saveThesisTitle_l(token, title) {
-  throw new Error('Submit your title from the \u201CTitle Approval\u201D request: both supervisors must approve it.');
+  throw new Error('Submit your title from the \u201CTitle Approval\u201D request: all assigned supervisors must approve it.');
   var user = requireUser_(token);
   assertRole_(user, ['Student'], 'Only students can enter a thesis/dissertation title.');
   var stu = studentByReg_(user.regNumber);
@@ -3735,9 +3771,9 @@ function api_getHoDStatsBase_(token) {
       yearOfAdmission: admissionYear, session: sessionLabel_(admissionYear), thesisTitle: s.thesisTitle || '', titleStatus: titleState_(s).status, currentStage: s.currentStage, email: s.email, phoneNumber: s.phoneNumber,
       status: userByReg[String(s.regNumber)] ? userByReg[String(s.regNumber)].status : '',
       faculty: normFaculty_(s.faculty), department: s.department, passportFileId: s.passportFileId || '', stalled: isStalled_(s),
-      mainSupervisorId: s.mainSupervisorId || '', coSupervisorId: s.coSupervisorId || '',
-      mainSupervisor: staffById[s.mainSupervisorId] || '', coSupervisor: staffById[s.coSupervisorId] || '',
-      mainSupervisorLabel: supWithRank_(staffRecById[s.mainSupervisorId]), coSupervisorLabel: supWithRank_(staffRecById[s.coSupervisorId]) };
+      mainSupervisorId: s.mainSupervisorId || '', coSupervisorId: s.coSupervisorId || '', secondCoSupervisorId: co2IdFor_(s),
+      mainSupervisor: staffById[s.mainSupervisorId] || '', coSupervisor: staffById[s.coSupervisorId] || '', secondCoSupervisor: staffById[co2IdFor_(s)] || '',
+      mainSupervisorLabel: supWithRank_(staffRecById[s.mainSupervisorId]), coSupervisorLabel: supWithRank_(staffRecById[s.coSupervisorId]), secondCoSupervisorLabel: supWithRank_(staffRecById[co2IdFor_(s)]) };
   });
   subs.forEach(function (s) { count(byStatus, s.status); });
   users.forEach(function (u) { if (u.role === 'Student') count(userByStatus, u.status); });
@@ -3769,10 +3805,12 @@ function api_getStaffDashboardBase_(token) {
       o.status = o.status || 'Logged'; o.studentName = stu ? fullNameOf_(stu) : String(m.regNumber); return o;
     }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); }).slice(0, 40),
     students: my.map(function (s) {
-      var main = ids.indexOf(String(s.mainSupervisorId)) > -1;
+      var sid = presentationStaffId_(user);
+      var myRole = supervisorRoleFor_(s, sid) || 'Co-Supervisor';
+      var others = supervisorIdsFor_(s).filter(function (id) { return String(id) !== String(sid); });
       return { regNumber: s.regNumber, fullName: fullNameOf_(s), programme: s.programme, specialisation: s.specialisation, currentStage: s.currentStage,
         passportFileId: s.passportFileId || '', email: s.email, phoneNumber: s.phoneNumber, stalled: isStalled_(s),
-        myRole: main ? 'Main Supervisor' : 'Co-Supervisor', other: lab(main ? s.coSupervisorId : s.mainSupervisorId) };
+        myRole: myRole, other: lab(others[0]), otherSupervisors: others.map(function (id) { return lab(id); }).filter(Boolean) };
     }),
     submissions: subs.map(function (s) {
       var stu = studentByReg_(s.regNumber);
@@ -3873,7 +3911,7 @@ var PRESENTATION_INTENTS = {
   'Final Examination': { stage: '12 - Thesis Submission', warn: '11 - Final Examination Intent' }
 };
 var PRESENTATION_ACTIVE_STATUSES = ['Pending Supervisors', 'Pending Coordinator', 'Returned'];
-function loadOf_(id) { return readTable_('Students').filter(function (s) { return String(s.mainSupervisorId) === String(id) || String(s.coSupervisorId) === String(id); }).length; }
+function loadOf_(id) { return readTable_('Students').filter(function (s) { return supervisorIdsFor_(s).some(function (x) { return String(x) === String(id); }); }).length; }
 function isStalled_(s) {
   var t = new Date(String(s.updatedAt || s.createdAt).replace(' ', 'T')).getTime();
   return !!t && s.currentStage !== STAGE_COMPLETE && (Date.now() - t) / 864e5 > 90;
@@ -4053,7 +4091,7 @@ function api_getProgrammeCalendar(token) {
   if (user.role === 'Student') {
     meetings = filterWhere_('Meetings', function (m) { return String(m.regNumber) === String(user.regNumber); });
   } else if (canSupervise_(user)) {
-    var regs = filterWhere_('Students', function (s) { return String(s.mainSupervisorId) === String(user.id) || String(s.coSupervisorId) === String(user.id); }).map(function (s) { return String(s.regNumber); });
+    var regs = filterWhere_('Students', function (s) { return supOf_(user, s); }).map(function (s) { return String(s.regNumber); });
     meetings = filterWhere_('Meetings', function (m) { return regs.indexOf(String(m.regNumber)) !== -1; });
   }
   meetings = meetings.map(function (m) {
@@ -4153,7 +4191,7 @@ function api_scheduleMeeting_l(token, reg, date, time, venue, agenda) {
   var tm = String(time || '10:00').trim(); if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(tm)) throw new Error('Enter the time as HH:MM (24-hour).');
   var r = appendRow_('Meetings', { regNumber: reg, date: date, time: tm, venue: String(venue || '').trim().slice(0, 200), notes: String(agenda || '').trim().slice(0, 1000), actions: '', createdBy: user.fullName, createdAt: nowIso_(), status: 'Scheduled' });
   var name = fullNameOf_(stu), ics = meetingIcs_({ id: r.id, date: date, time: tm, venue: r.venue, notes: r.notes }, name);
-  var to = {}; [stu.email, user.email].concat(supervisorEmails_([stu.mainSupervisorId, stu.coSupervisorId])).forEach(function (e) { e = String(e || '').trim().toLowerCase(); if (EMAIL_RE.test(e)) to[e] = 1; });
+  var to = {}; [stu.email, user.email].concat(supervisorEmails_(supervisorIdsFor_(stu))).forEach(function (e) { e = String(e || '').trim().toLowerCase(); if (EMAIL_RE.test(e)) to[e] = 1; });
   var addrs = Object.keys(to);
   if (addrs.length) { try { sendPortalMail_({ to: addrs.join(','), subject: 'Supervision meeting ' + date + ' ' + tm + ' \u2014 ' + name,
     body: 'A supervision meeting has been scheduled.\n\nStudent: ' + name + ' (' + reg + ')\nDate: ' + date + '\nTime: ' + tm + '\nVenue: ' + (r.venue || 'To be confirmed') + (r.notes ? '\nAgenda: ' + r.notes : '') + '\nScheduled by: ' + user.fullName + '\n\nOpen the attached calendar file to add it to your calendar.',
@@ -4279,7 +4317,7 @@ function supOf_(user, s) {
   var ids = [String(user.id), String(user.regNumber)];
   // A login whose ID differs from its Staff ID is still matched through its Staff record (email / name), memoised per request.
   if (canSupervise_(user)) { if (user.__sid === undefined) { try { user.__sid = presentationStaffId_(user) || ''; } catch (e) { user.__sid = ''; } } if (user.__sid) ids.push(String(user.__sid)); }
-  return ids.indexOf(String(s.mainSupervisorId)) > -1 || ids.indexOf(String(s.coSupervisorId)) > -1; }
+  return supervisorIdsFor_(s).some(function (id) { return ids.indexOf(String(id)) > -1; }); }
 function checklistFor_(type) {
   var doc = documentByType_(type);
   if (doc && DOCUMENT_CHECKLISTS[doc.id]) return DOCUMENT_CHECKLISTS[doc.id].slice();
@@ -4567,7 +4605,7 @@ function api_sendMessage_l(token, reg, text) {
   if (!t) throw new Error('Message cannot be empty.');
   appendRow_('Messages', { regNumber: stu.regNumber, fromName: user.fullName, fromRole: user.role, text: t.slice(0, 2000), createdAt: nowIso_() });
   if (user.role === 'Student') {
-    [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) {
+    supervisorIdsFor_(stu).forEach(function (id) {
       var st = id && findById_('Staff', id); if (!st) return;
       var su = findWhere_('Users', function (u) { return String(u.regNumber) === String(id) || (st.email && String(u.email).toLowerCase() === String(st.email).toLowerCase()); });
       if (su) addNote_(su.regNumber, 'Message from ' + user.fullName + ': ' + t.slice(0, 80));
@@ -4807,23 +4845,26 @@ function staffUserFor_(id) {
   return findWhere_('Users', function (u) { return String(u.regNumber) === String(id) || (st.email && String(u.email).toLowerCase() === String(st.email).toLowerCase()); });
 }
 var BULK_QUIET_ = false;   // set during bulk assignment so supervisors get one summary email instead of one per student
-function notifySupervisors_(stu, oldMain, oldCo, newMain, newCo) {
+function notifySupervisors_(stu, oldMain, oldCo, oldCo2, newMain, newCo, newCo2) {
   if (BULK_QUIET_) return;
   var info = fullNameOf_(stu) + ' (' + stu.regNumber + ') — ' + stu.programme + ', ' + stu.specialisation + '. Student email: ' + stu.email + '.';
-  var noteFor = function (role, otherId) {
+  var noteFor = function (role, otherIds) {
     return 'Assigned as ' + role + ': ' + fullNameOf_(stu) + ' (' + stu.regNumber + ') \u2014 ' +
       stu.programme + ', ' + stu.specialisation + '. Student email: ' + stu.email +
-      '. Other supervisor: ' + supLabel_(otherId) + '. Use "Handover" beside the student for the full history.';
+      '. Other supervisor(s): ' + otherIds.filter(Boolean).map(supLabel_).join(', ') + '. Use "Handover" beside the student for the full history.';
   };
   var send = function (id, subject, body, note) {
     var st = id && findById_('Staff', id); if (!st) return;
     var u = staffUserFor_(id); if (u) addNote_(u.regNumber, note);
     if (EMAIL_RE.test(String(st.email || ''))) { try { sendPortalMail_({ to: st.email, subject: subject, body: body }); } catch (e) {} }
   };
-  if (newMain) send(newMain, 'Supervision assignment: ' + stu.regNumber, 'You are the Main Supervisor of ' + info + '\nCo-supervisor: ' + supLabel_(newCo), noteFor('Main Supervisor', newCo));
-  if (newCo) send(newCo, 'Supervision assignment: ' + stu.regNumber, 'You are the Co-Supervisor of ' + info + '\nMain supervisor: ' + supLabel_(newMain), noteFor('Co-Supervisor', newMain));
-  [oldMain, oldCo].forEach(function (id) {
-    if (id && String(id) !== String(newMain) && String(id) !== String(newCo)) send(id, 'Supervision update: ' + stu.regNumber, 'You are no longer a supervisor of ' + fullNameOf_(stu) + ' (' + stu.regNumber + ').', 'Removed from supervising ' + fullNameOf_(stu));
+  var roles = [[newMain, SUPERVISOR_ROLE_LABELS_[0], [newCo, newCo2]], [newCo, SUPERVISOR_ROLE_LABELS_[1], [newMain, newCo2]], [newCo2, SUPERVISOR_ROLE_LABELS_[2], [newMain, newCo]]];
+  roles.forEach(function (p) {
+    if (!p[0]) return;
+    send(p[0], 'Supervision assignment: ' + stu.regNumber, 'You are the ' + p[1] + ' of ' + info + '\nOther supervisor(s): ' + p[2].filter(Boolean).map(supLabel_).join(', '), noteFor(p[1], p[2]));
+  });
+  [oldMain, oldCo, oldCo2].forEach(function (id) {
+    if (id && [newMain, newCo, newCo2].indexOf(id) === -1) send(id, 'Supervision update: ' + stu.regNumber, 'You are no longer a supervisor of ' + fullNameOf_(stu) + ' (' + stu.regNumber + ').', 'Removed from supervising ' + fullNameOf_(stu));
   });
 }
 function api_endorseSubmission_l(token, id) {
@@ -4940,14 +4981,25 @@ function presentationStaffId_(user) {
   st = fn && findWhere_('Staff', function (x) { return String(x.fullName || '').trim().toLowerCase() === fn; });
   return st ? String(st.id) : '';
 }
-/** Co-supervisor status that matches who is assigned NOW. An intent filed before a co-supervisor was assigned stores 'Not Required';
- *  once a co-supervisor exists that must become 'Pending' (otherwise nobody can act and the request is stuck). With no co-supervisor it is 'Not Required'. */
-function intentCoStatus_(r, stu) {
-  var hasCo = !!(stu && stu.coSupervisorId && findById_('Staff', stu.coSupervisorId));
-  var cur = String(r.coStatus || '');
-  if (!hasCo) return (cur === 'Approved' || cur === 'Declined') ? cur : 'Not Required';
+/** General status for an optional supervisor slot: an intent filed before that supervisor was assigned stores 'Not Required';
+ *  once one is assigned it becomes 'Pending' (otherwise nobody can act and the request is stuck). */
+function intentRoleStatus_(cur, assigned) {
+  cur = String(cur || '');
+  if (!assigned) return (cur === 'Approved' || cur === 'Declined') ? cur : 'Not Required';
   if (!cur || cur === 'Not Required') return 'Pending';
   return cur;
+}
+function intentCoStatus_(r, stu) {
+  return intentRoleStatus_(r.coStatus, !!(stu && stu.coSupervisorId && findById_('Staff', stu.coSupervisorId)));
+}
+function intentCo2Status_(r, stu) {
+  var id = co2IdFor_(stu);
+  return intentRoleStatus_(r.co2Status, !!(id && findById_('Staff', id)));
+}
+function intentAllApproved_(r, stu) {
+  return String(r.mainStatus || 'Pending') === 'Approved' &&
+    ['Approved', 'Not Required'].indexOf(intentCoStatus_(r, stu)) > -1 &&
+    ['Approved', 'Not Required'].indexOf(intentCo2Status_(r, stu)) > -1;
 }
 /** Re-syncs open presentation intents of a student after supervisors are (re)assigned. */
 function intentsResyncSupervisors_(stu, actor) {
@@ -4955,9 +5007,11 @@ function intentsResyncSupervisors_(stu, actor) {
   var rows = readTableSafe_('PresentationIntents').filter(function (r) { return String(r.regNumber) === String(stu.regNumber) && ['Pending Supervisors', 'Returned'].indexOf(String(r.status)) > -1; });
   rows.forEach(function (r) {
     try {
-      var coS = intentCoStatus_(r, stu), mainS = String(r.mainStatus || 'Pending'), patch = {};
+      var coS = intentCoStatus_(r, stu), co2S = intentCo2Status_(r, stu), patch = {};
       if (coS !== String(r.coStatus || '')) patch.coStatus = coS;
-      if (String(r.status) === 'Pending Supervisors' && mainS === 'Approved' && (coS === 'Approved' || coS === 'Not Required')) {
+      if (co2S !== String(r.co2Status || '')) patch.co2Status = co2S;
+      var effective = { mainStatus: r.mainStatus, coStatus: patch.coStatus || r.coStatus, co2Status: patch.co2Status || r.co2Status };
+      if (String(r.status) === 'Pending Supervisors' && intentAllApproved_(effective, stu)) {
         var im = presentationIntentMeta_(r.kind);
         patch.status = (im && im.coordinator === false) ? 'Approved' : 'Pending Coordinator';
         if (patch.status === 'Approved') patch.coordinatorStatus = 'Not Required';
@@ -4971,6 +5025,7 @@ function presentationIntentView_(r, viewer) {
   var stu = studentByReg_(r.regNumber);
   var main = stu && stu.mainSupervisorId ? findById_('Staff', stu.mainSupervisorId) : null;
   var co = stu && stu.coSupervisorId ? findById_('Staff', stu.coSupervisorId) : null;
+  var co2Id = co2IdFor_(stu), co2 = co2Id ? findById_('Staff', co2Id) : null;
   var meta = presentationIntentMeta_(r.kind);
   var v = {
     id: r.id, regNumber: String(r.regNumber || ''), studentName: stu ? fullNameOf_(stu) : '',
@@ -4979,9 +5034,10 @@ function presentationIntentView_(r, viewer) {
     status: String(r.status || ''),
     mainStatus: String(r.mainStatus || 'Pending'), mainBy: String(r.mainBy || ''), mainAt: String(r.mainAt || ''), mainNote: String(r.mainNote || ''),
     coStatus: intentCoStatus_(r, stu), coBy: String(r.coBy || ''), coAt: String(r.coAt || ''), coNote: String(r.coNote || ''),
+    co2Status: intentCo2Status_(r, stu), co2By: String(r.co2By || ''), co2At: String(r.co2At || ''), co2Note: String(r.co2Note || ''),
     coordinatorStatus: String(r.coordinatorStatus || ((meta && meta.coordinator === false) ? 'Not Required' : 'Pending')), coordinatorBy: String(r.coordinatorBy || ''), coordinatorAt: String(r.coordinatorAt || ''), coordinatorNote: String(r.coordinatorNote || ''),
     stageApplied: String(r.stageApplied || ''), targetStage: meta ? meta.stage : '',
-    mainSupervisorName: main ? main.fullName : '', coSupervisorName: co ? co.fullName : '',
+    mainSupervisorName: main ? main.fullName : '', coSupervisorName: co ? co.fullName : '', secondCoSupervisorName: co2 ? co2.fullName : '',
     warning: presentationIntentWarn_(stu, r.kind), history: parseHist_(r.history),
     createdAt: String(r.createdAt || ''), updatedAt: String(r.updatedAt || ''),
     canEdit: false, canWithdraw: false, canAct: false, myRole: '', myStatus: ''
@@ -4993,8 +5049,9 @@ function presentationIntentView_(r, viewer) {
     var sid = presentationStaffId_(viewer);
     var isMain = sid && String(stu.mainSupervisorId) === sid;
     var isCo = sid && String(stu.coSupervisorId) === sid;
-    v.myRole = isMain ? 'Main Supervisor' : (isCo ? 'Co-Supervisor' : '');
-    v.myStatus = isMain ? v.mainStatus : (isCo ? v.coStatus : '');
+    var isCo2 = sid && String(co2IdFor_(stu)) === sid;
+    v.myRole = isMain ? SUPERVISOR_ROLE_LABELS_[0] : (isCo ? SUPERVISOR_ROLE_LABELS_[1] : (isCo2 ? SUPERVISOR_ROLE_LABELS_[2] : ''));
+    v.myStatus = isMain ? v.mainStatus : (isCo ? v.coStatus : (isCo2 ? v.co2Status : ''));
     v.canAct = !!v.myRole && v.status === 'Pending Supervisors' && v.myStatus === 'Pending';
   }
   if (viewer && viewer.role === 'PG_Coordinator' && v.status === 'Pending Coordinator') v.canAct = true;   // the same person may approve as supervisor and again as coordinator
@@ -5008,7 +5065,7 @@ function presentationIntentsForStudent_(user) {
 function presentationIntentsForStaff_(user) {
   var sid = presentationStaffId_(user), regMap = {};
   if (!sid) return [];
-  filterWhere_('Students', function (s) { return String(s.mainSupervisorId) === sid || String(s.coSupervisorId) === sid; })
+  filterWhere_('Students', function (s) { return supervisorIdsFor_(s).some(function (id) { return String(id) === sid; }); })
     .forEach(function (s) { regMap[s.regNumber] = 1; });
   return filterWhere_('PresentationIntents', function (r) { return regMap[r.regNumber]; })
     .sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); })
@@ -5025,7 +5082,7 @@ function presentationIntentsForCoordinator_(user) {
 function presentationIntentNotifySupervisors_(stu, r, subject, text) {
   if (!stu) return;
   var seen = {};
-  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (sid) {
+  supervisorIdsFor_(stu).forEach(function (sid) {
     sid = String(sid || '');
     if (!sid || seen[sid]) return;
     seen[sid] = 1;
@@ -5081,6 +5138,8 @@ function api_savePresentationIntent_l(token, payload) {
   var note = String(payload.note || '').trim().slice(0, 1200);
   var coId = String(stu.coSupervisorId || '');
   if (coId && !findById_('Staff', coId)) coId = '';
+  var co2Id = co2IdFor_(stu);
+  if (co2Id && !findById_('Staff', co2Id)) co2Id = '';
   var now = nowIso_();
   var id = String(payload.id || '');
   var r;
@@ -5092,6 +5151,7 @@ function api_savePresentationIntent_l(token, payload) {
       kind: kind, title: title, preferredMonth: month, note: note, status: 'Pending Supervisors',
       mainStatus: 'Pending', mainBy: '', mainAt: '', mainNote: '',
       coStatus: coId ? 'Pending' : 'Not Required', coBy: '', coAt: '', coNote: '',
+      co2Status: co2Id ? 'Pending' : 'Not Required', co2By: '', co2At: '', co2Note: '',
       coordinatorStatus: 'Pending', coordinatorBy: '', coordinatorAt: '', coordinatorNote: '', stageApplied: '',
       history: pushHistory_(r, { at: now, by: user.fullName, role: 'Student', action: 'Resubmitted', note: kind + ' / ' + month }),
       updatedAt: now
@@ -5106,6 +5166,7 @@ function api_savePresentationIntent_l(token, payload) {
       regNumber: user.regNumber, kind: kind, title: title, preferredMonth: month, note: note, status: 'Pending Supervisors',
       mainStatus: 'Pending', mainBy: '', mainAt: '', mainNote: '',
       coStatus: coId ? 'Pending' : 'Not Required', coBy: '', coAt: '', coNote: '',
+      co2Status: co2Id ? 'Pending' : 'Not Required', co2By: '', co2At: '', co2Note: '',
       coordinatorStatus: 'Pending', coordinatorBy: '', coordinatorAt: '', coordinatorNote: '', stageApplied: '',
       history: JSON.stringify([{ at: now, by: user.fullName, role: 'Student', action: 'Submitted', note: kind + ' / ' + month }]),
       createdAt: now, updatedAt: now
@@ -5133,35 +5194,38 @@ function api_decidePresentationIntent_l(token, id, decision, note) {
   var sid = presentationStaffId_(user);
   var isMain = sid && String(stu.mainSupervisorId) === sid;
   var isCo = sid && String(stu.coSupervisorId) === sid;
-  if (!isMain && !isCo) throw new Error('This presentation intent is not from your student.');
-  var field = isMain ? 'main' : 'co';
-  var curStatus = isCo ? intentCoStatus_(r, stu) : String(r.mainStatus || 'Pending');
+  var isCo2 = sid && String(co2IdFor_(stu)) === sid;
+  if (!isMain && !isCo && !isCo2) throw new Error('This presentation intent is not from your student.');
+  var field = isMain ? 'main' : (isCo ? 'co' : 'co2');
+  var role = SUPERVISOR_ROLE_LABELS_[isMain ? 0 : (isCo ? 1 : 2)];
+  var curStatus = isMain ? String(r.mainStatus || 'Pending') : (isCo ? intentCoStatus_(r, stu) : intentCo2Status_(r, stu));
   if (curStatus !== 'Pending') throw new Error('You have already decided on this presentation intent.');
   var now = nowIso_(), patch = {};
   patch[field + 'Status'] = decision;
   patch[field + 'By'] = user.fullName;
   patch[field + 'At'] = now;
   patch[field + 'Note'] = note;
-  var mainStatus = isMain ? decision : String(r.mainStatus || 'Pending');
-  var coStatus = isCo ? decision : intentCoStatus_(r, stu);
+  var effective = { mainStatus: r.mainStatus, coStatus: intentCoStatus_(r, stu), co2Status: intentCo2Status_(r, stu) };
+  effective[field + 'Status'] = decision;
   var overall = 'Pending Supervisors', imeta = presentationIntentMeta_(r.kind);
   if (decision === 'Declined') overall = 'Returned';
-  else if (mainStatus === 'Approved' && (coStatus === 'Not Required' || coStatus === 'Approved')) overall = (imeta && imeta.coordinator === false) ? 'Approved' : 'Pending Coordinator';
+  else if (intentAllApproved_(effective, stu)) overall = (imeta && imeta.coordinator === false) ? 'Approved' : 'Pending Coordinator';
   if (overall === 'Approved') patch.coordinatorStatus = 'Not Required';
-  if (!isCo && coStatus !== String(r.coStatus || '')) patch.coStatus = coStatus;
+  if (effective.coStatus !== String(r.coStatus || '')) patch.coStatus = effective.coStatus;
+  if (effective.co2Status !== String(r.co2Status || '')) patch.co2Status = effective.co2Status;
   patch.status = overall;
   patch.updatedAt = now;
-  patch.history = pushHistory_(r, { at: now, by: user.fullName, role: isMain ? 'Main Supervisor' : 'Co-Supervisor', action: decision, note: note });
+  patch.history = pushHistory_(r, { at: now, by: user.fullName, role: role, action: decision, note: note });
   updateRow_('PresentationIntents', id, patch);
   if (overall === 'Approved') { try { intentAutoComplete_(findById_('PresentationIntents', id), stu, user, now); } catch (e) { Logger.log('intentAutoComplete_: ' + e); } }
   logAudit_(user.id, user.regNumber, decision === 'Approved' ? 'APPROVE_PRESENTATION_INTENT' : 'RETURN_PRESENTATION_INTENT', id, r.kind);
   if (decision === 'Declined') {
-    notifyStudent_(r.regNumber, 'Presentation intent returned', user.fullName + ' returned your ' + r.kind + ' request for revision.\nReason: ' + note + '\n\nUpdate and resubmit it from your dashboard. Both supervisor approvals will restart.');
+    notifyStudent_(r.regNumber, 'Presentation intent returned', user.fullName + ' returned your ' + r.kind + ' request for revision.\nReason: ' + note + '\n\nUpdate and resubmit it from your dashboard. All assigned supervisor approvals will restart.');
     presentationIntentNotifySupervisors_(stu, r, 'Presentation intent returned for revision', fullNameOf_(stu) + ' (' + stu.regNumber + ') must revise and resubmit the ' + r.kind + ' request. Reason: ' + note);
   } else {
-    notifyStudent_(r.regNumber, 'Presentation intent approved by ' + (isMain ? 'Main Supervisor' : 'Co-Supervisor'), 'Your ' + r.kind + ' request was approved by ' + user.fullName + '.');
+    notifyStudent_(r.regNumber, 'Presentation intent approved by ' + role, 'Your ' + r.kind + ' request was approved by ' + user.fullName + '.');
     if (overall === 'Pending Coordinator') {
-      var text = fullNameOf_(stu) + ' (' + stu.regNumber + ') has both supervisor approvals for a ' + r.kind + ' in ' + r.preferredMonth + '.' + (r.note ? '\nStudent note: ' + r.note : '') + '\n\nApprove and advance the stage, or return it for revision.';
+      var text = fullNameOf_(stu) + ' (' + stu.regNumber + ') has all assigned supervisor approvals for a ' + r.kind + ' in ' + r.preferredMonth + '.' + (r.note ? '\nStudent note: ' + r.note : '') + '\n\nApprove and advance the stage, or return it for revision.';
       presentationIntentNotifyCoordinators_('Presentation intent awaiting PG Coordinator decision', text);
     }
   }
@@ -5199,7 +5263,7 @@ function api_decidePresentationIntentCoordinator_l(token, id, decision, note) {
       updatedAt: now
     });
     logAudit_(user.id, user.regNumber, 'RETURN_PRESENTATION_INTENT', id, r.kind);
-    notifyStudent_(r.regNumber, 'Presentation intent returned', 'The PG Coordinator returned your ' + r.kind + ' request for revision.\nReason: ' + note + '\n\nUpdate and resubmit it from your dashboard. Both supervisor approvals will restart.');
+    notifyStudent_(r.regNumber, 'Presentation intent returned', 'The PG Coordinator returned your ' + r.kind + ' request for revision.\nReason: ' + note + '\n\nUpdate and resubmit it from your dashboard. All assigned supervisor approvals will restart.');
     presentationIntentNotifySupervisors_(stu, r, 'Presentation intent returned by PG Coordinator', fullNameOf_(stu) + ' (' + stu.regNumber + ') must revise and resubmit the ' + r.kind + ' request. Reason: ' + note + ' Supervisor approvals will restart.');
   }
   return { ok: true, status: decision, stageApplied: applied };
@@ -5488,7 +5552,7 @@ function programmeLimitMonths_(prog) {
 }
 function sessionStartDate_(stu) {
   var y = academicYearFromReg_(stu.regNumber) || parseInt(stu.yearOfAdmission, 10);
-  return y ? new Date(y - 1, 9, 1) : null;   // a 2026 admission belongs to session 2025/2026, which starts 1 October 2025
+  return y ? new Date(y, 9, 1) : null;   // admission year 2024 belongs to session 2024/2025, which starts 1 October 2024
 }
 function timeInfo_(stu) {
   if (String(getSetting_('TIME_LIMITS_ENABLED', 'no')).toLowerCase() !== 'yes') return null;   // off until the real limits are entered in the Config tab
@@ -5532,7 +5596,7 @@ function sendSupervisorReminders() {
     if (sub.lastRemindedAt && daysSince_(sub.lastRemindedAt) < every) return;
     var stu = studentByReg_(sub.regNumber);
     if (!stu) return;
-    [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (sid) {
+    supervisorIdsFor_(stu).forEach(function (sid) {
       if (!sid) return;
       (perStaff[sid] = perStaff[sid] || []).push('- ' + fullNameOf_(stu) + ' (' + stu.regNumber + '): ' + sub.type + ', waiting ' + daysSince_(sub.createdAt) + ' day(s)');
     });
@@ -5835,7 +5899,7 @@ function accessPlanFor_(reg, type) {
   var viewers = viewersForSubmissionType_(type), may = function (role) { return viewers.indexOf(role) !== -1; };
   var add = function (email, role) { email = String(email || '').trim().toLowerCase(); if (EMAIL_RE.test(email) && (!plan[email] || rank[role] > rank[plan[email]])) plan[email] = role; };
   var stu = studentByReg_(reg);
-  if (stu && !restricted && may('Staff')) supervisorEmails_([stu.mainSupervisorId, stu.coSupervisorId]).forEach(function (e) { add(e, 'writer'); });
+  if (stu && !restricted && may('Staff')) supervisorEmails_(supervisorIdsFor_(stu)).forEach(function (e) { add(e, 'writer'); });
   if (stu && may('Student')) add(stu.email, 'reader');   // every upload is private, so the owner is granted explicitly
   readTable_('Users').forEach(function (u) {
     if (!toBool_(u.active) || String(u.status) !== 'Approved' || !may(u.role)) return;
@@ -6969,7 +7033,7 @@ function notifyUploadRecipients_(sub) {
   var who = (stu ? fullNameOf_(stu) + ' ' : '') + '(' + sub.regNumber + ')', label = ALERT_TYPES[sub.type], targets = {};
   var add = function (u) { if (u && toBool_(u.active) && String(u.status) === 'Approved') targets[String(u.regNumber)] = { email: String(u.email || ''), name: u.fullName || '' }; };
   readTable_('Users').forEach(function (u) { if (u.role === 'PG_Coordinator' || u.role === 'Submission_Inspector') add(u); });
-  if (stu) [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { if (id) add(staffUserFor_(id)); });
+  if (stu) supervisorIdsFor_(stu).forEach(function (id) { if (id) add(staffUserFor_(id)); });
   Object.keys(targets).forEach(function (reg) {
     addNote_(reg, 'New upload: ' + label + ' \u2014 ' + who);
     var t = targets[reg];
@@ -7005,7 +7069,7 @@ function checkFinalPackage_(reg) {
   var t = fullNameOf_(stu) + ' (' + reg + ') has the External Examiner\u2019s assessment, the comment-by-comment response and the corrected clean copy. Final compliance check can start.';
   notifyCoordinators_('Final compliance \u2014 ' + reg, t, t);
   readTable_('Users').filter(function (u) { return u.role === 'Submission_Inspector' && toBool_(u.active); }).forEach(function (u) { addNote_(u.regNumber, 'Final compliance check: ' + fullNameOf_(stu) + ' (' + reg + ')'); });
-  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Please endorse the final corrections: ' + fullNameOf_(stu) + ' (' + reg + ')'); });
+  supervisorIdsFor_(stu).forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Please endorse the final corrections: ' + fullNameOf_(stu) + ' (' + reg + ')'); });
   notifyStudent_(reg, 'Final compliance check started', 'The External Examiner\u2019s assessment, your response and your corrected clean copy are in. Your supervisors, the Submission Inspector and the PG Coordinator now run the final compliance check.');
 }
 
@@ -7015,11 +7079,10 @@ function intentAutoComplete_(r, stu, user, now) {
   var patch = { coordinatorStatus: 'Not Required' }; if (applied) patch.stageApplied = applied;
   updateRow_('PresentationIntents', r.id, patch);
   if (r.kind === 'Title Approval') {
-    var main = stu.mainSupervisorId && findById_('Staff', stu.mainSupervisorId), co = stu.coSupervisorId && findById_('Staff', stu.coSupervisorId);
-    var names = [main ? main.fullName : '', co ? co.fullName : ''].filter(Boolean).join(' & ');
+    var names = supervisorIdsFor_(stu).map(function (id) { var st = findById_('Staff', id); return st ? st.fullName : ''; }).filter(Boolean).join(' & ');
     updateRow_('Students', stu.id, { thesisTitle: r.title, titleStatus: 'Confirmed', titleConfirmedBy: names ? 'Supervisors: ' + names : 'Supervisors', titleConfirmedAt: now, titleUpdatedAt: now });
     notifyStudent_(r.regNumber, 'Thesis title approved', 'Your title was approved by your supervisor(s):\n' + r.title + '\nIt is now locked until the thesis stage.' + (applied ? '\nYour stage is now: ' + applied + '.' : ''));
-    var t = fullNameOf_(stu) + ' (' + stu.regNumber + ') title approved by both supervisors: ' + r.title;
+    var t = fullNameOf_(stu) + ' (' + stu.regNumber + ') title approved by all assigned supervisors: ' + r.title;
     notifyCoordinators_('Thesis title approved \u2014 ' + stu.regNumber, t, t); notifyHoDs_('Thesis title approved \u2014 ' + stu.regNumber, t);
   } else {
     notifyStudent_(r.regNumber, 'Request approved', 'Your ' + r.kind + ' request was approved by your supervisor(s).' + (applied ? '\nYour stage is now: ' + applied + '.' : ''));
@@ -7038,7 +7101,7 @@ function api_recordProposalDefence_l(token, reg, outcome, note) {
   var moved = outcome === 'Not passed' ? '' : advanceStageTo_(stu, S_.PROG_INTENT, 'proposal defence ' + outcome.toLowerCase());
   logAudit_(user.id, user.regNumber, 'PROPOSAL_DEFENCE', reg, outcome + (note ? ': ' + note : ''));
   notifyStudent_(reg, 'Proposal defence outcome: ' + outcome, 'The PG Coordinator recorded your proposal defence as \u201C' + outcome + '\u201D.' + (note ? '\n' + note : '') + (moved ? '\nYour stage is now: ' + moved + '.' : '\nYou remain at the Proposal Defence stage.'));
-  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Proposal defence ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
+  supervisorIdsFor_(stu).forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Proposal defence ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
   return { ok: true, stage: moved || stu.currentStage };
 }
 function api_recordProposalDefence() { return L_(api_recordProposalDefence_l, arguments); }
@@ -7057,7 +7120,7 @@ function api_recordSecondInternal_l(token, reg, outcome, note) {
   var moved = outcome === 'Not passed' ? '' : advanceStageTo_(stu, S_.FINAL_INTENT, 'second internal examination ' + outcome.toLowerCase());
   logAudit_(user.id, user.regNumber, 'SECOND_INTERNAL', reg, outcome + (note ? ': ' + note : ''));
   notifyStudent_(reg, 'Second internal examination outcome: ' + outcome, 'The PG Coordinator recorded your PhD second internal examination as \u201C' + outcome + '\u201D.' + (note ? '\n' + note : '') + (moved ? '\nYour stage is now: ' + moved + '.' : '\nYou remain at the Second Internal Examination stage.'));
-  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Second internal examination ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
+  supervisorIdsFor_(stu).forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, 'Second internal examination ' + outcome + ': ' + fullNameOf_(stu) + ' (' + reg + ')'); });
   return { ok: true, stage: moved || stu.currentStage };
 }
 function api_recordSecondInternal() { return L_(api_recordSecondInternal_l, arguments); }
@@ -7145,7 +7208,7 @@ function api_assignExaminer_l(token, p) {
     if (!inst) throw new Error('Enter the examiner\u2019s university.');
     if (HOME_UNI_RE.test(inst) || /@uniabuja\.edu\.ng$/i.test(em)) throw new Error('An External Examiner must be an academic staff of another university.');
   }
-  if (supervisorEmails_([stu.mainSupervisorId, stu.coSupervisorId]).indexOf(em) !== -1) throw new Error('A supervisor of this student cannot be the examiner.');
+  if (supervisorEmails_(supervisorIdsFor_(stu)).indexOf(em) !== -1) throw new Error('A supervisor of this student cannot be the examiner.');
   var active = activeExaminer_(stu.regNumber, p.type, sub && sub.id);
   if (active && (!replacing || String(active.id) !== String(replacing.id))) throw new Error('A ' + p.type + ' examiner is already assigned. Use Replace on the current assignment.');
   var login = findWhere_('Users', function (u) { return u.role === 'Examiner' && String(u.email).toLowerCase() === em; }), tempPw = '', loginId;
@@ -7200,7 +7263,7 @@ function api_assignExaminer_l(token, p) {
     (hadPrevious ? '. The previous examiner no longer has access' : '') + '. Examiner identities are kept confidential.');
   var t = user.fullName + ' assigned ' + name + ' (' + (p.type === 'External' ? inst + ', ' : '') + dept + ') as ' + p.type + ' examiner for ' + stu.regNumber + '.';
   notifyCoordinators_('Examiner assigned \u2014 ' + stu.regNumber, t, t); if (user.role !== 'HoD') notifyHoDs_('Examiner assigned \u2014 ' + stu.regNumber, t);
-  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, p.type + ' examiner assigned to ' + fullNameOf_(stu) + ': ' + name); });
+  supervisorIdsFor_(stu).forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, p.type + ' examiner assigned to ' + fullNameOf_(stu) + ': ' + name); });
   if (p.type === 'Internal') advanceStageTo_(stu, S_.PRESENT, 'internal examiner assigned');
   logAudit_(user.id, user.regNumber, 'ASSIGN_EXAMINER', stu.regNumber, p.type + ': ' + name + ' [' + loginId + ']');
   if (replacing) logAudit_(user.id, user.regNumber, 'REPLACE_EXAMINER', stu.regNumber, p.type + ': ' + replacing.examinerName + ' [' + replacing.examLogin + '] (originally assigned ' + (replacing.createdAt || '?') + ' by ' + (replacing.assignedBy || '?') + ') replaced by ' + name + ' [' + loginId + '] on ' + nowIso_() + ' by ' + user.fullName + '; assignment ' + replacing.id + ' -> ' + r.id);
@@ -7391,9 +7454,15 @@ function api_getPipeline(token) {
     var reg = String(s.regNumber), waiting = '', since = '', detail = [];
     var act = intents.filter(function (r) { return String(r.regNumber) === reg && PRESENTATION_ACTIVE_STATUSES.indexOf(String(r.status)) > -1; })[0];
     if (act) {
-      var m = presentationIntentMeta_(act.kind), co = !!s.coSupervisorId;
+      var m = presentationIntentMeta_(act.kind);
       detail.push(act.kind + ': ' + act.status);
-      if (act.status === 'Pending Supervisors') { var w = []; if (String(act.mainStatus || 'Pending') === 'Pending') w.push('Main Supervisor'); if (co && String(act.coStatus || 'Pending') === 'Pending') w.push('Co-Supervisor'); waiting = w.join(' + ') + ' (' + act.kind + ')'; }
+      if (act.status === 'Pending Supervisors') {
+        var w = [];
+        if (String(act.mainStatus || 'Pending') === 'Pending') w.push(SUPERVISOR_ROLE_LABELS_[0]);
+        if (intentCoStatus_(act, s) === 'Pending') w.push(SUPERVISOR_ROLE_LABELS_[1]);
+        if (intentCo2Status_(act, s) === 'Pending') w.push(SUPERVISOR_ROLE_LABELS_[2]);
+        waiting = w.join(' + ') + ' (' + act.kind + ')';
+      }
       else if (act.status === 'Pending Coordinator') waiting = 'PG Coordinator (' + act.kind + ')';
       else waiting = 'Student (returned: ' + act.kind + ')';
       since = days(act.updatedAt || act.createdAt);
@@ -7451,7 +7520,7 @@ function migrateJourneyStagesV2() {
 function lockdownRestrictedFiles() {
   readTable_('Submissions').filter(function (s) { return isRestrictedType_(s.type); }).forEach(function (sub) {
     var plan = accessPlanFor_(sub.regNumber, sub.type), stu = studentByReg_(sub.regNumber), drop = [];
-    if (stu) drop = drop.concat(supervisorEmails_([stu.mainSupervisorId, stu.coSupervisorId]));
+    if (stu) drop = drop.concat(supervisorEmails_(supervisorIdsFor_(stu)));
     readTable_('Users').forEach(function (u) { if (u.role === 'HoD' || u.role === 'Examiner' || u.role === 'Submission_Inspector') drop.push(String(u.email).toLowerCase()); });
     drop = drop.filter(function (e) { return !plan[e]; });
     fileIdsFromUrls_(sub.driveFileUrls).forEach(function (id) { try { DriveApp.getFileById(id).setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE); } catch (e) { Logger.log('unshare ' + id + ': ' + e); } revokeFileEmails_(id, drop); Object.keys(plan).forEach(function (em) { grantFileRole_(id, em, plan[em]); }); });
@@ -7472,7 +7541,7 @@ function cleanText_(v, min, max, what) {
   return t;
 }
 function notifySupervisorsOf_(stu, text) {
-  [stu.mainSupervisorId, stu.coSupervisorId].forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, text); });
+  supervisorIdsFor_(stu).forEach(function (id) { var u = id && staffUserFor_(id); if (u) addNote_(u.regNumber, text); });
 }
 
 /* ---- action-item tracker ---- */
@@ -7610,8 +7679,9 @@ function api_getHandover(token, reg) {
   var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot view handover summaries.');
   var stu = threadStudent_(user, reg), r = String(stu.regNumber);
   var main = stu.mainSupervisorId && findById_('Staff', stu.mainSupervisorId), co = stu.coSupervisorId && findById_('Staff', stu.coSupervisorId);
+  var co2 = co2IdFor_(stu) && findById_('Staff', co2IdFor_(stu));
   return {
-    student: { regNumber: r, name: fullNameOf_(stu), programme: stu.programme, specialisation: stu.specialisation, stage: stu.currentStage, title: stu.thesisTitle || '', main: main ? main.fullName : '', co: co ? co.fullName : '', daysAtStage: daysSince_(stu.updatedAt || stu.createdAt) },
+    student: { regNumber: r, name: fullNameOf_(stu), programme: stu.programme, specialisation: stu.specialisation, stage: stu.currentStage, title: stu.thesisTitle || '', main: main ? main.fullName : '', co: co ? co.fullName : '', co2: co2 ? co2.fullName : '', daysAtStage: daysSince_(stu.updatedAt || stu.createdAt) },
     meetings: readTable_('Meetings').filter(function (m) { return String(m.regNumber) === r && (m.status || 'Logged') === 'Logged'; }).map(function (m) { return { date: m.date, by: m.createdBy, notes: m.notes, actions: m.actions }; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); }).slice(0, 15),
     actions: readTable_('Actions').filter(function (a) { return String(a.regNumber) === r && String(a.status) === 'Open'; }).map(stripRow_),
     reviews: readTable_('Reviews').filter(function (x) { return String(x.regNumber) === r; }).map(stripRow_).reverse().slice(0, 6),
@@ -7691,7 +7761,7 @@ function supervisionOverview_() {
   var flagged = readTable_('CheckIns').filter(function (c) { return String(c.month) === month && c.status !== 'On track'; }).map(function (c) { return { regNumber: c.regNumber, studentName: nm(c.regNumber), status: c.status, note: c.note }; });
   var latestRev = {}; readTable_('Reviews').forEach(function (r) { if (!latestRev[r.regNumber] || String(r.createdAt) > String(latestRev[r.regNumber].createdAt)) latestRev[r.regNumber] = r; });
   var atRisk = Object.keys(latestRev).filter(function (k) { return latestRev[k].recommendation !== 'Continue'; }).map(function (k) { return { regNumber: k, studentName: nm(k), recommendation: latestRev[k].recommendation, period: latestRev[k].period, by: latestRev[k].createdBy, comments: latestRev[k].comments }; });
-  var load = {}; students.forEach(function (s) { if (s.currentStage === STAGE_COMPLETE) return; [s.mainSupervisorId, s.coSupervisorId].forEach(function (id) { if (id) load[id] = (load[id] || 0) + 1; }); });
+  var load = {}; students.forEach(function (s) { if (s.currentStage === STAGE_COMPLETE) return; supervisorIdsFor_(s).forEach(function (id) { if (id) load[id] = (load[id] || 0) + 1; }); });
   var cap = Object.keys(load).map(function (id) { var st = findById_('Staff', id); return { name: st ? st.fullName : String(id), count: load[id], max: max, over: load[id] > max }; }).sort(function (a, b) { return b.count - a.count; });
   var acts = readTable_('Actions').filter(function (a) { return String(a.status) === 'Open'; });
   return { concerns: concerns, overdueFeedback: overdue, flaggedCheckIns: flagged, atRiskReviews: atRisk, capacity: cap, feedbackDays: days, maxStudents: max,

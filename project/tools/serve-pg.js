@@ -294,10 +294,10 @@ function seedDb() {
     { id: "Usr08", regNumber: "UA/pg2026/000003", email: "demo.phd2@gmail.com", role: "Student", fullName: "Ngozi Obi", firstLogin: false, active: true, status: "Approved", createdAt: now },
   ];
   const students = [
-    { id: "Stu01", regNumber: "UA/pg2026/000001", surname: "Okafor", firstName: "Chinedu", otherNames: "Emeka", gender: "Male", phoneNumber: "08012345678", email: "demo.student1@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "MSc", specialisation: "Experimental Solid-State Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "Stf02", currentStage: "4 - Proposal Submission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
-    { id: "Stu02", regNumber: "UA/pg2026/000002", surname: "Adamu", firstName: "Fatima", otherNames: "Yusuf", gender: "Female", phoneNumber: "08098765432", email: "demo.student2@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "", coSupervisorId: "", currentStage: "1 - Admission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
-    { id: "Stu03", regNumber: "26/408PHYX/040", surname: "Eze", firstName: "Blessing", otherNames: "Chidi", gender: "Female", phoneNumber: "08055556666", email: "demo.student4@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Solar Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", currentStage: "8 - Progress Report", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
-    { id: "Stu04", regNumber: "UA/pg2026/000003", surname: "Obi", firstName: "Ngozi", otherNames: "Nneka", gender: "Female", phoneNumber: "08011112222", email: "demo.phd2@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", currentStage: "10b - Internal Examination II (PhD)", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
+    { id: "Stu01", regNumber: "UA/pg2026/000001", surname: "Okafor", firstName: "Chinedu", otherNames: "Emeka", gender: "Male", phoneNumber: "08012345678", email: "demo.student1@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "MSc", specialisation: "Experimental Solid-State Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "Stf02", coSupervisor2Id: "", currentStage: "4 - Proposal Submission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
+    { id: "Stu02", regNumber: "UA/pg2026/000002", surname: "Adamu", firstName: "Fatima", otherNames: "Yusuf", gender: "Female", phoneNumber: "08098765432", email: "demo.student2@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "", coSupervisorId: "", coSupervisor2Id: "", currentStage: "1 - Admission", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
+    { id: "Stu03", regNumber: "26/408PHYX/040", surname: "Eze", firstName: "Blessing", otherNames: "Chidi", gender: "Female", phoneNumber: "08055556666", email: "demo.student4@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Solar Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", coSupervisor2Id: "Stf03", currentStage: "8 - Progress Report", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
+    { id: "Stu04", regNumber: "UA/pg2026/000003", surname: "Obi", firstName: "Ngozi", otherNames: "Nneka", gender: "Female", phoneNumber: "08011112222", email: "demo.phd2@gmail.com", faculty: "Faculty of Physical Sciences", department: "Physics", programme: "PhD", specialisation: "Nuclear Physics", passportFileId: "", passportUrl: "", mainSupervisorId: "Stf01", coSupervisorId: "", coSupervisor2Id: "", currentStage: "10b - Internal Examination II (PhD)", yearOfAdmission: 2026, createdAt: now, updatedAt: now },
   ];
   const staff = [
     { id: "Stf01", fullName: "Dr. Bala Ahmed", email: "bala.ahmed@uniabuja.edu.ng", rank: "Senior Lecturer", specialisation: "Solid-State Physics", active: true, createdAt: now },
@@ -336,12 +336,14 @@ function seedDb() {
     { id: "Pin01", regNumber: "UA/pg2026/000001", kind: "Proposal Presentation", preferredMonth: "2026-11", note: "Draft proposal is ready for departmental defence.", status: "Pending Supervisors",
       mainStatus: "Approved", mainBy: "Dr. Bala Ahmed", mainAt: "2026-10-22 10:00:00", mainNote: "",
       coStatus: "Pending", coBy: "", coAt: "", coNote: "",
+      co2Status: "Not Required", co2By: "", co2At: "", co2Note: "",
       coordinatorStatus: "Pending", coordinatorBy: "", coordinatorAt: "", coordinatorNote: "", stageApplied: "",
       history: JSON.stringify([{ at: "2026-10-20 09:00:00", by: "Chinedu Emeka Okafor", role: "Student", action: "Submitted", note: "Proposal Presentation / 2026-11" }, { at: "2026-10-22 10:00:00", by: "Dr. Bala Ahmed", role: "Main Supervisor", action: "Approved", note: "" }]),
       createdAt: "2026-10-20 09:00:00", updatedAt: "2026-10-22 10:00:00" },
-    { id: "Pin02", regNumber: "26/408PHYX/040", kind: "Progress Report Presentation", preferredMonth: "2026-12", note: "Annual progress report submitted for compliance review.", status: "Pending Coordinator",
+    { id: "Pin02", regNumber: "26/408PHYX/040", kind: "Progress Report Presentation", preferredMonth: "2026-12", note: "Annual progress report submitted for compliance review.", status: "Pending Supervisors",
       mainStatus: "Approved", mainBy: "Dr. Bala Ahmed", mainAt: "2026-10-23 12:00:00", mainNote: "",
       coStatus: "Not Required", coBy: "", coAt: "", coNote: "",
+      co2Status: "Pending", co2By: "", co2At: "", co2Note: "",
       coordinatorStatus: "Pending", coordinatorBy: "", coordinatorAt: "", coordinatorNote: "", stageApplied: "",
       history: JSON.stringify([{ at: "2026-10-21 08:30:00", by: "Blessing Chidi Eze", role: "Student", action: "Submitted", note: "Progress Report Presentation / 2026-12" }, { at: "2026-10-23 12:00:00", by: "Dr. Bala Ahmed", role: "Main Supervisor", action: "Approved", note: "" }]),
       createdAt: "2026-10-21 08:30:00", updatedAt: "2026-10-23 12:00:00" },
@@ -354,6 +356,24 @@ const DEFAULT_PASSWORD = "PhysicsPG2026!";
 
 /* ---- Mock helpers ---- */
 function fullNameOf(s) { return [s.firstName, s.otherNames, s.surname].filter(Boolean).join(" "); }
+function mockSessionLabel_(year) {
+  var y = parseInt(year, 10);
+  return y ? String(y) + '/' + String(y + 1) : '';
+}
+function mockCo2Id_(stu) {
+  return stu && /phd/i.test(String(stu.programme || '')) ? String(stu.coSupervisor2Id || '') : '';
+}
+function mockPresentationStaffId_(user) {
+  if (!user || ["Staff", "PG_Coordinator", "HoD"].indexOf(user.role) === -1) return "";
+  if (DB.staff.some((x) => String(x.id) === String(user.id))) return String(user.id);
+  if (DB.staff.some((x) => String(x.id) === String(user.regNumber))) return String(user.regNumber);
+  const email = String(user.email || "").toLowerCase();
+  let st = email && DB.staff.find((x) => String(x.email || "").toLowerCase() === email);
+  if (st) return String(st.id);
+  const name = String(user.fullName || "").trim().toLowerCase();
+  st = name && DB.staff.find((x) => String(x.fullName || "").trim().toLowerCase() === name);
+  return st ? String(st.id) : "";
+}
 function publicUser(u) { return { id: u.id, regNumber: u.regNumber, role: u.role, fullName: u.fullName, email: u.email, status: u.status, firstLogin: !!u.firstLogin }; }
 function requireUser(token) {
   const id = DB.sessions[token];
@@ -460,7 +480,7 @@ const API = {
       faculty: payload.faculty || "Faculty of Physical Sciences", department: payload.department || "Physics",
       programme: payload.programme || "MSc", specialisation: payload.specialisation || "",
       passportFileId: "local", passportUrl: (payload.passportPhoto && payload.passportPhoto.dataUrl) || "",
-      mainSupervisorId: "", coSupervisorId: "", currentStage: START_STAGE,
+      mainSupervisorId: "", coSupervisorId: "", coSupervisor2Id: "", currentStage: START_STAGE,
       yearOfAdmission: new Date().getFullYear(), createdAt: nowStr, updatedAt: nowStr,
     });
     DB.users.push({
@@ -483,6 +503,8 @@ const API = {
     if (!stu) throw new Error("Student profile not found.");
     const mainSup = stu.mainSupervisorId ? DB.staff.find((x) => x.id === stu.mainSupervisorId) : null;
     const coSup = stu.coSupervisorId ? DB.staff.find((x) => x.id === stu.coSupervisorId) : null;
+    const co2Id = mockCo2Id_(stu);
+    const coSup2 = co2Id ? DB.staff.find((x) => x.id === co2Id) : null;
     const subs = DB.submissions.filter((s) => s.regNumber === user.regNumber)
       .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     const anns = DB.announcements.filter((a) => a.active)
@@ -493,9 +515,10 @@ const API = {
         gender: stu.gender, phoneNumber: stu.phoneNumber, email: stu.email,
         faculty: stu.faculty, department: stu.department, programme: stu.programme,
         specialisation: stu.specialisation, passportUrl: stu.passportUrl, passportFileId: stu.passportFileId,
-        currentStage: stu.currentStage, yearOfAdmission: stu.yearOfAdmission,
+        currentStage: stu.currentStage, yearOfAdmission: stu.yearOfAdmission, session: mockSessionLabel_(stu.yearOfAdmission),
         mainSupervisor: mainSup ? { id: mainSup.id, fullName: mainSup.fullName, email: mainSup.email, rank: mainSup.rank } : null,
         coSupervisor: coSup ? { id: coSup.id, fullName: coSup.fullName, email: coSup.email, rank: coSup.rank } : null,
+        secondCoSupervisor: coSup2 ? { id: coSup2.id, fullName: coSup2.fullName, email: coSup2.email, rank: coSup2.rank } : null,
       },
       submissions: subs,
       announcements: anns.slice(0, 10),
@@ -509,7 +532,7 @@ const API = {
     if (user.role === "Student") {
       meetings = DB.meetings.filter((m) => m.regNumber === user.regNumber);
     } else if (user.role === "Staff") {
-      const regs = DB.students.filter((s) => s.mainSupervisorId === user.id || s.coSupervisorId === user.id).map((s) => s.regNumber);
+      const regs = DB.students.filter((s) => s.mainSupervisorId === user.id || s.coSupervisorId === user.id || s.coSupervisor2Id === user.id).map((s) => s.regNumber);
       meetings = DB.meetings.filter((m) => regs.indexOf(m.regNumber) !== -1);
     }
     return {
@@ -573,7 +596,7 @@ const API = {
     let list;
     if (user.role === "Student") list = DB.submissions.filter((s) => s.regNumber === user.regNumber);
     else if (user.role === "Staff") {
-      const regs = DB.students.filter((s) => s.mainSupervisorId === user.id || s.coSupervisorId === user.id).map((s) => s.regNumber);
+      const regs = DB.students.filter((s) => s.mainSupervisorId === user.id || s.coSupervisorId === user.id || s.coSupervisor2Id === user.id).map((s) => s.regNumber);
       list = DB.submissions.filter((s) => regs.indexOf(s.regNumber) !== -1);
     } else if (user.role === "Submission_Inspector") {
       list = DB.submissions.filter((s) => s.status === "Submitted" || s.status === "Changes Requested");
@@ -607,8 +630,9 @@ const API = {
     const allStudents = DB.students.map((s) => {
       const main = s.mainSupervisorId ? DB.staff.find((x) => x.id === s.mainSupervisorId) : null;
       const co = s.coSupervisorId ? DB.staff.find((x) => x.id === s.coSupervisorId) : null;
+      const co2 = s.coSupervisor2Id ? DB.staff.find((x) => x.id === s.coSupervisor2Id) : null;
       const u = DB.users.find((x) => x.regNumber === s.regNumber);
-      return { regNumber: s.regNumber, fullName: fullNameOf(s), programme: s.programme, specialisation: s.specialisation, mainSupervisor: main ? main.fullName : "", coSupervisor: co ? co.fullName : "", currentStage: s.currentStage, status: u ? u.status : "" };
+      return { regNumber: s.regNumber, fullName: fullNameOf(s), programme: s.programme, specialisation: s.specialisation, mainSupervisor: main ? main.fullName : "", coSupervisor: co ? co.fullName : "", secondCoSupervisor: co2 ? co2.fullName : "", currentStage: s.currentStage, yearOfAdmission: s.yearOfAdmission, session: mockSessionLabel_(s.yearOfAdmission), status: u ? u.status : "" };
     });
     const staffList = DB.staff.filter((s) => s.active).map((s) => ({ id: s.id, fullName: s.fullName, rank: s.rank, specialisation: s.specialisation }));
     return { pending, students: allStudents, staff: staffList, stages: STAGES };
@@ -647,6 +671,7 @@ const API = {
       let hit = false;
       if (String(s.mainSupervisorId) === String(staffId)) { s.mainSupervisorId = ""; hit = true; }
       if (String(s.coSupervisorId) === String(staffId)) { s.coSupervisorId = ""; hit = true; }
+      if (String(s.coSupervisor2Id) === String(staffId)) { s.coSupervisor2Id = ""; hit = true; }
       if (hit) { unassigned++; s.updatedAt = now(); }
     });
     staff.active = false;
@@ -676,7 +701,7 @@ const API = {
       faculty: payload.faculty || "Faculty of Physical Sciences", department: payload.department || "Physics",
       programme: payload.programme || "MSc", specialisation: payload.specialisation || "",
       passportFileId: "", passportUrl: "",
-      mainSupervisorId: "", coSupervisorId: "", currentStage: START_STAGE,
+      mainSupervisorId: "", coSupervisorId: "", coSupervisor2Id: "", currentStage: START_STAGE,
       yearOfAdmission: parseInt(payload.yearOfAdmission, 10) || new Date().getFullYear(), createdAt: nowStr, updatedAt: nowStr
     });
     DB.users.push({
@@ -701,17 +726,41 @@ const API = {
     const name = student ? fullNameOf(student) : (account ? account.fullName : reg);
     return { ok: true, message: name + " removed." + (removedSubs ? " " + removedSubs + " submission(s) removed." : "") };
   },
-  api_assignSupervisors(token, regNumber, mainId, coId) {
+  api_assignSupervisors(token, regNumber, mainId, coId, co2Id) {
     const user = requireUser(token);
-    assertRole(user, ["PG_Coordinator"]);
+    assertRole(user, ["PG_Coordinator", "HoD"]);
     const stu = DB.students.find((s) => s.regNumber === regNumber);
     if (!stu) throw new Error("Student not found.");
+    if (co2Id && !/phd/i.test(stu.programme || "")) throw new Error("A second co-supervisor can only be assigned to a PhD student.");
+    const ids = [mainId || "", coId || "", co2Id || ""].filter(Boolean);
+    if (new Set(ids).size !== ids.length) throw new Error("Each supervisor role must be a different person.");
     stu.mainSupervisorId = mainId || "";
     stu.coSupervisorId = coId || "";
+    stu.coSupervisor2Id = co2Id && /phd/i.test(stu.programme || "") ? co2Id : "";
     if (!stu.mainSupervisorId && String(stu.currentStage).indexOf("1 -") === 0) stu.currentStage = "1 - Admission";
     else if (stu.mainSupervisorId && String(stu.currentStage).indexOf("2 -") === 0) stu.currentStage = "3 - Supervisor Allocation";
     stu.updatedAt = now();
     return true;
+  },
+  api_bulkAssignSupervisors(token, regs, mainId, coId, co2Id) {
+    const user = requireUser(token);
+    assertRole(user, ["PG_Coordinator", "HoD"]);
+    const list = (regs || []).map(String).slice(0, 100);
+    if (!list.length) throw new Error("Select at least one student.");
+    if (!mainId && !coId && !co2Id) throw new Error("Choose at least one supervisor.");
+    let updated = 0;
+    const failed = [], warnings = [];
+    list.forEach((reg) => {
+      const stu = DB.students.find((s) => s.regNumber === reg);
+      if (!stu) { failed.push({ regNumber: reg, error: "Student not found." }); return; }
+      const phd = /phd/i.test(stu.programme || "");
+      if (co2Id && !phd) warnings.push({ regNumber: reg, error: "Second co-supervisor is PhD-only; skipped for " + (stu.programme || "this programme") + "." });
+      try {
+        API.api_assignSupervisors(token, reg, mainId || stu.mainSupervisorId, coId || stu.coSupervisorId, phd ? co2Id : "");
+        updated++;
+      } catch (e) { failed.push({ regNumber: reg, error: String((e && e.message) || e) }); }
+    });
+    return { updated, failed, warnings };
   },
   api_updateStudentStage(token, regNumber, stage) {
     const user = requireUser(token);
@@ -781,8 +830,9 @@ const API = {
   },
   api_getStaffDashboard(token) {
     const user = requireUser(token);
-    assertRole(user, ["Staff"]);
-    const mine = DB.students.filter((s) => s.mainSupervisorId === user.id || s.coSupervisorId === user.id);
+    assertRole(user, ["Staff", "PG_Coordinator", "HoD"]);
+    const sid = mockPresentationStaffId_(user);
+    const mine = DB.students.filter((s) => String(s.mainSupervisorId) === sid || String(s.coSupervisorId) === sid || String(mockCo2Id_(s)) === sid);
     const regs = mine.map((s) => s.regNumber);
     return {
       students: mine.map((s) => ({ regNumber: s.regNumber, fullName: fullNameOf(s), programme: s.programme, specialisation: s.specialisation, currentStage: s.currentStage, passportUrl: s.passportUrl })),
@@ -795,12 +845,13 @@ const API = {
   api_exportData(token) {
     const user = requireUser(token);
     assertRole(user, ["PG_Coordinator"]);
-    let csv = "RegNumber,Surname,FirstName,OtherNames,Gender,Phone,Programme,Specialisation,MainSupervisor,CoSupervisor,Stage,Status\n";
+    let csv = "RegNumber,Surname,FirstName,OtherNames,Gender,Phone,Programme,Specialisation,MainSupervisor,CoSupervisor,SecondCoSupervisor,Stage,Status\n";
     DB.students.forEach((s) => {
       const u = DB.users.find((x) => x.regNumber === s.regNumber) || {};
       const main = s.mainSupervisorId ? (DB.staff.find((x) => x.id === s.mainSupervisorId) || {}).fullName || "" : "";
       const co = s.coSupervisorId ? (DB.staff.find((x) => x.id === s.coSupervisorId) || {}).fullName || "" : "";
-      csv += [s.regNumber, s.surname, s.firstName, s.otherNames, s.gender, s.phoneNumber, s.programme, s.specialisation, main, co, s.currentStage, u.status || ""].join(",") + "\n";
+      const co2 = s.coSupervisor2Id ? (DB.staff.find((x) => x.id === s.coSupervisor2Id) || {}).fullName || "" : "";
+      csv += [s.regNumber, s.surname, s.firstName, s.otherNames, s.gender, s.phoneNumber, s.programme, s.specialisation, main, co, co2, s.currentStage, u.status || ""].join(",") + "\n";
     });
     return csv;
   },
@@ -853,6 +904,8 @@ const MOCK_API_JS = `
 window.__PG_MOCK_API__ = (function () {
   var DB = window.__PG_MOCK_DB__;
   DB.sessions = {};
+  var mockSessionLabel_ = ${mockSessionLabel_.toString()};
+  var mockCo2Id_ = ${mockCo2Id_.toString()};
   var DEFAULT_PASSWORD = ${JSON.stringify(DEFAULT_PASSWORD)};
   var STAGES = ${JSON.stringify(STAGES)};
   var SECOND_INTERNAL_STAGE = ${JSON.stringify(SECOND_INTERNAL_STAGE)};
@@ -1125,6 +1178,25 @@ window.__PG_MOCK_API__ = (function () {
     return u;
   }
   function assertRole(user, roles) { if (roles.indexOf(user.role) === -1) throw new Error('Access denied.'); }
+  function intentStatusMock(r, field, assigned) {
+    var cur = String(r[field] || '');
+    if (!assigned) return (cur === 'Approved' || cur === 'Declined') ? cur : 'Not Required';
+    if (!cur || cur === 'Not Required') return 'Pending';
+    return cur;
+  }
+  function assignSupervisorsMock(user, regNumber, mainId, coId, co2Id) {
+    var stu = find(DB.students, function (s) { return s.regNumber === regNumber; });
+    if (!stu) throw new Error('Student not found.');
+    if (co2Id && !/phd/i.test(String(stu.programme || ''))) throw new Error('A second co-supervisor can only be assigned to a PhD student.');
+    var ids = [mainId || '', coId || '', co2Id || ''].filter(Boolean);
+    for (var i = 0; i < ids.length; i++) for (var j = i + 1; j < ids.length; j++) if (ids[i] === ids[j]) throw new Error('Each supervisor role must be a different person.');
+    stu.mainSupervisorId = mainId || '';
+    stu.coSupervisorId = coId || '';
+    stu.coSupervisor2Id = co2Id && /phd/i.test(String(stu.programme || '')) ? co2Id : '';
+    if (stu.mainSupervisorId && String(stu.currentStage).indexOf('2 -') === 0) stu.currentStage = '3 - Supervisor Allocation';
+    stu.updatedAt = now();
+    return true;
+  }
   function nextId(prefix) { DB.seq = (DB.seq || 100) + 1; return prefix + DB.seq; }
   function now() { return new Date().toISOString().slice(0, 19).replace('T', ' '); }
   function find(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
@@ -1138,7 +1210,7 @@ window.__PG_MOCK_API__ = (function () {
   var PRESENTATION_ACTIVE = ['Pending Supervisors', 'Pending Coordinator', 'Returned'];
   function presentationMeta(kind) { return PRESENTATION_INTENTS[kind] || null; }
   function presentationStaffId(user) {
-    if (!user || user.role !== 'Staff') return '';
+    if (!user || ['Staff', 'PG_Coordinator', 'HoD'].indexOf(user.role) === -1) return '';
     if (find(DB.staff, function (x) { return String(x.id) === String(user.id); })) return String(user.id);
     if (find(DB.staff, function (x) { return String(x.id) === String(user.regNumber); })) return String(user.regNumber);
     var em = String(user.email || '').toLowerCase();
@@ -1159,6 +1231,7 @@ window.__PG_MOCK_API__ = (function () {
     var stu = find(DB.students, function (s) { return String(s.regNumber) === String(r.regNumber); });
     var main = stu && stu.mainSupervisorId ? find(DB.staff, function (x) { return String(x.id) === String(stu.mainSupervisorId); }) : null;
     var co = stu && stu.coSupervisorId ? find(DB.staff, function (x) { return String(x.id) === String(stu.coSupervisorId); }) : null;
+    var co2Id = mockCo2Id_(stu), co2 = co2Id ? find(DB.staff, function (x) { return String(x.id) === String(co2Id); }) : null;
     var meta = presentationMeta(r.kind), hist = [];
     try { hist = JSON.parse(r.history || '[]'); } catch (e) { hist = []; }
     var v = {
@@ -1166,22 +1239,24 @@ window.__PG_MOCK_API__ = (function () {
       programme: stu ? stu.programme : '', currentStage: stu ? stu.currentStage : '',
       kind: String(r.kind || ''), preferredMonth: String(r.preferredMonth || ''), note: String(r.note || ''), status: String(r.status || ''),
       mainStatus: String(r.mainStatus || 'Pending'), mainBy: String(r.mainBy || ''), mainAt: String(r.mainAt || ''), mainNote: String(r.mainNote || ''),
-      coStatus: String(r.coStatus || (co ? 'Pending' : 'Not Required')), coBy: String(r.coBy || ''), coAt: String(r.coAt || ''), coNote: String(r.coNote || ''),
+      coStatus: intentStatusMock(r, 'coStatus', !!co), coBy: String(r.coBy || ''), coAt: String(r.coAt || ''), coNote: String(r.coNote || ''),
+      co2Status: intentStatusMock(r, 'co2Status', !!co2), co2By: String(r.co2By || ''), co2At: String(r.co2At || ''), co2Note: String(r.co2Note || ''),
       coordinatorStatus: String(r.coordinatorStatus || 'Pending'), coordinatorBy: String(r.coordinatorBy || ''), coordinatorAt: String(r.coordinatorAt || ''), coordinatorNote: String(r.coordinatorNote || ''),
       stageApplied: String(r.stageApplied || ''), targetStage: meta ? meta.stage : '',
-      mainSupervisorName: main ? main.fullName : '', coSupervisorName: co ? co.fullName : '',
+      mainSupervisorName: main ? main.fullName : '', coSupervisorName: co ? co.fullName : '', secondCoSupervisorName: co2 ? co2.fullName : '',
       warning: presentationWarn(stu, r.kind), history: hist, createdAt: String(r.createdAt || ''), updatedAt: String(r.updatedAt || ''),
       canEdit: false, canWithdraw: false, canAct: false, myRole: '', myStatus: ''
     };
     if (viewer && viewer.role === 'Student') {
       v.canEdit = ['Pending Supervisors', 'Returned'].indexOf(v.status) > -1;
       v.canWithdraw = PRESENTATION_ACTIVE.indexOf(v.status) > -1;
-    } else if (viewer && viewer.role === 'Staff' && stu) {
+    } else if (viewer && ['Staff', 'PG_Coordinator', 'HoD'].indexOf(viewer.role) > -1 && stu) {
       var sid = presentationStaffId(viewer);
       var isMain = sid && String(stu.mainSupervisorId) === sid;
       var isCo = sid && String(stu.coSupervisorId) === sid;
-      v.myRole = isMain ? 'Main Supervisor' : (isCo ? 'Co-Supervisor' : '');
-      v.myStatus = isMain ? v.mainStatus : (isCo ? v.coStatus : '');
+      var isCo2 = sid && String(mockCo2Id_(stu)) === sid;
+      v.myRole = isMain ? 'Main Supervisor' : (isCo ? 'Co-Supervisor' : (isCo2 ? 'Second Co-supervisor' : ''));
+      v.myStatus = isMain ? v.mainStatus : (isCo ? v.coStatus : (isCo2 ? v.co2Status : ''));
       v.canAct = !!v.myRole && v.status === 'Pending Supervisors' && v.myStatus === 'Pending';
     } else if (viewer && viewer.role === 'PG_Coordinator') {
       v.canAct = v.status === 'Pending Coordinator';
@@ -1196,7 +1271,7 @@ window.__PG_MOCK_API__ = (function () {
   function presentationIntentsForStaff(user) {
     var sid = presentationStaffId(user), regs = [];
     if (!sid) return [];
-    regs = filter(DB.students, function (s) { return String(s.mainSupervisorId) === sid || String(s.coSupervisorId) === sid; }).map(function (s) { return s.regNumber; });
+    regs = filter(DB.students, function (s) { return String(s.mainSupervisorId) === sid || String(s.coSupervisorId) === sid || String(mockCo2Id_(s)) === sid; }).map(function (s) { return s.regNumber; });
     return filter(DB.presentationIntents, function (r) { return regs.indexOf(r.regNumber) !== -1; })
       .sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); })
       .map(function (r) { return presentationView(r, user); });
@@ -1254,7 +1329,7 @@ window.__PG_MOCK_API__ = (function () {
         faculty: payload.faculty || 'Faculty of Physical Sciences', department: payload.department || 'Physics',
         programme: payload.programme || 'MSc', specialisation: payload.specialisation || '',
         passportFileId: 'local', passportUrl: (payload.passportPhoto && payload.passportPhoto.dataUrl) || '',
-        mainSupervisorId: '', coSupervisorId: '', currentStage: START_STAGE,
+        mainSupervisorId: '', coSupervisorId: '', coSupervisor2Id: '', currentStage: START_STAGE,
         yearOfAdmission: new Date().getFullYear(), createdAt: nowStr, updatedAt: nowStr
       });
       DB.users.push({
@@ -1279,6 +1354,8 @@ window.__PG_MOCK_API__ = (function () {
       if (!stu) throw new Error('Student profile not found.');
       var mainSup = stu.mainSupervisorId ? find(DB.staff, function (x) { return x.id === stu.mainSupervisorId; }) : null;
       var coSup = stu.coSupervisorId ? find(DB.staff, function (x) { return x.id === stu.coSupervisorId; }) : null;
+      var co2Id = mockCo2Id_(stu);
+      var coSup2 = co2Id ? find(DB.staff, function (x) { return x.id === co2Id; }) : null;
       var subs = filter(DB.submissions, function (s) { return s.regNumber === user.regNumber; });
       subs.sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
       var anns = filter(DB.announcements, function (a) { return a.active; });
@@ -1289,9 +1366,10 @@ window.__PG_MOCK_API__ = (function () {
           gender: stu.gender, phoneNumber: stu.phoneNumber, email: stu.email,
           faculty: stu.faculty, department: stu.department, programme: stu.programme,
           specialisation: stu.specialisation, passportUrl: stu.passportUrl, passportFileId: stu.passportFileId,
-          currentStage: stu.currentStage, yearOfAdmission: stu.yearOfAdmission,
+          currentStage: stu.currentStage, yearOfAdmission: stu.yearOfAdmission, session: mockSessionLabel_(stu.yearOfAdmission),
           mainSupervisor: mainSup ? { id: mainSup.id, fullName: mainSup.fullName, email: mainSup.email, rank: mainSup.rank } : null,
-          coSupervisor: coSup ? { id: coSup.id, fullName: coSup.fullName, email: coSup.email, rank: coSup.rank } : null
+          coSupervisor: coSup ? { id: coSup.id, fullName: coSup.fullName, email: coSup.email, rank: coSup.rank } : null,
+          secondCoSupervisor: coSup2 ? { id: coSup2.id, fullName: coSup2.fullName, email: coSup2.email, rank: coSup2.rank } : null
         },
         submissions: subs,
         announcements: anns.slice(0, 10),
@@ -1314,7 +1392,7 @@ window.__PG_MOCK_API__ = (function () {
       var list;
       if (user.role === 'Student') list = filter(DB.submissions, function (s) { return s.regNumber === user.regNumber; });
       else if (user.role === 'Staff') {
-        var regs = filter(DB.students, function (s) { return s.mainSupervisorId === user.id || s.coSupervisorId === user.id; }).map(function (s) { return s.regNumber; });
+        var regs = filter(DB.students, function (s) { return s.mainSupervisorId === user.id || s.coSupervisorId === user.id || s.coSupervisor2Id === user.id; }).map(function (s) { return s.regNumber; });
         list = filter(DB.submissions, function (s) { return regs.indexOf(s.regNumber) !== -1; });
       } else if (user.role === 'Submission_Inspector') {
         list = filter(DB.submissions, function (s) { return s.status === 'Submitted' || s.status === 'Changes Requested'; });
@@ -1565,8 +1643,13 @@ window.__PG_MOCK_API__ = (function () {
       var allStudents = DB.students.map(function (s) {
         var main = s.mainSupervisorId ? find(DB.staff, function (x) { return x.id === s.mainSupervisorId; }) : null;
         var co = s.coSupervisorId ? find(DB.staff, function (x) { return x.id === s.coSupervisorId; }) : null;
+        var co2Id = s.coSupervisor2Id && /phd/i.test(String(s.programme || '')) ? s.coSupervisor2Id : '';
+        var co2 = co2Id ? find(DB.staff, function (x) { return x.id === co2Id; }) : null;
         var u = find(DB.users, function (x) { return x.regNumber === s.regNumber; });
-        return { regNumber: s.regNumber, fullName: fullNameOf(s), programme: s.programme, specialisation: s.specialisation, mainSupervisor: main ? main.fullName : '', coSupervisor: co ? co.fullName : '', currentStage: s.currentStage, status: u ? u.status : '' };
+        return { regNumber: s.regNumber, fullName: fullNameOf(s), programme: s.programme, specialisation: s.specialisation,
+          mainSupervisorId: s.mainSupervisorId || '', coSupervisorId: s.coSupervisorId || '', secondCoSupervisorId: co2Id,
+          mainSupervisor: main ? main.fullName : '', coSupervisor: co ? co.fullName : '', secondCoSupervisor: co2 ? co2.fullName : '', currentStage: s.currentStage,
+          yearOfAdmission: s.yearOfAdmission, session: mockSessionLabel_(s.yearOfAdmission), status: u ? u.status : '' };
       });
       var staffList = filter(DB.staff, function (s) { return s.active; }).map(function (s) { return { id: s.id, fullName: s.fullName, rank: s.rank, specialisation: s.specialisation }; });
       return { pending: pending, students: allStudents, staff: staffList, stages: STAGES, presentationIntents: presentationIntentsForCoordinator(user) };
@@ -1606,6 +1689,7 @@ window.__PG_MOCK_API__ = (function () {
         var hit = false;
         if (String(s.mainSupervisorId) === String(staffId)) { s.mainSupervisorId = ''; hit = true; }
         if (String(s.coSupervisorId) === String(staffId)) { s.coSupervisorId = ''; hit = true; }
+        if (String(s.coSupervisor2Id) === String(staffId)) { s.coSupervisor2Id = ''; hit = true; }
         if (hit) { unassigned++; s.updatedAt = now(); }
       });
       staff.active = false;
@@ -1635,7 +1719,7 @@ window.__PG_MOCK_API__ = (function () {
         faculty: payload.faculty || 'Faculty of Physical Sciences', department: payload.department || 'Physics',
         programme: payload.programme || 'MSc', specialisation: payload.specialisation || '',
         passportFileId: '', passportUrl: '',
-        mainSupervisorId: '', coSupervisorId: '', currentStage: START_STAGE,
+        mainSupervisorId: '', coSupervisorId: '', coSupervisor2Id: '', currentStage: START_STAGE,
         yearOfAdmission: parseInt(payload.yearOfAdmission, 10) || new Date().getFullYear(), createdAt: nowStr, updatedAt: nowStr
       });
       DB.users.push({
@@ -1665,16 +1749,29 @@ window.__PG_MOCK_API__ = (function () {
       assertRole(user, ['PG_Coordinator']);
       return changeRegNumberMock(oldReg, newReg);
     },
-    api_assignSupervisors: function (token, regNumber, mainId, coId) {
+    api_assignSupervisors: function (token, regNumber, mainId, coId, co2Id) {
       var user = requireUser(token);
-      assertRole(user, ['PG_Coordinator']);
-      var stu = find(DB.students, function (s) { return s.regNumber === regNumber; });
-      if (!stu) throw new Error('Student not found.');
-      stu.mainSupervisorId = mainId || '';
-      stu.coSupervisorId = coId || '';
-      if (stu.mainSupervisorId && String(stu.currentStage).indexOf('2 -') === 0) stu.currentStage = '3 - Supervisor Allocation';
-      stu.updatedAt = now();
-      return true;
+      assertRole(user, ['PG_Coordinator', 'HoD']);
+      return assignSupervisorsMock(user, regNumber, mainId, coId, co2Id);
+    },
+    api_bulkAssignSupervisors: function (token, regs, mainId, coId, co2Id) {
+      var user = requireUser(token);
+      assertRole(user, ['PG_Coordinator', 'HoD']);
+      var list = (regs || []).map(String).slice(0, 100);
+      if (!list.length) throw new Error('Select at least one student.');
+      if (!mainId && !coId && !co2Id) throw new Error('Choose at least one supervisor.');
+      var updated = 0, failed = [], warnings = [];
+      list.forEach(function (reg) {
+        var stu = find(DB.students, function (s) { return s.regNumber === reg; });
+        if (!stu) { failed.push({ regNumber: reg, error: 'Student not found.' }); return; }
+        var phd = /phd/i.test(String(stu.programme || ''));
+        if (co2Id && !phd) warnings.push({ regNumber: reg, error: 'Second co-supervisor is PhD-only; skipped for ' + (stu.programme || 'this programme') + '.' });
+        try {
+          assignSupervisorsMock(user, reg, mainId || stu.mainSupervisorId, coId || stu.coSupervisorId, phd ? co2Id : '');
+          updated++;
+        } catch (e) { failed.push({ regNumber: reg, error: String((e && e.message) || e) }); }
+      });
+      return { updated: updated, failed: failed, warnings: warnings };
     },
     api_updateStudentStage: function (token, regNumber, stage) {
       var user = requireUser(token);
@@ -1744,9 +1841,9 @@ window.__PG_MOCK_API__ = (function () {
     },
     api_getStaffDashboard: function (token) {
       var user = requireUser(token);
-      assertRole(user, ['Staff']);
+      assertRole(user, ['Staff', 'PG_Coordinator', 'HoD']);
       var sid = presentationStaffId(user);
-      var mine = filter(DB.students, function (s) { return String(s.mainSupervisorId) === sid || String(s.coSupervisorId) === sid; });
+      var mine = filter(DB.students, function (s) { return String(s.mainSupervisorId) === sid || String(s.coSupervisorId) === sid || String(mockCo2Id_(s)) === sid; });
       var regs = mine.map(function (s) { return s.regNumber; });
       return {
         students: mine.map(function (s) { return { regNumber: s.regNumber, fullName: fullNameOf(s), programme: s.programme, specialisation: s.specialisation, currentStage: s.currentStage, passportUrl: s.passportUrl }; }),
@@ -1760,12 +1857,13 @@ window.__PG_MOCK_API__ = (function () {
     api_exportData: function (token) {
       var user = requireUser(token);
       assertRole(user, ['PG_Coordinator']);
-      var csv = 'RegNumber,Surname,FirstName,OtherNames,Gender,Phone,Programme,Specialisation,MainSupervisor,CoSupervisor,Stage,Status\\n';
+      var csv = 'RegNumber,Surname,FirstName,OtherNames,Gender,Phone,Programme,Specialisation,MainSupervisor,CoSupervisor,SecondCoSupervisor,Stage,Status\\n';
       DB.students.forEach(function (s) {
         var u = find(DB.users, function (x) { return x.regNumber === s.regNumber; }) || {};
         var main = s.mainSupervisorId ? ((find(DB.staff, function (x) { return x.id === s.mainSupervisorId; }) || {}).fullName || '') : '';
         var co = s.coSupervisorId ? ((find(DB.staff, function (x) { return x.id === s.coSupervisorId; }) || {}).fullName || '') : '';
-        csv += [s.regNumber, s.surname, s.firstName, s.otherNames, s.gender, s.phoneNumber, s.programme, s.specialisation, main, co, s.currentStage, u.status || ''].join(',') + '\\n';
+        var co2 = s.coSupervisor2Id ? ((find(DB.staff, function (x) { return x.id === s.coSupervisor2Id; }) || {}).fullName || '') : '';
+        csv += [s.regNumber, s.surname, s.firstName, s.otherNames, s.gender, s.phoneNumber, s.programme, s.specialisation, main, co, co2, s.currentStage, u.status || ''].join(',') + '\\n';
       });
       return csv;
     },
@@ -1785,6 +1883,8 @@ window.__PG_MOCK_API__ = (function () {
       var note = String(payload.note || '').trim().slice(0, 1200);
       var coId = String(stu.coSupervisorId || '');
       if (coId && !find(DB.staff, function (x) { return String(x.id) === coId; })) coId = '';
+      var co2Id = mockCo2Id_(stu);
+      if (co2Id && !find(DB.staff, function (x) { return String(x.id) === co2Id; })) co2Id = '';
       var nowStr = now(), id = String(payload.id || ''), r;
       if (id) {
         r = find(DB.presentationIntents, function (x) { return String(x.id) === id; });
@@ -1793,6 +1893,7 @@ window.__PG_MOCK_API__ = (function () {
         r.kind = kind; r.preferredMonth = month; r.note = note; r.status = 'Pending Supervisors';
         r.mainStatus = 'Pending'; r.mainBy = ''; r.mainAt = ''; r.mainNote = '';
         r.coStatus = coId ? 'Pending' : 'Not Required'; r.coBy = ''; r.coAt = ''; r.coNote = '';
+        r.co2Status = co2Id ? 'Pending' : 'Not Required'; r.co2By = ''; r.co2At = ''; r.co2Note = '';
         r.coordinatorStatus = 'Pending'; r.coordinatorBy = ''; r.coordinatorAt = ''; r.coordinatorNote = ''; r.stageApplied = '';
         r.history = presentationPush(r, { at: nowStr, by: user.fullName, role: 'Student', action: 'Resubmitted', note: kind + ' / ' + month });
         r.updatedAt = nowStr;
@@ -1802,6 +1903,7 @@ window.__PG_MOCK_API__ = (function () {
         r = { id: nextId('Pnt'), regNumber: user.regNumber, kind: kind, preferredMonth: month, note: note, status: 'Pending Supervisors',
           mainStatus: 'Pending', mainBy: '', mainAt: '', mainNote: '',
           coStatus: coId ? 'Pending' : 'Not Required', coBy: '', coAt: '', coNote: '',
+          co2Status: co2Id ? 'Pending' : 'Not Required', co2By: '', co2At: '', co2Note: '',
           coordinatorStatus: 'Pending', coordinatorBy: '', coordinatorAt: '', coordinatorNote: '', stageApplied: '',
           history: JSON.stringify([{ at: nowStr, by: user.fullName, role: 'Student', action: 'Submitted', note: kind + ' / ' + month }]),
           createdAt: nowStr, updatedAt: nowStr };
@@ -1812,7 +1914,7 @@ window.__PG_MOCK_API__ = (function () {
     },
     api_decidePresentationIntent: function (token, id, decision, note) {
       var user = requireUser(token);
-      assertRole(user, ['Staff']);
+      assertRole(user, ['Staff', 'PG_Coordinator', 'HoD']);
       decision = String(decision || '');
       if (['Approved', 'Declined'].indexOf(decision) === -1) throw new Error('Invalid decision.');
       note = String(note || '').trim().slice(0, 1200);
@@ -1824,15 +1926,19 @@ window.__PG_MOCK_API__ = (function () {
       var sid = presentationStaffId(user);
       var isMain = sid && String(stu.mainSupervisorId) === sid;
       var isCo = sid && String(stu.coSupervisorId) === sid;
-      if (!isMain && !isCo) throw new Error('This presentation intent is not from your student.');
-      var field = isMain ? 'main' : 'co';
+      var isCo2 = sid && String(mockCo2Id_(stu)) === sid;
+      if (!isMain && !isCo && !isCo2) throw new Error('This presentation intent is not from your student.');
+      var field = isMain ? 'main' : (isCo ? 'co' : 'co2');
+      var role = isMain ? 'Main Supervisor' : (isCo ? 'Co-Supervisor' : 'Second Co-supervisor');
       if (String(r[field + 'Status'] || 'Pending') !== 'Pending') throw new Error('You have already decided on this presentation intent.');
       var nowStr = now();
       r[field + 'Status'] = decision; r[field + 'By'] = user.fullName; r[field + 'At'] = nowStr; r[field + 'Note'] = note;
-      var mainStatus = isMain ? decision : String(r.mainStatus || 'Pending');
-      var coStatus = isCo ? decision : String(r.coStatus || (stu.coSupervisorId ? 'Pending' : 'Not Required'));
-      r.status = decision === 'Declined' ? 'Returned' : (mainStatus === 'Approved' && (!stu.coSupervisorId || coStatus === 'Approved') ? 'Pending Coordinator' : 'Pending Supervisors');
-      r.history = presentationPush(r, { at: nowStr, by: user.fullName, role: isMain ? 'Main Supervisor' : 'Co-Supervisor', action: decision, note: note });
+      var mainStatus = String(r.mainStatus || 'Pending');
+      var coStatus = intentStatusMock(r, 'coStatus', !!stu.coSupervisorId);
+      var co2Status = intentStatusMock(r, 'co2Status', !!mockCo2Id_(stu));
+      var allApproved = mainStatus === 'Approved' && ['Approved', 'Not Required'].indexOf(coStatus) > -1 && ['Approved', 'Not Required'].indexOf(co2Status) > -1;
+      r.status = decision === 'Declined' ? 'Returned' : (allApproved ? 'Pending Coordinator' : 'Pending Supervisors');
+      r.history = presentationPush(r, { at: nowStr, by: user.fullName, role: role, action: decision, note: note });
       r.updatedAt = nowStr;
       return { ok: true, status: r.status };
     },

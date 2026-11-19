@@ -238,7 +238,7 @@ Key schema columns (order is authoritative — see `HEADERS` in `Code.gs`):
 | Role | Can Do |
 |------|--------|
 | **Student** | Register (pending approval), dashboard: profile + photo update, supervisors, 17-stage journey bar (Step 10b is PhD-only), announcements, templates, new submissions; view own submissions |
-| **PG_Coordinator** | Approve/reject registrations, add/import/remove students, correct a student's registration number (cascades to every linked record), assign main + co-supervisor, record the Proposal Defence and PhD-only Internal Examination II outcomes (Passed / Passed with corrections / Not passed), manage staff list, post announcements, export CSV |
+| **PG_Coordinator** | Approve/reject registrations, add/import/remove students, correct a student's registration number (cascades to every linked record), assign main + co-supervisor (plus a second co-supervisor for PhD students), record the Proposal Defence and PhD-only Internal Examination II outcomes (Passed / Passed with corrections / Not passed), manage staff list, post announcements, export CSV |
 | **HoD** | Read-only: stats, programme/status breakdowns, all submissions |
 | **Staff** | See students they supervise, add supervisory notes on submissions |
 | **Submission_Inspector** | Review queue: Approve / Reject / Request Changes / Under Review (comments mandatory for Reject & Request Changes) — emails student via branded `sendPortalMail_` |
