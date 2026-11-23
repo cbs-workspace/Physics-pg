@@ -33,6 +33,7 @@ const showAll = process.argv.indexOf('--all') !== -1;
 const SAFE_CALLS = new Set([
   'statusBadge', 'optionsHtml', 'facOptionsHtml', 'depOptionsHtml', 'tplOptions', 'calMonthOptions_',
   'navBadge', 'intentWarningHtml', 'reviewRow', 'themeIcon', 'a11yFix_', 'restoreUi_', 'showSpinner_',
+  'stuSearchRows_',   // builds table rows with esc() on every student field
 ]);
 /* Variables that hold HTML already escaped by a builder above (reviewed one by one),
  * plus two constants computed from a fixed set of values in checkRegistrationStatus. */

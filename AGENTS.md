@@ -159,6 +159,11 @@ output dir `dist`. `/exec` URL is baked into `GAS_EXEC` in
 - `showView()` exists only in the public branch. On the login page `?page=` links
   do a full navigation by design; the shared click interceptor in the common
   block must stay before any listener that navigates.
+- `doGet()` sets `X-Frame-Options` via `embedAllowed_(embed)`: `ALLOWALL` only when
+  the URL carries `embed=1` (or `embed=true`), `DEFAULT` otherwise. The static
+  `/login/` and `/register/` wrappers both rely on `?embed=1`; excluding `login`
+  from this rule makes script.google.com send `SAMEORIGIN` and Firefox shows
+  "Can't Open This Page" inside the frame. `EMBED_ENABLED=no` disables all framing.
 - Every native form `submit` is `preventDefault()`-ed. A listener that fails to
   attach lets the form submit natively and land on Google's internal
   `userCodeAppPanel` URL.

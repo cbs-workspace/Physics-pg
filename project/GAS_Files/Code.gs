@@ -363,7 +363,7 @@ var HEADERS = {
   Users: ['regNumber', 'email', 'passwordHash', 'salt', 'role', 'fullName', 'firstLogin', 'active', 'status', 'createdAt', 'emailPref'],
   Students: ['regNumber', 'surname', 'firstName', 'otherNames', 'gender', 'phoneNumber', 'email', 'faculty', 'department', 'programme', 'specialisation', 'passportFileId', 'passportUrl', 'mainSupervisorId', 'coSupervisorId', 'coSupervisor2Id', 'currentStage', 'yearOfAdmission', 'createdAt', 'updatedAt', 'thesisTitle', 'titleStatus', 'titleConfirmedBy', 'titleConfirmedAt', 'titleUpdatedAt', 'admissionLetterUrl', 'lastNudgeAt', 'File - Research Plan Form', 'File - Seminar Presentation', 'File - Research Proposal', 'File - Progress Report', 'File - Final Thesis or Dissertation', 'File - Internal Examiner Observations', 'File - Final Correction', 'File - Response to External Examiner', 'File - Response to Internal Examiner', 'File - Signed Proposal Defence Form', 'File - External Examiner Comments', 'Latest Upload Date', 'Latest Upload Type'],
   Staff: ['id', 'fullName', 'email', 'rank', 'specialisation', 'active', 'createdAt', 'role'],
-  Submissions: ['id', 'regNumber', 'type', 'driveFileUrls', 'status', 'inspectorComments', 'supervisorNotes', 'createdBy', 'createdAt', 'updatedAt', 'reviewedBy', 'reviewedAt', 'checklist', 'endorsedBy', 'assignedTo', 'history', 'compliance', 'similarity', 'similarityUrl', 'similarityBy', 'similarityAt', 'lastRemindedAt'],
+  Submissions: ['id', 'regNumber', 'type', 'driveFileUrls', 'status', 'inspectorComments', 'supervisorNotes', 'createdBy', 'createdAt', 'updatedAt', 'reviewedBy', 'reviewedAt', 'checklist', 'endorsedBy', 'assignedTo', 'history', 'compliance', 'similarity', 'similarityUrl', 'similarityBy', 'similarityAt', 'lastRemindedAt', 'formatHistory'],
   Announcements: ['id', 'title', 'body', 'active', 'createdBy', 'createdAt', 'audience'],
   Config: ['key', 'value', 'updatedAt'],
   Meetings: ['id', 'regNumber', 'date', 'notes', 'actions', 'createdBy', 'createdAt', 'time', 'venue', 'status', 'ackAt', 'studentAgenda', 'seenBy'],
@@ -371,7 +371,7 @@ var HEADERS = {
   Notifications: ['id', 'regNumber', 'text', 'read', 'createdAt'],
   Messages: ['id', 'regNumber', 'fromName', 'fromRole', 'text', 'createdAt', 'readBy'],
   Templates: ['id', 'owner', 'kind', 'title', 'body', 'createdAt'],
-  Inquiries: ['id', 'regNumber', 'subject', 'category', 'status', 'thread', 'createdAt', 'updatedAt', 'lastBy', 'closedBy', 'closedAt'],
+  Inquiries: ['id', 'regNumber', 'subject', 'category', 'status', 'thread', 'createdAt', 'updatedAt', 'lastBy', 'closedBy', 'closedAt', 'studentSeenAt'],
   Requests: ['id', 'regNumber', 'type', 'reason', 'status', 'decisionNote', 'createdAt', 'decidedBy', 'decidedAt'],
   PresentationIntents: ['id', 'regNumber', 'kind', 'preferredMonth', 'note', 'status',
     'mainStatus', 'mainBy', 'mainAt', 'mainNote',
@@ -384,7 +384,10 @@ var HEADERS = {
   Examiners: ['id', 'regNumber', 'examinerName', 'type', 'email', 'score', 'comments', 'status', 'createdAt',
     'submissionId', 'institution', 'department', 'rank', 'examLogin', 'assignedBy', 'dueDate', 'recommendation', 'scores', 'reportUrl', 'submittedAt', 'profileUrl',
     'revokedAt', 'revokedBy', 'revokedByReg', 'replacedById', 'replacesId',
-    'extendedAccess', 'extendedBy', 'extendedByReg', 'extendedAt', 'extendedNote', 'extendedEndedAt', 'extendedEndedBy'],
+    'extendedAccess', 'extendedBy', 'extendedByReg', 'extendedAt', 'extendedNote', 'extendedEndedAt', 'extendedEndedBy', 'lastRemindedAt'],
+  SupervisorHistory: ['id', 'regNumber', 'role', 'fromId', 'fromName', 'toId', 'toName', 'reason', 'changedBy', 'changedAt'],
+  Publications: ['id', 'regNumber', 'type', 'title', 'authors', 'venue', 'year', 'status', 'peerReviewed', 'doi', 'url', 'note', 'createdAt', 'updatedAt', 'verifiedBy', 'verifiedAt'],
+  Clearance: ['id', 'regNumber', 'items', 'updatedAt', 'updatedBy'],
   Actions: ['id', 'regNumber', 'text', 'owner', 'ownerName', 'ownerReg', 'dueDate', 'status', 'meetingId', 'createdBy', 'createdAt', 'doneAt', 'lastRemindedAt'],
   Reviews: ['id', 'regNumber', 'period', 'rating', 'recommendation', 'comments', 'createdBy', 'createdAt'],
   Concerns: ['id', 'regNumber', 'category', 'text', 'status', 'createdBy', 'createdByReg', 'createdAt', 'resolvedBy', 'resolvedAt', 'note'],
@@ -402,6 +405,7 @@ var LINK_COLUMNS = {
 
 var ID_PREFIXES = {
   Users: 'Usr', Students: 'Stu', Staff: 'Stf',
+  Publications: 'Pub', Clearance: 'Clr', SupervisorHistory: 'Sph',
   Submissions: 'Sub', Announcements: 'Ann', AuditLog: 'Log', Meetings: 'Mtg', Notifications: 'Ntf', Requests: 'Req', PresentationIntents: 'Pnt', Seminars: 'Sem', ProgrammeSessions: 'Pgs', Examiners: 'Exm', Messages: 'Msg', Deadlines: 'Ddl', Inquiries: 'Inq', Templates: 'Tpl', Actions: 'Act', Reviews: 'Rev', Concerns: 'Con', CheckIns: 'Chk', SubComments: 'Cmt'
 };
 var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -415,7 +419,8 @@ function brand_() {
     logoUrl: p.getProperty('SCHOOL_LOGO_URL') || CFG.DEFAULT_LOGO_URL,
     cbsLogoUrl: p.getProperty('CBS_LOGO_URL') || CFG.DEFAULT_CBS_LOGO_URL,
     heroBgUrl: p.getProperty('HERO_IMAGE_URL') || '',
-    journeyImgUrl: p.getProperty('JOURNEY_IMAGE_URL') || ''
+    journeyImgUrl: p.getProperty('JOURNEY_IMAGE_URL') || '',
+    turnstileSiteKey: p.getProperty('TURNSTILE_SITE_KEY') || ''
   };
 }
 
@@ -472,6 +477,12 @@ function cellSafe_(v) {
   if (/^\d{1,2}:\d{2}$/.test(v)) return "'" + v;   // HH:MM times stay text
   return v;
 }
+/** One CSV field, quoted. A text cell that starts with = + - @ tab or CR gets a leading ' so Excel/Sheets show it as text instead of running it as a formula. */
+function csvCell_(v) {
+  var t = v === undefined || v === null ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+  return '"' + t.replace(/"/g, '""') + '"';
+}
 function fullNameOf_(rec) { return [rec.firstName, rec.otherNames, rec.surname].filter(Boolean).join(' '); }
 
 /* ---- Lock ---- */
@@ -481,6 +492,7 @@ function lockAcquire_(ms) {
   var l = LockService.getScriptLock();
   if (!l.tryLock(ms || 20000)) return false;
   __lockObj = l; __lockDepth = 1;
+  __tables = {}; __idx = {};   // another request may have written while the lock was free (e.g. between the rows of a bulk job): never trust tables read earlier in this run
   return true;
 }
 function lockRelease_() {
@@ -1047,14 +1059,47 @@ function sendPortalMail_(opts) {
   if (__lockDepth > 0 && !opts.immediate) { if (!opts.to) return false; __mailQueue.push(opts); return true; }
   return sendPortalMailNow_(opts);
 }
+function mailRecipientCount_(opts) {
+  var n = 0;
+  ['to', 'cc', 'bcc'].forEach(function (k) { if (opts && opts[k]) n += String(opts[k]).split(',').filter(function (x) { return String(x).trim(); }).length; });
+  return Math.max(1, n);
+}
+/** Sends one announcement-style message to many people as BCC batches of 50, right now (never queued) and never past the daily quota.
+ *  Returns how many recipients were really handed to MailApp. Call it AFTER the script lock is released (see finishBulkMail_). */
+function sendBcc_(list, subject, body, replyTo) {
+  var sent = 0, quota = Infinity;
+  try { quota = MailApp.getRemainingDailyQuota(); } catch (qe) {}
+  for (var i = 0; i < list.length; i += 50) {
+    var chunk = list.slice(i, i + 50);
+    var room = quota - 1;                                   // 1 address (the To) is spent on the coordinator copy
+    if (room < 1) { Logger.log('Mail quota exhausted; ' + (list.length - i) + ' recipient(s) not emailed: ' + subject); break; }
+    if (room < chunk.length) chunk = chunk.slice(0, room);
+    try {
+      var o = { to: coordinatorEmail_(), bcc: chunk.join(','), subject: subject, body: body };
+      if (replyTo) o.replyTo = replyTo;
+      if (sendPortalMailNow_(o)) { sent += chunk.length; quota -= chunk.length + 1; } else break;
+    } catch (e) { Logger.log('bulk mail: ' + e); }
+    if (chunk.length < list.slice(i, i + 50).length) break;
+  }
+  return sent;
+}
+/** For the locked bulk endpoints: they return {..., _mail: {list, subject, body}}; the wrapper sends after the lock is released and fills in the true count. */
+function finishBulkMail_(res) {
+  var job = res && res._mail; if (!job) return res;
+  delete res._mail;
+  res.emailAttempted = job.list.length;
+  if (job.individual) { try { res.emailed = sendPortalMailNow_({ to: job.list[0], subject: job.subject, body: job.body, replyTo: job.replyTo || '' }) ? 1 : 0; } catch (e) { Logger.log('direct message mail: ' + e); res.emailed = 0; } }
+  else res.emailed = job.list.length ? sendBcc_(job.list, job.subject, job.body, job.replyTo) : 0;
+  return res;
+}
 function flushMailQueue_() {
   var q = __mailQueue; __mailQueue = [];
-  q.forEach(function (o) { try { sendPortalMailNow_(o); } catch (e) { Logger.log('queued mail to ' + o.to + ' failed: ' + e); } });
+  q.forEach(function (o) { try { if (!sendPortalMailNow_(o)) Logger.log('queued mail to ' + o.to + ' was not sent: ' + o.subject); } catch (e) { Logger.log('queued mail to ' + o.to + ' failed: ' + e); } });
 }
 function sendPortalMailNow_(opts) {
   opts = opts || {};
   if (!opts.to) return false;
-  try { if (MailApp.getRemainingDailyQuota() < 1) { Logger.log('Mail quota exhausted; not sent: ' + opts.subject); return false; } } catch (qe) {}
+  try { if (MailApp.getRemainingDailyQuota() < mailRecipientCount_(opts)) { Logger.log('Mail quota exhausted; not sent: ' + opts.subject); return false; } } catch (qe) {}   // the daily quota counts every to/cc/bcc address, not every message
   var text = String(opts.body || '');
   if (!opts.noLoginLink && text.indexOf(PORTAL_LOGIN_URL_) === -1) text += '\n\nPortal login: ' + PORTAL_LOGIN_URL_;   // every email carries the one official address, except those flagged noLoginLink
   var contact = opts.contactEmail ? { email: opts.contactEmail, label: opts.contactLabel || '' } : null;
@@ -1396,10 +1441,11 @@ function setUp() {
  *  LIMIT_MONTHS_* are PLACEHOLDER programme time limits \u2014 enter the real ones, then set TIME_LIMITS_ENABLED = yes. */
 var NEW_SETTINGS = [
   ['SIMILARITY_LIMIT', '20'], ['REQUIRE_SIMILARITY', 'no'], ['EXAMINER_APPROVAL_REQUIRED', 'no'], ['PASSPORT_PRIVACY', 'private'],
-  ['TIME_LIMITS_ENABLED', 'no'], ['LIMIT_MONTHS_MSc', '24'], ['LIMIT_MONTHS_MPhil', '36'], ['LIMIT_MONTHS_PhD', '60'], ['TIME_ALERT_MONTHS', '6'], ['ENDORSE_REMIND_DAYS', '3'], ['NUDGE_DAYS', '30'],
+  ['TIME_LIMITS_ENABLED', 'no'], ['LIMIT_MONTHS_MSc', '24'], ['LIMIT_MONTHS_MPhil', '36'], ['LIMIT_MONTHS_PhD', '60'], ['TIME_ALERT_MONTHS', '6'], ['ENDORSE_REMIND_DAYS', '3'], ['NUDGE_DAYS', '30'], ['EXAMINER_REMIND_DAYS', '7'], ['PUB_REQUIRED_PHD', '1'], ['PUB_REQUIRED_MSC', '0'], ['PUB_REQUIRE_VERIFIED', 'yes'], ['EXAMINER_DUE_SOON_DAYS', '3'],
   ['BLOCK_APPROVAL_ON_FORMAT', 'yes'], ['PROGRAMME_START_MONTH', '2026-11'], ['PROGRAMME_TIMEZONE', 'Africa/Lagos'], ['PROGRAMME_SEEDED', 'no'], ['SUPERVISOR_MAX_STUDENTS', '8'], ['FEEDBACK_DAYS', '7'], ['TEMPLATE_PROPOSAL_DEFENCE_FORM', ''], ['TEMPLATE_PROGRESS_PPTX', ''],
   ['LETTER_REF_PREFIX', 'UA/PHY/FPS'], ['LETTER_REF_SERIAL', '0'], ['LETTER_REF_PAD', '2'], ['LETTER_REF_RESET_YEARLY', 'no'], ['LETTER_REF_YEAR', ''],
-  ['HOD_NAME', 'Dr. Medina Umar'], ['HOD_TITLE', 'Ag. HOD, Physics'], ['LETTER_LOGO_FILE_ID', '1LDjsF_70W2BpttMyLxfmltABCyUSPeHl'], ['LETTER_DEFAULT_TIME', '10.00 am'], ['LETTER_DEFAULT_VENUE', 'Physics Conference Room']
+  ['HOD_NAME', 'Dr. Medina Umar'], ['HOD_TITLE', 'Ag. HOD, Physics'], ['LETTER_LOGO_FILE_ID', '1LDjsF_70W2BpttMyLxfmltABCyUSPeHl'], ['LETTER_DEFAULT_TIME', '10.00 am'], ['LETTER_DEFAULT_VENUE', 'Physics Conference Room'],
+  ['REGISTER_HOURLY_MAX', '20'], ['REGISTER_DAILY_MAX', '60'], ['ENQUIRY_HOURLY_MAX', '10'], ['ENQUIRY_DAILY_MAX', '30']
 ];
 function ensureSettings_() {
   var sh = getSheet_('Config'), have = {}, added = [];
@@ -1648,11 +1694,11 @@ function validatePhone_(phone) {
   if (/^(\+|00)?234/.test(s)) s = '0' + s.replace(/^(\+|00)?234/, '').replace(/^0/, '');
   return /^0[789][01]\d{8}$/.test(s) ? s : null;
 }
-function validateName_(name) { var s = String(name || '').trim(); return s.length >= 2 && /^[A-Za-z\s'\-]+$/.test(s); }
+function validateName_(name) { var s = String(name || '').trim(); return s.length >= 2 && /^[\p{L}\p{M}\s'\u2019\-]+$/u.test(s); }   // any letter or combining mark: Ad\u00e9ye\u0301m\u00ed, \u1ECCl\u00e1t\u00fanj\u00ed, M\u00fcller, Zo\u00eb
 /** "jOHN  mary-jane o'brien" -> "John Mary-Jane O'Brien". */
 function toTitleCase_(v) {
   return String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018`]/g, "'").replace(/\s+/g, ' ').trim()
-    .toLowerCase().replace(/(^|[\s'\-])([a-z])/g, function (m, p, c) { return p + c.toUpperCase(); });
+    .toLowerCase().replace(/(^|[\s'\-])(\p{L})/gu, function (m, p, c) { return p + c.toUpperCase(); });
 }
 
 /** "o'brien  adeyemi" -> "O'BRIEN ADEYEMI". Surnames are always stored in UPPERCASE. */
@@ -1660,22 +1706,139 @@ function toUpperName_(v) {
   return String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018`]/g, "'").replace(/\s+/g, ' ').trim().toUpperCase();
 }
 var TITLE_SMALL_WORDS_ = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'into', 'nor', 'of', 'on', 'or', 'per', 'the', 'to', 'via', 'vs', 'with'];
-/** Title case for thesis titles: every word capitalised; words with 2+ capitals (ZnO, PhD, XRD, DNA) left alone;
- *  small connecting words stay lowercase unless first or straight after a colon / question mark. */
-function toTitleText_(v) {
-  var s = String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018]/g, "'").replace(/\s+/g, ' ').trim();
-  var first = true, afterBreak = false;
-  return s.replace(/\S+/g, function (w) {
-    var letters = w.replace(/[^A-Za-z]/g, ''), caps = (letters.match(/[A-Z]/g) || []).length, out;
-    if (caps >= 2 || (letters.length === 1 && caps === 1)) out = w;
+
+/* Acronyms and terms with a fixed spelling. Matching ignores case ("nacl", "Nacl" and "NACL" all become NaCl), and a
+ * trailing s or 's is kept ("ngos" -> NGOs, "lga's" -> LGA's), so plurals need no entry of their own.
+ * Left out on purpose, because they are also everyday words: IT, AIDS (handled by the HIV rule below), CAN, SON, NOUN, NUT, SEC,
+ * PET, ART, ID, US, ATM, PIN, MAN. NIWA is not listed either (it is the test case for an unlisted acronym).
+ * To add a term, add it to the right group; keep the spelling you want to see. */
+var TITLE_TERMS_ = [].concat(
+  // Nigerian government, regulators, security and public bodies
+  ['FCT', 'FCTA', 'AMAC', 'LGA', 'FGN', 'NGO', 'NASS', 'INEC', 'NJC', 'EFCC', 'ICPC', 'CCB', 'CCT', 'NFIU', 'NDLEA', 'NAPTIP', 'NSCDC', 'NPF', 'NAF', 'DSS',
+   'NIS', 'NCS', 'FRSC', 'FIRS', 'NIMC', 'NPC', 'NBS', 'CBN', 'NDIC', 'AMCON', 'NNPC', 'NLNG', 'NUPRC', 'NMDPRA', 'DPR', 'PTDF', 'NCDMB', 'NEPZA',
+   'NSE', 'NGX', 'NCC', 'NBC', 'NTA', 'FRCN', 'NIPOST', 'NiMet', 'NAMA', 'FAAN', 'NCAA', 'NPA', 'NIMASA', 'NEMA', 'SEMA', 'NEMSA', 'NERC', 'NESREA',
+   'NOSDRA', 'NIHSA', 'NDDC', 'NEDC', 'NSITF', 'PenCom', 'NHIS', 'NPHCDA', 'NCDC', 'NAFDAC', 'NITDA', 'NASRDA', 'NASENI', 'NABDA', 'NAERLS', 'NIFOR',
+   'NIRSAL', 'SMEDAN', 'NEXIM', 'BOI', 'CAC', 'NIPC', 'NESG', 'NEITI', 'NSIA', 'CISLAC', 'SERAP', 'APC', 'PDP', 'NYSC'],
+  // Nigerian education, professional bodies, unions and universities
+  ['NUC', 'NBTE', 'NCCE', 'JAMB', 'WAEC', 'NECO', 'NABTEB', 'UTME', 'SSCE', 'TETFund', 'TRCN', 'COREN', 'ICAN', 'ANAN', 'NMA', 'NARD', 'JOHESU', 'MDCN',
+   'NMCN', 'PCN', 'NBA', 'NUJ', 'NLC', 'TUC', 'ASUU', 'ASUP', 'SSANU', 'NASU', 'COEASU', 'NANS', 'NUPENG', 'PENGASSAN',
+   'ABU', 'UI', 'UNN', 'OAU', 'UNILAG', 'UNIABUJA', 'UNIBEN', 'UNILORIN', 'UNIJOS', 'UNIZIK', 'UNICAL', 'UNIPORT', 'UNIMAID', 'UNIUYO', 'UNIOSUN', 'LASU',
+   'FUTA', 'FUTMINNA', 'FUOYE', 'FUTO', 'BUK', 'NDA', 'AFIT'],
+  // UN agencies and international bodies
+  ['UN', 'UNICEF', 'UNESCO', 'UNDP', 'UNEP', 'UNHCR', 'UNFPA', 'UNAIDS', 'UNODC', 'UNIDO', 'UNCTAD', 'OCHA', 'UNOCHA', 'UNRWA', 'UNOPS', 'UNWTO', 'UNFCCC',
+   'UNCCD', 'UNDRR', 'UNITAR', 'UNU', 'WHO', 'FAO', 'ILO', 'IMO', 'ITU', 'IAEA', 'ICAO', 'IFAD', 'IMF', 'WFP', 'WIPO', 'WMO', 'UPU', 'WTO', 'OECD', 'OPEC',
+   'IFC', 'MIGA', 'AfDB', 'IPCC', 'IUCN', 'WWF', 'IOM', 'ICRC', 'IFRC', 'MSF', 'USAID', 'FCDO', 'JICA', 'GIZ', 'CDC', 'NIH', 'NASA', 'CERN', 'NSF',
+   'ECOWAS', 'AU', 'NEPAD', 'SADC', 'EU', 'UK', 'USA', 'UAE', 'SDG', 'MDG'],
+  // ICT, computing and AI
+  ['AI', 'ML', 'DL', 'ICT', 'IoT', 'API', 'AR', 'VR', 'XR', 'GPS', 'GIS', 'GSM', 'LTE', 'SMS', 'USSD', 'LAN', 'WAN', 'VPN', 'IP', 'TCP', 'UDP', 'HTTP', 'HTTPS',
+   'URL', 'HTML', 'CSS', 'SQL', 'XML', 'JSON', 'PDF', 'CPU', 'GPU', 'TPU', 'RAM', 'ROM', 'SSD', 'USB', 'LED', 'LCD', 'OLED', 'RFID', 'NFC', 'QR', 'ERP', 'CRM',
+   'DBMS', 'SaaS', 'IaaS', 'PaaS', 'NLP', 'LLM', 'CNN', 'RNN', 'LSTM', 'SVM', 'KNN', 'PCA', 'GPT', 'ChatGPT', 'UAV', 'SCADA', 'PLC', 'FPGA', 'MATLAB',
+   'SPSS', 'PHP', 'iOS', 'macOS', 'WiFi', 'PC', 'OS', 'CAD', 'MIS', 'DSP', 'BVN', 'NIN', 'OTP', 'SIM', 'UX', 'AWS', 'TV'],
+  // Health and life sciences
+  ['HIV', 'DNA', 'RNA', 'mRNA', 'tRNA', 'rRNA', 'cDNA', 'PCR', 'qPCR', 'ELISA', 'TB', 'HBV', 'HCV', 'HPV', 'STI', 'ARV', 'PMTCT', 'COVID', 'SARS', 'CoV', 'MERS',
+   'BMI', 'BP', 'ECG', 'EEG', 'EMG', 'MRI', 'CT', 'CD4', 'CD8', 'ICU', 'OPD', 'ANC', 'ORS', 'IVF', 'HDL', 'LDL', 'ATP', 'ADP', 'PTSD', 'ADHD', 'COPD', 'CVD',
+   'UTI', 'NCD', 'PHC', 'ARI', 'MDR', 'XDR', 'GMO', 'HPLC'],
+  // Chemistry, materials and environment
+  ['pH', 'pKa', 'pOH', 'NPK', 'HCl', 'NaCl', 'NaOH', 'KOH', 'KCl', 'CaCl2', 'MgCl2', 'FeCl3', 'AlCl3', 'H2O', 'H2O2', 'H2S', 'H2SO4', 'H3PO4', 'HNO3', 'HF',
+   'NH3', 'NH4OH', 'NH4Cl', 'NH4NO3', 'KNO3', 'NaNO3', 'K2SO4', 'Na2SO4', 'CuSO4', 'FeSO4', 'ZnSO4', 'MgSO4', 'AgNO3', 'BaSO4', 'CaCO3', 'Na2CO3', 'NaHCO3',
+   'KMnO4', 'K2Cr2O7', 'CaO', 'MgO', 'ZnO', 'CuO', 'NiO', 'TiO2', 'SnO2', 'SiO2', 'Al2O3', 'Fe2O3', 'Fe3O4', 'Co3O4', 'CeO2', 'WO3', 'MoS2', 'WS2', 'ZnS',
+   'CdS', 'CdSe', 'CdTe', 'PbS', 'GaN', 'GaAs', 'InP', 'ITO', 'FTO', 'AZO', 'CIGS', 'CZTS', 'CO2', 'CH4', 'N2O', 'NO2', 'NOx', 'SO2', 'SOx', 'O3', 'N2', 'H2',
+   'O2', 'PM2.5', 'PM10', 'CFC', 'VOC', 'BOD', 'COD', 'TDS', 'TSS', 'PAH', 'PCB', 'DDT', 'LPG', 'CNG', 'PMS', 'UV', 'IR', 'XRD', 'SEM', 'TEM', 'EDX', 'EDS',
+   'FTIR', 'XPS', 'AFM', 'NMR', 'EPR', 'ESR', 'XRF', 'AAS', 'BET', 'TGA', 'DSC', 'DTA', 'DFT', 'PV', 'AC', 'DC', 'RF', 'EMF', '1D', '2D', '3D'],
+  // Degrees and qualifications
+  ['PhD', 'MSc', 'MPhil', 'BSc', 'BEng', 'MEng', 'MEd', 'MBBS', 'MBA', 'HND', 'OND', 'NCE', 'PGD']
+);
+/* Terms that are also ordinary words or element symbols (who, led, ram, Au, Eu, Tb ...): they take their listed spelling only when typed in capitals. */
+var TITLE_CAPS_ONLY_ = ['who', 'led', 'ram', 'firs', 'wan', 'cad', 'ml', 'dl', 'au', 'ir', 'ar', 'hf', 'tb', 'eu', 'os'];
+var TITLE_TERM_MAP_ = Object.create(null), TITLE_CAPS_ONLY_MAP_ = Object.create(null), TITLE_SMALL_MAP_ = Object.create(null);
+TITLE_TERMS_.forEach(function (t) { TITLE_TERM_MAP_[t.toLowerCase()] = t; });
+TITLE_CAPS_ONLY_.forEach(function (t) { TITLE_CAPS_ONLY_MAP_[t] = 1; });
+TITLE_SMALL_WORDS_.forEach(function (t) { TITLE_SMALL_MAP_[t] = 1; });
+
+/** Two or more letters, none of them lower case (NSCDC, AND). */
+function titleIsCapsWord_(s) { var l = String(s).replace(/[^A-Za-z]/g, ''); return l.length >= 2 && l === l.toUpperCase(); }
+
+/** The listed spelling of a word (stem + optional plural s), or '' when it is not a listed term or is an everyday word typed in lower case. */
+function titleTerm_(seg) {
+  var low = seg.toLowerCase(), base, hit;
+  if (low in TITLE_TERM_MAP_) return (low in TITLE_CAPS_ONLY_MAP_ && !titleIsCapsWord_(seg)) ? '' : TITLE_TERM_MAP_[low];
+  if (low.length > 2 && low.charAt(low.length - 1) === 's') {
+    base = low.slice(0, -1);
+    if (base in TITLE_TERM_MAP_ && !(base in TITLE_CAPS_ONLY_MAP_ && !titleIsCapsWord_(seg.slice(0, -1)))) return TITLE_TERM_MAP_[base] + 's';
+  }
+  return '';
+}
+
+/** True when the whole title is typed in capitals. Formulas (anything with a digit) and listed terms such as NaCl, pH or PhD are ignored in that test. */
+function titleIsAllCaps_(s) {
+  var any = false, parts = String(s).split(/[\s\-\/&\u2013\u2014]+/), i, core;
+  for (i = 0; i < parts.length; i++) {
+    core = parts[i].replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9+]+$/g, '').replace(/'s$/i, '');
+    if (!/[A-Za-z]/.test(core) || /\d/.test(core) || titleTerm_(core)) continue;
+    if (/[a-z]/.test(core)) return false;
+    any = true;
+  }
+  return any;
+}
+
+/** One word (no spaces, hyphens, slashes or ampersands). ctx: allCaps, bracketed, single (the token is just this word), first, afterBreak, afterHiv. */
+function titleSeg_(seg, ctx) {
+  if (!/[A-Za-z0-9]/.test(seg)) return seg;
+  var low = seg.toLowerCase(), poss = /'s$/i.test(seg) ? "'s" : '', stem = poss ? seg.slice(0, -2) : seg, hit, letters, single;
+  if (/^\d+(?:st|nd|rd|th)$/.test(low)) return low;                         // 3rd, 21st
+  if (low === 'aids' && ctx.afterHiv) return 'AIDS';                       // HIV/AIDS, HIV and AIDS (but not "teaching aids")
+  hit = titleTerm_(stem); if (hit) return hit + poss;                       // the list wins over every other rule
+  if (/\d/.test(seg) && /[A-Z]/.test(seg)) return seg;                      // CO2, H2O2, PM2.5, Fe3O4, Cu2+, B12, 5G
+  if (ctx.bracketed && ctx.single && titleIsCapsWord_(stem)) return seg;    // (NSCDC), (XYZ)
+  letters = stem.replace(/[^A-Za-z]/g, '');
+  if (/[A-Z]/.test(letters.slice(1)) && /[a-z]/.test(letters)) return seg;  // NaCl, PhD, iPhone
+  single = letters.length === 1 && /[A-Z]/.test(letters);
+  if (!ctx.allCaps && (single || titleIsCapsWord_(stem)) && !(!single && ctx.single && TITLE_SMALL_MAP_[low])) return seg;   // typed in capitals on purpose (FCT, Vitamin A); a small word such as AND still goes lower case
+  if (ctx.single && !ctx.first && !ctx.afterBreak && TITLE_SMALL_MAP_[low]) return low;
+  return low.replace(/^([^a-z0-9]*)([a-z])/, function (m, p, ch) { return p + ch.toUpperCase(); });
+}
+
+/** What was typed while the cursor is still in the last word: only the basic rules, so a half-typed word such as "un" (university) is not turned into UN. */
+function titleLight_(w, first, afterBreak) {
+  var letters = w.replace(/[^A-Za-z]/g, ''), caps = (letters.match(/[A-Z]/g) || []).length, lw, core;
+  if (caps >= 2 || (letters.length === 1 && caps === 1)) return w;
+  lw = w.toLowerCase(); core = lw.replace(/^[^a-z]+|[^a-z]+$/g, '');
+  if (!first && !afterBreak && TITLE_SMALL_MAP_[core]) return lw;
+  return lw.replace(/(^[("'\[\u201C]*|[-\/])([a-z])/g, function (m, p, ch) { return p + ch.toUpperCase(); });
+}
+
+/** Title case for thesis and dissertation titles. */
+function titleCaseCore_(s, live) {
+  var allCaps = !live && titleIsAllCaps_(s), first = true, afterBreak = false, prev1 = '', prev2 = '';
+  return s.replace(/\S+/g, function (w, off) {
+    var out, m = /^([(\["'\u201C\u2018{]*)([\s\S]*?)([.,;:!?)\]}"'\u201D\u2019]*)$/.exec(w), lead = m[1], core = m[2], trail = m[3], parts, i, low1, hiv = false;
+    if (live && off + w.length === s.length) out = titleLight_(w, first, afterBreak);          // word still being typed
+    else if (!/[A-Za-z0-9]/.test(core)) out = w;
     else {
-      var lw = w.toLowerCase(), core = lw.replace(/^[^a-z]+|[^a-z]+$/g, '');
-      if (!first && !afterBreak && TITLE_SMALL_WORDS_.indexOf(core) > -1) out = lw;
-      else out = lw.replace(/(^[("'\[\u201C]*|[-\/])([a-z])/g, function (m, p, ch) { return p + ch.toUpperCase(); });
+      parts = core.split(/([\-\/&\u2013\u2014])/);
+      var bracketed = /[(\[]/.test(lead) && /[)\]]/.test(trail), single = parts.length === 1, hivBefore = prev1 === 'hiv' || ((prev1 === 'and' || prev1 === '&') && prev2 === 'hiv');
+      for (i = 0; i < parts.length; i += 2) {
+        low1 = parts[i].toLowerCase();
+        parts[i] = titleSeg_(parts[i], { allCaps: allCaps, bracketed: bracketed, single: single, first: first, afterBreak: afterBreak, afterHiv: hivBefore || hiv });
+        hiv = low1 === 'hiv';
+      }
+      out = lead + parts.join('') + trail;
     }
+    prev2 = prev1; prev1 = core.toLowerCase();
     first = false; afterBreak = /[:?]$/.test(w);
     return out;
   });
+}
+
+/** Thesis / dissertation title case. Rules, in order of priority (see titleSeg_):
+ *  listed acronyms and terms get their fixed spelling; ordinals (3rd) go lower case; any word with both a capital and a digit
+ *  (CO2, Fe3O4, 5G) and any mixed-case word (NaCl, PhD, iPhone) stays as typed; a capitalised single word in brackets stays;
+ *  in a normal title other all-caps words stay (FCT) except small words such as AND, which go lower case;
+ *  a title typed entirely in capitals keeps only the list, digit words and bracketed words in capitals.
+ *  Small connecting words stay lower case unless first or straight after a colon / question mark. */
+function toTitleText_(v) {
+  var s = String(v === undefined || v === null ? '' : v).replace(/[\u2019\u2018]/g, "'").replace(/\s+/g, ' ').trim();
+  return titleCaseCore_(s, false);
 }
 
 /** Serialised wrapper: one writer at a time so read-check-write cannot interleave. */
@@ -1701,6 +1864,9 @@ function api_register_locked_(payload) {
   if (findUserByReg_(reg)) throw new Error('Registration number already registered.');
   if (findWhere_('Users', function (u) { return String(u.email || '').toLowerCase() === email; })) throw new Error('This email address is already used by another account. Use a different email, or contact the PG Coordinator if this is a mistake.');
 
+  // Public and unauthenticated: every registration saves a photo, writes rows and sends two emails, so cap the volume before any of that happens.
+  if (rateLimitHit_('reg_hour', capSetting_('REGISTER_HOURLY_MAX', 20), 3600) || dailyCapHit_('reg', capSetting_('REGISTER_DAILY_MAX', 60)))
+    throw new Error('Registration is very busy right now. Please try again later, or contact the PG Coordinator.');
   // Upload passport
   if (!payload.passportPhoto || !payload.passportPhoto.dataUrl) throw new Error('Passport photo is required.');
   var fileInfo = savePassportPhoto_(payload.passportPhoto, reg);
@@ -1773,7 +1939,7 @@ function api_register_locked_(payload) {
   } catch (mailErr) { Logger.log('Registration email failed for ' + reg + ': ' + (mailErr && mailErr.message ? mailErr.message : mailErr)); }
   return { ok: true, message: 'Registration submitted. Awaiting PG Coordinator approval.' + letterNote, letterSaved: !!letterInfo || !letterNote };
 }
-function api_register() { var a = arguments; return withScriptLock_(function () { return api_register_locked_.apply(null, a); }, 30000); }
+function api_register(payload) { verifyTurnstile_(payload && payload.captchaToken); var a = arguments; return withScriptLock_(function () { return api_register_locked_.apply(null, a); }, 30000); }
 
 /** Branded "registration received" email to the student (coordinator BCC'd). */
 function notifyRegistrationReceived_(p) {
@@ -2274,7 +2440,7 @@ function removeIdColumns(dryRun) {
  *  prefixed sequence (Sub01, Mtg01 ...). Those counters read the sheet, so they restart at 01 once the tabs are empty.
  *  Safe to re-run: if the Drive clean-up stops at the time limit, run it again to finish. */
 var TRAINING_WIPE_TABS_ = ['Students', 'Submissions', 'SubComments', 'Meetings', 'Actions', 'Messages', 'Inquiries', 'Requests',
-  'PresentationIntents', 'Examiners', 'Reviews', 'Concerns', 'CheckIns', 'Notifications', 'AuditLog'];
+  'PresentationIntents', 'Examiners', 'Reviews', 'Concerns', 'CheckIns', 'Publications', 'Clearance', 'SupervisorHistory', 'Notifications', 'AuditLog'];
 var TRAINING_CALENDAR_TABS_ = ['Announcements', 'Deadlines', 'Seminars'];
 var TRAINING_WIPE_ROLES_ = ['student', 'examiner'];
 var TRAINING_DRIVE_FOLDERS_ = ['Submissions', 'Admission Letters', 'Attachments', 'Examination Notices', 'Passport Photographs'];   // 'Submissions' holds the numbered per-upload folders; they are cleared with it
@@ -2414,7 +2580,7 @@ function resetForTraining(dryRun, clearCalendar) {
  *  Keeps: Staff, all other logins, Templates, ProgrammeSessions, Config (including the letter counter), the Backups folder,
  *  the passport photos and the Admission Letters folder. Refuses to run if no active SuperAdmin / PG Coordinator would remain. */
 var TRAINING_KEEP_WIPE_TABS_ = ['Submissions', 'SubComments', 'Meetings', 'Actions', 'Messages', 'Inquiries', 'Requests',
-  'PresentationIntents', 'Examiners', 'Reviews', 'Concerns', 'CheckIns', 'Notifications', 'AuditLog'];
+  'PresentationIntents', 'Examiners', 'Reviews', 'Concerns', 'CheckIns', 'Publications', 'Clearance', 'SupervisorHistory', 'Notifications', 'AuditLog'];
 var TRAINING_KEEP_DRIVE_FOLDERS_ = ['Submissions', 'Attachments', 'Examination Notices'];
 var TRAINING_START_STAGE_ = START_STAGE_;   // the training reset keeps students at the same starting stage
 
@@ -2538,6 +2704,7 @@ function api_removeStaff_locked_(token, staffId) {
     return String(s.mainSupervisorId) === String(staffId) || String(s.coSupervisorId) === String(staffId) || String(s.coSupervisor2Id) === String(staffId);
   });
   affected.forEach(function (s) {
+    [['mainSupervisorId', SUP_ROLES_[0]], ['coSupervisorId', SUP_ROLES_[1]], ['coSupervisor2Id', SUP_ROLES_[2]]].forEach(function (rl) { if (String(s[rl[0]]) === String(staffId)) supHistoryAdd_(s.regNumber, rl[1], staffId, staff.fullName, '', '', 'Supervisor record removed from the portal', user.fullName); });
     updateRow_('Students', s.id, {
       mainSupervisorId: String(s.mainSupervisorId) === String(staffId) ? '' : s.mainSupervisorId,
       coSupervisorId: String(s.coSupervisorId) === String(staffId) ? '' : s.coSupervisorId,
@@ -2641,7 +2808,7 @@ function defaultFacDep_() {
   return { faculty: f, department: dep };
 }
 function matchList_(list, v) { var k = String(v || '').trim().toLowerCase(), hit = ''; list.forEach(function (x) { if (x.toLowerCase() === k) hit = x; }); return hit; }
-function api_importStudents_l(token, csvText) {
+function importPrepare_(token, csvText) {
   var user = requireUser_(token);
   assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can import students.');
   var table = parseCsv_(csvText);
@@ -2655,28 +2822,34 @@ function api_importStudents_l(token, csvText) {
   });
   var rows = table.slice(1);
   if (rows.length > STUDENT_IMPORT_MAX) throw new Error('Import at most ' + STUDENT_IMPORT_MAX + ' students at a time (this file has ' + rows.length + '). Split it into smaller files.');
-  var dflt = defaultFacDep_(), added = [], failed = [], emailed = 0;
+  return { user: user, map: map, rows: rows, dflt: defaultFacDep_() };
+}
+
+/** CSV import. Parsing and checks run under one short lock; then each account is created under its own short lock and its
+ *  one-time-password email is sent after that lock is released, so a 60-row file never keeps everyone else waiting. */
+function api_importStudents(token, csvText) {
+  var ctx = withScriptLock_(function () { return importPrepare_(token, csvText); }, 30000);
+  var map = ctx.map, rows = ctx.rows, dflt = ctx.dflt, added = [], failed = [], emailed = 0;
   rows.forEach(function (r, i) {
     var cell = function (f) { return map[f] === undefined ? '' : String(r[map[f]] === undefined ? '' : r[map[f]]).trim(); };
     var line = i + 2, reg = cell('regNumber').replace(/^UA\/PG/i, 'UA/pg');
     try {
       var g = cell('gender').toLowerCase();
-      var made = createStudentAccount_(user, {
+      var made = withScriptLock_(function () { return createStudentAccount_(ctx.user, {
         regNumber: reg, surname: cell('surname'), firstName: cell('firstName'), otherNames: cell('otherNames'),
         gender: g === 'male' || g === 'm' ? 'Male' : (g === 'female' || g === 'f' ? 'Female' : cell('gender')),
         phoneNumber: cell('phoneNumber'), email: cell('email'),
         faculty: cell('faculty') || dflt.faculty, department: cell('department') || dflt.department,
         programme: matchList_(CFG.PROGRAMMES, cell('programme')) || cell('programme'),
         specialisation: matchList_(CFG.SPECIALISATIONS, cell('specialisation')) || cell('specialisation')
-      }, 'Imported from CSV');
+      }, 'Imported from CSV'); }, 30000);   // one short lock per account
       added.push({ regNumber: made.regNumber, name: made.firstName + ' ' + made.surname });
       try { if (notifyStudentAccountCreated_(made)) emailed++; } catch (e) { Logger.log('import mail ' + made.regNumber + ': ' + e); }
     } catch (e) { failed.push({ row: line, regNumber: reg, error: String((e && e.message) || e) }); }
   });
-  logAudit_(user.id, user.regNumber, 'IMPORT_STUDENTS', 'Students', added.length + ' added, ' + failed.length + ' failed');
+  try { withScriptLock_(function () { logAudit_(ctx.user.id, ctx.user.regNumber, 'IMPORT_STUDENTS', 'Students', added.length + ' added, ' + failed.length + ' failed'); }, 30000); } catch (e) { Logger.log('import audit: ' + e); }
   return { ok: true, added: added, failed: failed, emailed: emailed };
 }
-function api_importStudents() { return L_(api_importStudents_l, arguments); }
 
 function api_removeStudent_locked_(token, regNumber) {
   var user = requireUser_(token);
@@ -3074,7 +3247,7 @@ function logImportSummary_(s) {
 
 /* =========================== 8. SUPERVISOR ASSIGNMENT =========================== */
 
-function api_assignSupervisors_locked_(token, regNumber, mainSupervisorId, coSupervisorId, secondCoSupervisorId) {
+function api_assignSupervisors_locked_(token, regNumber, mainSupervisorId, coSupervisorId, secondCoSupervisorId, reason) {
   var user = requireUser_(token);
   assertRole_(user, ['PG_Coordinator', 'HoD'], 'Only the PG Coordinator or HoD can assign supervisors.');
   if (!regNumber) throw new Error('Reg number required.');
@@ -3091,7 +3264,13 @@ function api_assignSupervisors_locked_(token, regNumber, mainSupervisorId, coSup
   var co2 = isPhd_(student.programme) ? (secondCoSupervisorId || '') : '';
   var patch = { mainSupervisorId: mainSupervisorId || '', coSupervisorId: coSupervisorId || '', coSupervisor2Id: co2, updatedAt: nowIso_() };
   var oldIds = supervisorIdsFor_(student);
+  var supChanges = [[SUP_ROLES_[0], student.mainSupervisorId, mainSupervisorId || ''], [SUP_ROLES_[1], student.coSupervisorId, coSupervisorId || ''], [SUP_ROLES_[2], co2IdFor_(student), co2]]
+    .filter(function (c) { return String(c[1] || '') !== String(c[2] || ''); });
+  reason = String(reason || '').trim().slice(0, 300);
+  if (!reason && BULK_QUIET_) reason = 'Bulk assignment';
+  if (supChanges.some(function (c) { return c[1]; }) && reason.length < 5) throw new Error('Give a reason for replacing or removing a supervisor (for example: sabbatical, resignation, conflict of interest, or student request).');
   updateRow_('Students', student.id, patch);
+  supChanges.forEach(function (c) { supHistoryAdd_(student.regNumber, c[0], c[1], staffNameOf_(c[1]), c[2], staffNameOf_(c[2]), reason, user.fullName); });
   if (mainSupervisorId && stageIdx_(student.currentStage) <= stageIdx_('3 - Supervisor Allocation')) { try { advanceStageTo_(student, S_.TITLE, 'supervisors assigned'); } catch (e) { Logger.log(e); } }
   var mainName = mainSupervisorId ? (findById_('Staff', mainSupervisorId) || {}).fullName || '' : 'None';
   var coName = coSupervisorId ? (findById_('Staff', coSupervisorId) || {}).fullName || '' : 'None';
@@ -3277,7 +3456,7 @@ function api_createSubmission_locked_(token, payload) {
   var stuForStage = studentByReg_(user.regNumber);
   if (!asDraft) validateSubmissionStage_(stuForStage, payload.type);   // stage rules apply when the draft is submitted
   if (!payload.driveFileUrls) throw new Error('Drive file URL is required.');
-  assertUploadLinkKind_(payload.type, payload.driveFileUrls);
+  assertUploadLinkKind_(payload.type, payload.driveFileUrls, user);
   var now = nowIso_();
   var url = String(payload.driveFileUrls).trim();
   var row = appendRow_('Submissions', {
@@ -3517,7 +3696,7 @@ function api_submitDraft_l(token, id, url) {
   validateSubmissionStage_(studentByReg_(user.regNumber), sub.type);
   var link = String(url || '').trim() || String(sub.driveFileUrls || '');
   if (!urlsFromText_(link).length) throw new Error('A valid file link is required.');
-  assertUploadLinkKind_(sub.type, link);
+  assertUploadLinkKind_(sub.type, link, user);
   var now = nowIso_();
   updateRow_('Submissions', id, { driveFileUrls: link, status: 'Submitted', createdAt: now, updatedAt: now, compliance: '', history: pushFileHistory_(sub, 'Submitted from draft', link, '', '', user.fullName) });
   renameSubmissionFiles_(user.regNumber, sub.type, link); syncStudentFileLink_(user.regNumber, sub.type, link, now);
@@ -3602,23 +3781,36 @@ function api_approveStudent_locked_(token, regNumber) {
 function api_approveStudent() { var a = arguments; return withScriptLock_(function () { return api_approveStudent_locked_.apply(null, a); }, 30000); }
 
 /** Bulk-approve all registrations currently pending. Restricted to the PG Coordinator. */
-function api_approvePendingStudents_locked_(token) {
-  var user = requireUser_(token);
-  assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can bulk-approve students.');
-  var pending = filterWhere_('Users', function (u) { return u.role === 'Student' && String(u.status) === 'Pending'; });
-  var approved = 0, failedEmails = 0, failed = [];
-  pending.forEach(function (target) {
-    updateRow_('Users', target.id, { status: 'Approved' });
-    var tempPw = issueTempPassword_(target);
-    logAudit_(user.id, user.regNumber, 'APPROVE_STUDENT', target.regNumber, 'Bulk approved');
+/** Bulk approval. The script lock is global, so it is held for ONE student at a time (hash + writes), never across the whole batch,
+ *  and each one-time-password email is sent after that lock is released. Other users are not shut out and a large batch cannot run the 6-minute limit
+ *  while holding the lock. */
+function api_approvePendingStudents(token) {
+  var ctx = withScriptLock_(function () {
+    var user = requireUser_(token);
+    assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can bulk-approve students.');
+    return { user: user, regs: filterWhere_('Users', function (u) { return u.role === 'Student' && String(u.status) === 'Pending'; }).map(function (u) { return u.regNumber; }) };
+  }, 30000);
+  var approved = 0, failedEmails = 0, failed = [], skipped = 0;
+  ctx.regs.forEach(function (reg) {
+    var step = null;
+    try {
+      step = withScriptLock_(function () {
+        var target = userByRegExact_(reg);
+        if (!target || target.role !== 'Student' || String(target.status) !== 'Pending') return null;   // changed since the list was read
+        updateRow_('Users', target.id, { status: 'Approved' });
+        var tempPw = issueTempPassword_(target);
+        logAudit_(ctx.user.id, ctx.user.regNumber, 'APPROVE_STUDENT', target.regNumber, 'Bulk approved');
+        return { target: target, tempPw: tempPw };
+      }, 30000);
+    } catch (lockErr) { Logger.log('Bulk approve skipped ' + reg + ': ' + lockErr); skipped++; return; }   // portal busy: stays Pending, can be approved again
+    if (!step) return;
     var sent = false;
-    try { sent = notifyRegistrationDecision_(target, 'Approved', '', tempPw) === true; } catch (mailErr) { Logger.log('Bulk approve email failed for ' + target.regNumber + ': ' + (mailErr && mailErr.message ? mailErr.message : mailErr)); }
-    if (!sent) { failedEmails++; failed.push({ regNumber: target.regNumber, tempPassword: tempPw }); }
+    try { sent = notifyRegistrationDecision_(step.target, 'Approved', '', step.tempPw) === true; } catch (mailErr) { Logger.log('Bulk approve email failed for ' + reg + ': ' + (mailErr && mailErr.message ? mailErr.message : mailErr)); }
+    if (!sent) { failedEmails++; failed.push({ regNumber: step.target.regNumber, tempPassword: step.tempPw }); }
     approved++;
   });
-  return { ok: true, approved: approved, failedEmails: failedEmails, failed: failed };
+  return { ok: true, approved: approved, failedEmails: failedEmails, failed: failed, skipped: skipped };
 }
-function api_approvePendingStudents() { var a = arguments; return withScriptLock_(function () { return api_approvePendingStudents_locked_.apply(null, a); }, 30000); }
 
 function api_rejectStudent_locked_(token, regNumber, reason) {
   var user = requireUser_(token);
@@ -3653,11 +3845,195 @@ function api_addAnnouncement_locked_(token, title, body, audience, sendEmail, pr
   if (ANN_AUDIENCES.indexOf(audience) === -1) throw new Error('Choose who the announcement is for: Students only, Staff only or Every user.');
   var row = appendRow_('Announcements', { title: String(title).trim().slice(0, 200), body: String(body).slice(0, 5000), active: true, createdBy: user.id, createdAt: nowIso_(), audience: audience });
   logAudit_(user.id, user.regNumber, 'ADD_ANNOUNCEMENT', row.id, title + ' [' + audience + ']');
-  var emailed = 0;
-  if (sendEmail === true || String(sendEmail) === 'true') { try { emailed = broadcast_(String(title), String(body), audience, String(programme || 'all')); } catch (e) { Logger.log('Broadcast failed: ' + e); } }
-  return { id: row.id, emailed: emailed };
+  var mailJob = null;
+  if (sendEmail === true || String(sendEmail) === 'true') { try { mailJob = { list: broadcastList_(audience, String(programme || 'all')), subject: 'Announcement: ' + String(title), body: String(body) }; } catch (e) { Logger.log('Broadcast list failed: ' + e); } }
+  return { id: row.id, emailed: 0, _mail: mailJob };
 }
-function api_addAnnouncement() { var a = arguments; return withScriptLock_(function () { return api_addAnnouncement_locked_.apply(null, a); }, 30000); }
+function api_addAnnouncement() { var a = arguments; return finishBulkMail_(withScriptLock_(function () { return api_addAnnouncement_locked_.apply(null, a); }, 30000)); }
+
+/* ---- Targeted group message (PG Coordinator / HoD): portal notification and/or one BCC e-mail to a chosen group ---- */
+var GROUP_MESSAGE_MAX_ = 300;
+function groupMatchStudents_(f) {
+  f = f || {}; var regs = Array.isArray(f.regs) ? f.regs.map(String).slice(0, 300) : [];
+  return readTable_('Students').filter(function (s) {
+    if (regs.length && regs.indexOf(String(s.regNumber)) === -1) return false;
+    var ses = sessionLabel_(academicYearFromReg_(s.regNumber) || s.yearOfAdmission || '');
+    if (f.session && ses !== String(f.session)) return false;
+    if (f.programme && s.programme !== String(f.programme)) return false;
+    if (f.stage && s.currentStage !== String(f.stage)) return false;
+    if (f.stalled && !isStalled_(s)) return false;
+    if (f.noSupervisor && s.mainSupervisorId) return false;
+    if (f.noTitle && String(s.thesisTitle || '').trim()) return false;
+    return true;
+  });
+}
+function api_sendGroupMessage_l(token, f, subject, body, viaPortal, viaEmail, audience) {
+  var user = requireUser_(token);
+  assertRole_(user, ['PG_Coordinator', 'HoD'], 'You cannot send group messages.');
+  subject = String(subject || '').trim(); body = String(body || '').trim();
+  if (subject.length < 3 || subject.length > 150) throw new Error('Enter a subject of 3 to 150 characters.');
+  if (body.length < 5 || body.length > 5000) throw new Error('Enter a message of 5 to 5000 characters.');
+  viaPortal = viaPortal === true || String(viaPortal) === 'true'; viaEmail = viaEmail === true || String(viaEmail) === 'true';
+  if (!viaPortal && !viaEmail) throw new Error('Choose at least one way to send: portal notification or e-mail.');
+  audience = String(audience || 'students').toLowerCase();
+  if (['students', 'supervisors', 'both'].indexOf(audience) === -1) throw new Error('Choose who receives the message.');
+  var matched = groupMatchStudents_(f);
+  if (!matched.length) throw new Error('No students match these filters.');
+  var users = indexBy_('Users', 'regNumber'), stuRecipients = [], supIds = {};
+  if (audience !== 'supervisors') matched.forEach(function (s) { var u = users[String(s.regNumber)]; if (u && String(u.status) === 'Approved' && toBool_(u.active)) stuRecipients.push({ reg: s.regNumber, email: String(u.email || '').trim().toLowerCase() }); });
+  if (audience !== 'students') matched.forEach(function (s) { supervisorIdsFor_(s).forEach(function (id) { supIds[id] = 1; }); });
+  var supList = Object.keys(supIds).map(function (id) { var st = findById_('Staff', id), su = staffUserFor_(id); return st ? { reg: su ? su.regNumber : '', email: String(st.email || '').trim().toLowerCase() } : null; }).filter(Boolean);
+  if (stuRecipients.length + supList.length > GROUP_MESSAGE_MAX_) throw new Error('That is ' + (stuRecipients.length + supList.length) + ' recipients. Narrow the filters (maximum ' + GROUP_MESSAGE_MAX_ + ' per message).');
+  if (!stuRecipients.length && !supList.length) throw new Error('None of the matching students or supervisors can receive messages (no active accounts).');
+  var portal = 0, seen = {}, list = [], mailJob = null;
+  if (viaPortal) stuRecipients.concat(supList).forEach(function (r) { if (r.reg) { addNote_(r.reg, subject + ' \u2014 ' + body); portal++; } });
+  if (viaEmail) {
+    stuRecipients.concat(supList).forEach(function (r) { if (EMAIL_RE.test(r.email) && !seen[r.email]) { seen[r.email] = 1; list.push(r.email); } });
+    var sig = '\n\n\u2014 ' + user.fullName + ' (' + (ROLE_NAMES_[user.role] || user.role) + '), Department of Physics';
+    mailJob = { list: list, subject: subject, body: body + sig };   // sent after the lock is released
+  }
+  logAudit_(user.id, user.regNumber, 'GROUP_MESSAGE', '', subject.slice(0, 80) + ' [' + audience + '; students ' + stuRecipients.length + ', supervisors ' + supList.length + '; portal ' + portal + ', email recipients ' + list.length + ']');
+  return { students: stuRecipients.length, supervisors: supList.length, portal: portal, emailed: 0, _mail: mailJob };
+}
+function api_sendGroupMessage() { var a = arguments; return finishBulkMail_(withScriptLock_(function () { return api_sendGroupMessage_l.apply(null, a); }, 30000)); }
+
+/* ================= PUBLICATIONS TRACKER + PRE-DEFENCE CLEARANCE ================= */
+var PUB_TYPES_ = ['Journal article', 'Conference paper', 'Book chapter', 'Conference presentation / poster', 'Patent', 'Other'];
+var PUB_STATUSES_ = ['In preparation', 'Submitted', 'Under review', 'Accepted', 'Published'];
+function pubNum_(key, dflt) { var n = parseInt(getSetting_(key, String(dflt)), 10); return n >= 0 ? n : dflt; }
+function pubRequired_(stu) { return /phd|doctor/i.test(String((stu && stu.programme) || '')) ? pubNum_('PUB_REQUIRED_PHD', 1) : pubNum_('PUB_REQUIRED_MSC', 0); }
+function pubCounts_(pubs) {
+  var verifiedOnly = String(getSetting_('PUB_REQUIRE_VERIFIED', 'yes')).toLowerCase() !== 'no';
+  return pubs.filter(function (p) { return p.type === 'Journal article' && ['Accepted', 'Published'].indexOf(String(p.status)) !== -1 && String(p.peerReviewed) === 'Yes' && (!verifiedOnly || String(p.verifiedBy || '').trim()); }).length;
+}
+function pubOut_(p, stu) { var o = stripRow_(p); if (stu) { o.studentName = fullNameOf_(stu); o.programme = stu.programme || ''; } return o; }
+function api_listPublications(token, reg) {
+  var user = requireUser_(token), students, one = null;
+  if (user.role === 'Student') one = studentByReg_(user.regNumber);
+  else if (reg) one = threadStudent_(user, reg);
+  else if (['PG_Coordinator', 'HoD'].indexOf(user.role) !== -1) students = readTable_('Students');
+  else if (user.role === 'Staff') students = readTable_('Students').filter(function (s) { return supOf_(user, s); });
+  else throw new Error('You cannot view publications.');
+  var byReg = {}; (one ? [one] : students).forEach(function (s) { byReg[String(s.regNumber)] = s; });
+  var rows = readTable_('Publications').filter(function (p) { return byReg[String(p.regNumber)]; }).map(function (p) { return pubOut_(p, byReg[String(p.regNumber)]); });
+  rows.sort(function (a, b) { return String(b.year).localeCompare(String(a.year)) || String(b.createdAt).localeCompare(String(a.createdAt)); });
+  var out = { items: rows, types: PUB_TYPES_, statuses: PUB_STATUSES_, requiredPhD: pubNum_('PUB_REQUIRED_PHD', 1), requiredMSc: pubNum_('PUB_REQUIRED_MSC', 0) };
+  if (one) { out.required = pubRequired_(one); out.counted = pubCounts_(rows); }
+  return out;
+}
+function api_savePublication_l(token, p) {
+  var user = requireUser_(token); assertRole_(user, ['Student'], 'Students add their own publications.');
+  p = p || {}; var stu = studentByReg_(user.regNumber); if (!stu) throw new Error('Student record not found.');
+  var type = String(p.type || ''); if (PUB_TYPES_.indexOf(type) === -1) throw new Error('Choose the type of publication.');
+  var status = String(p.status || ''); if (PUB_STATUSES_.indexOf(status) === -1) throw new Error('Choose the publication status.');
+  var year = parseInt(p.year, 10), thisYear = new Date().getFullYear(); if (!(year >= 1990 && year <= thisYear + 1)) throw new Error('Enter a valid year.');
+  var doi = String(p.doi || '').trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i, ''); if (doi && !/^10\.\d{4,9}\/\S+$/.test(doi)) throw new Error('The DOI should look like 10.1234/abcd.');
+  var url = String(p.url || '').trim(); if (url && !/^https?:\/\/\S+$/i.test(url)) throw new Error('The link must start with http:// or https://.');
+  var rec = { type: type, title: cleanText_(p.title, 3, 300, 'The title'), authors: cleanText_(p.authors, 2, 300, 'The authors'), venue: cleanText_(p.venue, 2, 200, 'The journal or conference'),
+    year: String(year), status: status, peerReviewed: String(p.peerReviewed) === 'No' ? 'No' : 'Yes', doi: doi, url: url, note: String(p.note || '').trim().slice(0, 300), updatedAt: nowIso_() };
+  if (p.id) {
+    var ex = findById_('Publications', p.id); if (!ex || String(ex.regNumber) !== String(user.regNumber)) throw new Error('Publication not found.');
+    rec.verifiedBy = ''; rec.verifiedAt = '';   // any change must be confirmed again
+    updateRow_('Publications', ex.id, rec); logAudit_(user.id, user.regNumber, 'EDIT_PUBLICATION', user.regNumber, rec.title.slice(0, 80)); return { id: ex.id };
+  }
+  rec.regNumber = user.regNumber; rec.createdAt = nowIso_(); rec.verifiedBy = ''; rec.verifiedAt = '';
+  var r = appendRow_('Publications', rec);
+  try { notifySupervisorsOf_(stu, fullNameOf_(stu) + ' added a publication: ' + rec.title.slice(0, 100)); } catch (e) { Logger.log('pub notify: ' + e); }
+  logAudit_(user.id, user.regNumber, 'ADD_PUBLICATION', user.regNumber, rec.title.slice(0, 80));
+  return { id: r.id };
+}
+function api_savePublication() { return L_(api_savePublication_l, arguments); }
+function api_deletePublication_l(token, id) {
+  var user = requireUser_(token), p = findById_('Publications', id); if (!p) throw new Error('Publication not found.');
+  var own = user.role === 'Student' && String(p.regNumber) === String(user.regNumber);
+  if (!own && ['PG_Coordinator', 'HoD'].indexOf(user.role) === -1) throw new Error('You cannot delete this publication.');
+  if (own && String(p.verifiedBy || '').trim()) throw new Error('This publication has been verified. Ask the PG Coordinator to remove it.');
+  deleteRow_('Publications', p.id); logAudit_(user.id, user.regNumber, 'DELETE_PUBLICATION', p.regNumber, String(p.title).slice(0, 80));
+  return { ok: true };
+}
+function api_deletePublication() { return L_(api_deletePublication_l, arguments); }
+function api_verifyPublication_l(token, id, verified) {
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot verify publications.');
+  var p = findById_('Publications', id); if (!p) throw new Error('Publication not found.');
+  var stu = studentByReg_(p.regNumber); if (!stu || !canThread_(user, stu)) throw new Error('You cannot verify this publication.');
+  var on = verified === true || String(verified) === 'true';
+  updateRow_('Publications', p.id, { verifiedBy: on ? user.fullName : '', verifiedAt: on ? nowIso_() : '' });
+  if (on) notifyStudent_(stu.regNumber, 'Publication verified', user.fullName + ' verified your publication: ' + String(p.title).slice(0, 100));
+  logAudit_(user.id, user.regNumber, on ? 'VERIFY_PUBLICATION' : 'UNVERIFY_PUBLICATION', p.regNumber, String(p.title).slice(0, 80));
+  return { ok: true };
+}
+function api_verifyPublication() { return L_(api_verifyPublication_l, arguments); }
+
+/* ---- Pre-defence clearance checklist ---- */
+var CLEARANCE_ITEMS_ = [
+  { key: 'proposal', label: 'Research proposal approved', kind: 'auto' },
+  { key: 'pubs', label: 'Publication requirement met', kind: 'auto' },
+  { key: 'format', label: 'Thesis / dissertation passes the format check', kind: 'auto' },
+  { key: 'examiners', label: 'Internal and external examiners appointed', kind: 'auto' },
+  { key: 'progress', label: 'Progress reports up to date', kind: 'manual', who: 'coord' },
+  { key: 'seminar', label: 'Required seminar presentations completed', kind: 'manual', who: 'coord' },
+  { key: 'sup_main', label: 'Main supervisor sign-off', kind: 'manual', who: 'sup' },
+  { key: 'sup_co', label: 'Co-supervisor sign-off', kind: 'manual', who: 'sup', needsCo: true },
+  { key: 'fees', label: 'Fees and bursary clearance', kind: 'manual', who: 'coord' },
+  { key: 'library', label: 'Library clearance', kind: 'manual', who: 'coord' }
+];
+function clearanceCtx_() {
+  return { subs: readTable_('Submissions'), exm: readTable_('Examiners'), pubs: readTable_('Publications'), clr: readTable_('Clearance') };
+}
+function clearanceFor_(stu, ctx) {
+  var reg = String(stu.regNumber), saved = {}, row = null;
+  ctx.clr.forEach(function (r) { if (String(r.regNumber) === reg) row = r; });
+  if (row) { try { saved = JSON.parse(row.items || '{}') || {}; } catch (e) { saved = {}; } }
+  var mySubs = ctx.subs.filter(function (s) { return String(s.regNumber) === reg && String(s.status) !== 'Draft'; });
+  var auto = {};
+  var prop = mySubs.some(function (s) { return s.type === 'Research Proposal' && String(s.status) === 'Approved'; });
+  auto.proposal = { ok: prop, detail: prop ? 'Approved' : 'Not yet approved' };
+  var req = pubRequired_(stu), have = pubCounts_(ctx.pubs.filter(function (p) { return String(p.regNumber) === reg; }));
+  auto.pubs = { ok: have >= req, detail: req ? have + ' of ' + req + ' required (verified, accepted or published journal article' + (req === 1 ? '' : 's') + ')' : 'No publication required for this programme' };
+  var theses = mySubs.filter(function (s) { return s.type === 'Final Thesis/Dissertation'; }).sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+  var cs = theses.length ? parseCompliance_(theses[0].compliance) : null;
+  auto.format = { ok: !!(cs && cs.status === 'Pass'), detail: !theses.length ? 'No thesis submitted yet' : cs ? 'Latest check: ' + cs.status : 'Not checked yet' };
+  var ex = ctx.exm.filter(function (x) { return String(x.regNumber) === reg && ['Declined', 'Revoked', 'Proposed'].indexOf(String(x.status)) === -1; });
+  var hasInt = ex.some(function (x) { return /^internal/i.test(String(x.type)); }), hasExt = ex.some(function (x) { return /^external/i.test(String(x.type)); });
+  auto.examiners = { ok: hasInt && hasExt, detail: (hasInt ? 'Internal \u2713' : 'Internal missing') + ', ' + (hasExt ? 'External \u2713' : 'External missing') };
+  var items = CLEARANCE_ITEMS_.filter(function (it) { return !it.needsCo || stu.coSupervisorId; }).map(function (it) {
+    var o = { key: it.key, label: it.label, kind: it.kind, who: it.who || '' };
+    if (it.kind === 'auto') { o.done = auto[it.key].ok; o.detail = auto[it.key].detail; }
+    else { var sv = saved[it.key] || {}; o.done = !!sv.done; o.by = sv.by || ''; o.at = sv.at || ''; o.note = sv.note || ''; }
+    return o;
+  });
+  var done = items.filter(function (i) { return i.done; }).length;
+  return { regNumber: reg, studentName: fullNameOf_(stu), programme: stu.programme || '', stage: stu.currentStage || '', items: items, done: done, total: items.length, complete: done === items.length };
+}
+function api_getClearance(token, reg) {
+  var user = requireUser_(token), stu = threadStudent_(user, reg);
+  var c = clearanceFor_(stu, clearanceCtx_()); c.canEdit = user.role !== 'Student'; c.role = user.role; return c;
+}
+function api_listClearance(token) {
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot view the clearance overview.');
+  var ctx = clearanceCtx_();
+  return readTable_('Students').filter(function (s) { return user.role !== 'Staff' || supOf_(user, s); }).map(function (s) {
+    var c = clearanceFor_(s, ctx); return { regNumber: c.regNumber, studentName: c.studentName, programme: c.programme, stage: c.stage, done: c.done, total: c.total, complete: c.complete };
+  }).sort(function (a, b) { return (b.done / b.total) - (a.done / a.total) || String(a.studentName).localeCompare(String(b.studentName)); });
+}
+function api_setClearanceItem_l(token, reg, key, done, note) {
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot update the clearance checklist.');
+  var stu = studentByReg_(reg); if (!stu || !canThread_(user, stu)) throw new Error('You cannot update this student\u2019s checklist.');
+  var def = CLEARANCE_ITEMS_.filter(function (i) { return i.key === key; })[0];
+  if (!def || def.kind !== 'manual') throw new Error('That item is worked out automatically from the portal records.');
+  if (user.role === 'Staff' && def.who !== 'sup') throw new Error('Only the PG Coordinator or HoD can tick this item.');
+  var on = done === true || String(done) === 'true', row = null, saved = {};
+  readTable_('Clearance').forEach(function (r) { if (String(r.regNumber) === String(stu.regNumber)) row = r; });
+  if (row) { try { saved = JSON.parse(row.items || '{}') || {}; } catch (e) { saved = {}; } }
+  saved[key] = on ? { done: true, by: user.fullName, at: nowIso_(), note: String(note || '').trim().slice(0, 200) } : { done: false };
+  var patch = { items: JSON.stringify(saved), updatedAt: nowIso_(), updatedBy: user.fullName };
+  if (row) updateRow_('Clearance', row.id, patch); else { patch.regNumber = stu.regNumber; appendRow_('Clearance', patch); }
+  var after = clearanceFor_(stu, clearanceCtx_());
+  if (on && after.complete) notifyStudent_(stu.regNumber, 'Defence clearance complete', 'Every item on your pre-defence clearance checklist is complete.');
+  logAudit_(user.id, user.regNumber, on ? 'CLEARANCE_TICK' : 'CLEARANCE_UNTICK', stu.regNumber, def.label);
+  return after;
+}
+function api_setClearanceItem() { return L_(api_setClearanceItem_l, arguments); }
 
 function api_exportData(token) {
   var user = requireUser_(token);
@@ -3671,11 +4047,11 @@ function api_exportData(token) {
     var main = s.mainSupervisorId ? (findById_('Staff', s.mainSupervisorId) || {}).fullName || '' : '';
     var co = s.coSupervisorId ? (findById_('Staff', s.coSupervisorId) || {}).fullName || '' : '';
     var co2 = co2IdFor_(s) ? (findById_('Staff', co2IdFor_(s)) || {}).fullName || '' : '';
-    csv += [s.regNumber, s.surname, s.firstName, s.otherNames, s.gender, s.phoneNumber, s.programme, s.specialisation, studentSession_(s), main, co, co2, s.thesisTitle || '', titleState_(s).status, s.currentStage, u.status || ''].map(function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(',') + '\n';
+    csv += [s.regNumber, s.surname, s.firstName, s.otherNames, s.gender, s.phoneNumber, s.programme, s.specialisation, studentSession_(s), main, co, co2, s.thesisTitle || '', titleState_(s).status, s.currentStage, u.status || ''].map(csvCell_).join(',') + '\n';
   });
   csv += '\n\nSubmissions:\nSubmissionID,RegNumber,Type,Status,CreatedAt\n';
   subs.forEach(function (s) {
-    csv += [s.id, s.regNumber, s.type, s.status, s.createdAt].map(function (v) { return '"' + String(v || '') + '"'; }).join(',') + '\n';
+    csv += [s.id, s.regNumber, s.type, s.status, s.createdAt].map(csvCell_).join(',') + '\n';
   });
   return csv;
 }
@@ -3852,11 +4228,14 @@ function api_publicAnnouncements() {
 }
 
 /** Status check on the public Register page: Pending / Approved / Rejected / Not Found. */
-function api_checkRegistrationStatus(regNumber) {
+function api_checkRegistrationStatus(regNumber, email) {
   var reg = cleanRegInput_(regNumber);
   if (!validateRegNumber_(reg)) throw new Error('Invalid registration number. Use UA/pg2026/003531, 26/408PHYX/040 (capital letters; the first two digits are the admission year and cannot be in the future), Phd/sci/16586006 or 1750806006.');
+  if (rateLimitHit_('status_hour', 120, 3600) || rateLimitHit_('status_' + normReg_(reg), 10, 3600)) throw new Error('Too many checks. Please try again later.');
   var user = findWhere_('Users', function (u) { return normReg_(u.regNumber) === normReg_(reg) && u.role === 'Student'; });
-  if (!user) return { status: 'Not Found', message: 'No registration found with that number. Please check and try again.' };
+  // The status is shown only to someone who also knows the email address used to register, so the form cannot be used to probe which numbers exist.
+  if (!user || cleanEmail_(email).toLowerCase() !== String(user.email || '').trim().toLowerCase())
+    return { status: 'Not Found', message: 'No registration found with that number and email address. Please check both and try again.' };
   var st = String(user.status || 'Pending');
   var msg = st === 'Approved' ? 'Your registration has been approved. Your one-time password was emailed to you. Check your Spam/Junk folder, or use Forgot password on the sign-in page.'
     : st === 'Rejected' ? 'Your registration was rejected. Please contact the PG Coordinator.'
@@ -3873,18 +4252,57 @@ function coordinatorEmail_() {
   return mailEnquiriesAddress_();
 }
 
+/* ---- abuse protection for the public endpoints ---- */
+/** Fixed-window counter in CacheService (window <= 6 h). Returns true when the limit for this window has been reached; otherwise counts the hit. */
+function rateLimitHit_(name, limit, windowSec) {
+  var cache = CacheService.getScriptCache(), key = 'pg_rl_' + name + '_' + Math.floor(Date.now() / (windowSec * 1000));
+  var n = parseInt(cache.get(key) || '0', 10);
+  if (n >= limit) return true;
+  cache.put(key, String(n + 1), Math.min(21600, windowSec + 60));
+  return false;
+}
+/** Calendar-day counter kept in Script Properties (CacheService cannot hold a value for 24 h). Returns true when today's cap is reached. */
+function dailyCapHit_(name, limit) {
+  return withScriptLock_(function () {
+    var props = PropertiesService.getScriptProperties(), pk = 'PG_DAY_' + name, today = Utilities.formatDate(new Date(), programmeTimezone_(), 'yyyyMMdd');
+    var parts = String(props.getProperty(pk) || '').split(':'), n = parts[0] === today ? parseInt(parts[1] || '0', 10) : 0;
+    if (n >= limit) return true;
+    props.setProperty(pk, today + ':' + (n + 1));
+    return false;
+  }, 5000);
+}
+function capSetting_(key, dflt) { var n = parseInt(getSetting_(key, String(dflt)), 10); return isNaN(n) || n < 1 ? dflt : n; }
+/** Cloudflare Turnstile. Switched on by setting the script property TURNSTILE_SECRET (and TURNSTILE_SITE_KEY for the page). Not configured = not required. */
+function verifyTurnstile_(token) {
+  var secret = PropertiesService.getScriptProperties().getProperty('TURNSTILE_SECRET');
+  if (!secret) return true;
+  token = String(token || '');
+  if (!token || token.length > 2048) throw new Error('Please complete the human check and try again.');
+  var ok = false;
+  try {
+    var r = UrlFetchApp.fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'post', payload: { secret: secret, response: token }, muteHttpExceptions: true });
+    var j = JSON.parse(r.getContentText()); ok = !!(j && j.success);
+  } catch (e) { Logger.log('Turnstile verify: ' + e); throw new Error('The human check could not be verified. Please try again.'); }
+  if (!ok) throw new Error('The human check failed. Please reload the page and try again.');
+  return true;
+}
+
 /** Enquiry from the public Contact page — emailed to the PG Coordinator. */
-function api_publicEnquiry(name, email, message) {
+function api_publicEnquiry(name, email, message, captchaToken) {
+  verifyTurnstile_(captchaToken);
   var n = String(name || '').trim();
   var em = cleanEmail_(email);
   var msg = String(message || '').trim();
   if (!validateName_(n)) throw new Error('Please enter your name (at least 2 letters).');
   if (!validateEmail_(em)) throw new Error('Please enter a valid email address, e.g. name@example.com.');
   if (msg.length < 10 || msg.length > 2000) throw new Error('Message must be between 10 and 2000 characters.');
+  // The address is supplied by the caller, so a per-address limit alone is bypassed by varying it: the global limits below are what hold.
   var cache = CacheService.getScriptCache();
   var key = 'pg_enq_' + em.toLowerCase();
   var count = parseInt(cache.get(key) || '0', 10);
   if (count >= 3) throw new Error('Please wait a little before sending another enquiry.');
+  if (rateLimitHit_('enq_hour', capSetting_('ENQUIRY_HOURLY_MAX', 10), 3600) || dailyCapHit_('enq', capSetting_('ENQUIRY_DAILY_MAX', 30)))
+    throw new Error('We are receiving a lot of enquiries right now. Please try again later or email the department directly.');
   cache.put(key, String(count + 1), 3600);
   sendPortalMail_({
     to: coordinatorEmail_(),
@@ -3946,6 +4364,9 @@ function autoAdvance_(sub) {
 }
 /** Emails an announcement to its audience (BCC, 50 per message). Returns the number of recipients. */
 function broadcast_(title, body, audience, programme) {
+  return sendBcc_(broadcastList_(audience, programme), 'Announcement: ' + title, body);   // only for callers that do not hold the lock (the daily reminder trigger)
+}
+function broadcastList_(audience, programme) {
   var wantStu = audience === 'students' || audience === 'all', wantStaff = audience === 'staff' || audience === 'all';
   var stuRegs = {};
   if (wantStu) readTable_('Students').forEach(function (s) { if (!programme || programme === 'all' || s.programme === programme) stuRegs[s.regNumber] = 1; });
@@ -3956,8 +4377,7 @@ function broadcast_(title, body, audience, programme) {
     var isStu = u.role === 'Student';
     if ((isStu && wantStu && stuRegs[u.regNumber]) || (!isStu && wantStaff)) { seen[em] = 1; list.push(em); }
   });
-  for (var i = 0; i < list.length; i += 50) sendPortalMail_({ to: coordinatorEmail_(), bcc: list.slice(i, i + 50).join(','), subject: 'Announcement: ' + title, body: body });
-  return list.length;
+  return list;
 }
 function upcomingDeadlines_() {
   var today = nowIso_().slice(0, 10);
@@ -3971,16 +4391,22 @@ function api_addDeadline_l(token, title, date) {
 }
 function api_addDeadline() { return L_(api_addDeadline_l, arguments); }
 /** Run installReminderTrigger() once: emails students 7 days and 1 day before each deadline. */
-function installReminderTrigger() { ScriptApp.newTrigger('sendDeadlineReminders').timeBased().everyDays(1).atHour(8).create(); }
+function installReminderTrigger() { ensureTrigger_('sendDeadlineReminders', function (b) { b.everyDays(1).atHour(8); }); }
+/** Creates a time-based trigger for fn only if the project does not already have one for it (running an installer twice must not double the emails). */
+function ensureTrigger_(fn, configure) {
+  var exists = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === fn; });
+  if (exists) { Logger.log('Trigger already installed: ' + fn); return false; }
+  var b = ScriptApp.newTrigger(fn).timeBased(); configure(b); b.create(); return true;
+}
 function sendDeadlineReminders() {
   var tz = programmeTimezone_();
-  [7, 1].forEach(function (n) {
+  [7, 1].forEach(function (n) { try {
     var d = new Date(Date.now() + n * 864e5), key = Utilities.formatDate(d, tz, 'yyyy-MM-dd');
-    filterWhere_('Deadlines', function (x) { return String(x.date) === key; }).forEach(function (x) { broadcast_('Reminder: ' + x.title, x.title + ' is due on ' + x.date + ' (' + n + ' day(s) from now).', 'all'); });
+    filterWhere_('Deadlines', function (x) { return String(x.date) === key; }).forEach(function (x) { try { broadcast_('Reminder: ' + x.title, x.title + ' is due on ' + x.date + ' (' + n + ' day(s) from now).', 'all'); } catch (e) { Logger.log('deadline reminder ' + x.title + ': ' + e); } });
     filterWhere_('ProgrammeSessions', function (x) { return String(x.date) === key && String(x.status || 'Scheduled') !== 'Cancelled'; }).forEach(function (x) {
-      broadcast_('Reminder: ' + x.title, x.title + ' is on ' + x.date + (normalizeTime_(x.startTime) ? ' at ' + normalizeTime_(x.startTime) : '') + (x.venue ? ' (' + x.venue + ')' : '') + ' - ' + n + ' day(s) from now.', 'all');
+      try { broadcast_('Reminder: ' + x.title, x.title + ' is on ' + x.date + (normalizeTime_(x.startTime) ? ' at ' + normalizeTime_(x.startTime) : '') + (x.venue ? ' (' + x.venue + ')' : '') + ' - ' + n + ' day(s) from now.', 'all'); } catch (e) { Logger.log('session reminder ' + x.title + ': ' + e); }
     });
-  });
+  } catch (e) { Logger.log('sendDeadlineReminders (' + n + ' day): ' + e); } });
 }
 
 /* ---- one-year PG academic development programme calendar ---- */
@@ -4243,7 +4669,7 @@ function api_resubmit_l(token, id, url) {
   var stuForStage = studentByReg_(user.regNumber);
   validateSubmissionStage_(stuForStage, sub.type);
   if (!urlsFromText_(url).length) throw new Error('A valid link is required.');
-  assertUploadLinkKind_(sub.type, url);
+  assertUploadLinkKind_(sub.type, url, user);
   updateRow_('Submissions', id, { history: pushFileHistory_(sub, 'Resubmitted', url, '', 'After: ' + String(sub.status || ''), user.fullName), driveFileUrls: String(url).trim(), status: 'Submitted', supervisorNotes: String(sub.supervisorNotes || ''), updatedAt: nowIso_(), compliance: '', endorsedBy: '', checklist: '', similarity: '', similarityUrl: '', similarityBy: '', similarityAt: '', reviewedBy: '', reviewedAt: '', lastRemindedAt: '' });
   syncStudentFileLink_(user.regNumber, sub.type, String(url).trim(), nowIso_());
   logAudit_(user.id, user.regNumber, 'RESUBMIT', id, 'After: ' + sub.status + ' / ' + String(sub.inspectorComments || '').slice(0, 80)); return { ok: true };
@@ -4263,7 +4689,7 @@ function api_replaceSubmission_l(token, id, url) {
   if (!doc || !doc.resubmit || doc.uploader !== 'Student') throw new Error('This document cannot be replaced.');
   var wasDraft = String(sub.status) === 'Draft', wasApproved = String(sub.status) === 'Approved';
   if (!wasDraft) validateSubmissionStage_(studentByReg_(user.regNumber), sub.type);
-  assertUploadLinkKind_(sub.type, url);
+  assertUploadLinkKind_(sub.type, url, user);
   var now = nowIso_(), newUrl = String(url).trim(), note = wasDraft ? 'Draft file replaced' : 'Replacement uploaded', reverted = '';
   if (wasApproved) {
     var stu = studentByReg_(user.regNumber), approvalStage = stageAfterApproval_(sub.type, stu);
@@ -4373,10 +4799,11 @@ function genResetCode_() {
 }
 function api_requestReset(regNumber) {
   var key = normReg_(regNumber), cache = CacheService.getScriptCache();
-  var msg = { message: 'If that account exists, a 6-digit code has been emailed to the address on file. It expires in 30 minutes. Check your spam/junk folder if it does not arrive within a few minutes.' };
+  var msg = { message: 'If that account exists, a 6-digit code has been emailed to the address on file. It expires in 30 minutes. Check your spam/junk folder; if nothing arrives within a few minutes, contact the PG Coordinator.' };
   if (!key) throw new Error('Enter your registration number or staff ID.');
   var n = parseInt(cache.get('rstn_' + key) || '0', 10);
   if (n >= 3) throw new Error('Too many requests. Please try again in an hour.');
+  if (rateLimitHit_('reset_hour', 60, 3600)) throw new Error('Too many requests. Please try again later.');
   var u = findUserByReg_(key);
   if (u && toBool_(u.active) && String(u.status) === 'Approved' && EMAIL_RE.test(String(u.email || ''))) {
     cache.put('rstn_' + key, String(n + 1), 3600);   // only real, deliverable requests use up the hourly allowance
@@ -4387,17 +4814,10 @@ function api_requestReset(regNumber) {
         body: 'Your password reset code is ' + code + '. It expires in 30 minutes. If you did not request this, ignore this email.',
         htmlBody: '<p style="margin:0 0 12px">Your password reset code is:</p><p style="font-size:24px;letter-spacing:4px;font-family:monospace;margin:0 0 12px"><strong>' + escHtml_(code) + '</strong></p><p style="color:#66756f;font-size:13px">It expires in 30 minutes. If you did not request this, ignore this email.</p>' });
     } catch (mailErr) { Logger.log('Reset code email error for ' + u.regNumber + ': ' + (mailErr && mailErr.message ? mailErr.message : mailErr)); }
-    if (!sent) {
-      Logger.log('Reset code NOT sent for ' + u.regNumber + ' (mail quota exhausted or send error).');
-      throw new Error('We could not send the email right now. Please try again later or ask the PG Coordinator to reset your password.');
-    }
-  } else if (!u) {
-    cache.put('rstn_' + key, String(n + 1), 3600);   // unknown IDs still count, to stop probing
+    if (!sent) Logger.log('Reset code NOT sent for ' + u.regNumber + ' (mail quota exhausted or send error).');   // same reply either way: the answer must not reveal that the account exists
   } else {
-    // Account exists but cannot receive a code: say so instead of pretending an email was sent.
-    if (String(u.status) === 'Pending') throw new Error('Your registration is still awaiting PG Coordinator approval, so you cannot reset a password yet.');
-    if (String(u.status) === 'Rejected') throw new Error('Your registration was not approved. Please contact the PG Coordinator.');
-    if (!EMAIL_RE.test(String(u.email || ''))) throw new Error('There is no valid email address on this account. Please contact the PG Coordinator.');
+    cache.put('rstn_' + key, String(n + 1), 3600);   // unknown or unusable IDs count too, to stop probing
+    if (u) Logger.log('Reset code requested for ' + u.regNumber + ' but the account is ' + String(u.status) + (toBool_(u.active) ? '' : ' / inactive') + ' or has no valid email.');
   }
   return msg;
 }
@@ -4618,7 +5038,9 @@ function api_sendMessage() { return L_(api_sendMessage_l, arguments); }
 
 
 /* =========================== 15c-2. INQUIRIES (student -> PG Coordinator / HoD) ===========================
- *  Ticket-style: subject + category + status (Open / Answered / Closed) with a reply thread.
+ *  Ticket-style: subject + category + status (Open / Closed) with a reply thread.
+ *  A Coordinator/HoD reply closes the ticket in the same write; student follow-ups reopen it.
+ *  Legacy "Answered" rows are still accepted and displayed as Closed.
  *  A student sees only their own tickets; PG Coordinator and HoD see and answer all of them.
  *  This is separate from the student<->supervisor chat (Messages) and the Requests form. */
 var INQUIRY_CATEGORIES = ['Registration / Records', 'Supervision / Supervisor', 'Journey Stage / Progression', 'Submissions / Documents', 'Thesis / Dissertation Title', 'Seminar / Defence / Examination', 'Fees / Administration', 'Other'];
@@ -4627,10 +5049,25 @@ var INQUIRY_MAX_OPEN = 10;
 function inquiryItem_(q) {
   var stu = studentByReg_(q.regNumber);
   return { id: q.id, regNumber: q.regNumber, studentName: stu ? fullNameOf_(stu) : String(q.regNumber), programme: stu ? stu.programme : '',
-    subject: String(q.subject || ''), category: String(q.category || ''), status: String(q.status || 'Open'),
+    subject: String(q.subject || ''), category: String(q.category || ''), status: String(q.status) === 'Answered' ? 'Closed' : String(q.status || 'Open'),
     createdAt: String(q.createdAt || ''), updatedAt: String(q.updatedAt || q.createdAt || ''), lastBy: String(q.lastBy || ''),
-    closedBy: String(q.closedBy || ''), closedAt: String(q.closedAt || ''), thread: parseHist_(q.thread) };
+    closedBy: String(q.closedBy || ''), closedAt: String(q.closedAt || ''), studentSeenAt: String(q.studentSeenAt || ''), unread: inquiryUnreadForStudent_(q), thread: parseHist_(q.thread) };
 }
+/** A staff reply the student has not opened yet: the inquiry was closed by a reply from staff after the student last saw it. */
+function inquiryUnreadForStudent_(q) {
+  if (['Closed', 'Answered'].indexOf(String(q.status)) === -1 || String(q.lastBy || '') === 'Student' || !String(q.closedBy || '').trim()) return false;
+  var replied = String(q.closedAt || q.updatedAt || ''), seen = String(q.studentSeenAt || '');
+  return !seen || seen < replied;
+}
+/** Called when a student opens an inquiry: records that the staff reply has been read, which clears the menu badge. */
+function api_markInquirySeen_l(token, id) {
+  var user = requireUser_(token); assertRole_(user, ['Student'], 'Only the student who sent the inquiry can mark it as seen.');
+  var q = inquiryFor_(user, id);
+  if (!inquiryUnreadForStudent_(q)) return { ok: true, changed: false };
+  updateRow_('Inquiries', q.id, { studentSeenAt: nowIso_() });
+  return { ok: true, changed: true };
+}
+function api_markInquirySeen() { return L_(api_markInquirySeen_l, arguments); }
 /** Active PG Coordinator + HoD users (the people who handle inquiries). */
 function inquiryHandlers_(exceptId) {
   return filterWhere_('Users', function (u) { return (u.role === 'PG_Coordinator' || u.role === 'HoD') && toBool_(u.active) && String(u.status) === 'Approved' && String(u.id) !== String(exceptId || ''); });
@@ -4713,14 +5150,19 @@ function api_replyInquiry_l(token, id, text, attachUrl) {
   var full = (body + (att ? (body ? '\n' : '') + att : '')).trim();
   var student = user.role === 'Student', now = nowIso_(), thread = parseHist_(q.thread);
   thread.push({ from: user.fullName, role: user.role, text: full, at: now });
-  updateRow_('Inquiries', q.id, { thread: JSON.stringify(thread.slice(-40)), status: student ? 'Open' : 'Answered', updatedAt: now, lastBy: student ? 'Student' : user.role });
+  /* A Coordinator/HoD reply is the answer: close the ticket in the same write so it cannot
+     linger as Open/Answered when the separate "Close inquiry" button is not clicked. */
+  var patch = { thread: JSON.stringify(thread.slice(-40)), status: student ? 'Open' : 'Closed', updatedAt: now, lastBy: student ? 'Student' : user.role };
+  if (student) { patch.closedBy = ''; patch.closedAt = ''; }
+  else { patch.closedBy = user.fullName; patch.closedAt = now; }
+  updateRow_('Inquiries', q.id, patch);
   logAudit_(user.id, user.regNumber, student ? 'INQUIRY_FOLLOWUP' : 'INQUIRY_REPLY', q.id, String(q.subject).slice(0, 80));
   if (student) {
     notifyInquiryHandlers_('Inquiry follow-up — ' + user.regNumber, 'Follow-up from ' + user.fullName + ': ' + q.subject,
       user.fullName + ' (' + user.regNumber + ') replied on "' + q.subject + '":\n\n' + full + '\n\nReply in the portal (Inquiries).', null);
   } else {
-    notifyStudent_(q.regNumber, 'Reply to your inquiry "' + String(q.subject).slice(0, 60) + '"', user.fullName + ' (' + (ROLE_NAMES_[user.role] || user.role) + ') replied:\n\n' + full + '\n\nOpen the portal (Inquiries) to see the full conversation.');
-    inquiryHandlers_(user.id).forEach(function (u) { addNote_(u.regNumber, user.fullName + ' replied to inquiry: ' + q.subject + ' (' + q.regNumber + ')'); });
+    notifyStudent_(q.regNumber, 'Reply to your inquiry "' + String(q.subject).slice(0, 60) + '"', user.fullName + ' (' + (ROLE_NAMES_[user.role] || user.role) + ') replied and closed this inquiry:\n\n' + full + '\n\nOpen the portal (Inquiries → Closed) to read the conversation. To ask something else, send a new inquiry.');
+    inquiryHandlers_(user.id).forEach(function (u) { addNote_(u.regNumber, user.fullName + ' replied to and closed inquiry: ' + q.subject + ' (' + q.regNumber + ')'); });
   }
   return { ok: true };
 }
@@ -4827,16 +5269,13 @@ function api_sendDirectMessage_l(token, scope, target, subject, text) {
     var em = String(u.email || '').trim().toLowerCase();
     if (EMAIL_RE.test(em) && !seen[em]) { seen[em] = 1; emails.push(em); }
   });
-  var emailed = 0, mailBody = body + '\n\n— ' + user.fullName + ' (' + (ROLE_NAMES_[user.role] || user.role) + ')\nYou can also see this in the portal.';
-  try {
-    if (scope === 'individual' && emails.length) { sendPortalMail_({ to: emails[0], subject: subj, body: mailBody, replyTo: EMAIL_RE.test(String(user.email || '')) ? user.email : '' }); emailed = 1; }
-    else for (var i = 0; i < emails.length; i += 50) { var chunk = emails.slice(i, i + 50); sendPortalMail_({ to: coordinatorEmail_(), bcc: chunk.join(','), subject: subj, body: mailBody }); emailed += chunk.length; }
-  } catch (e) { Logger.log('Direct message email failed: ' + e); }
+  var mailBody = body + '\n\n— ' + user.fullName + ' (' + (ROLE_NAMES_[user.role] || user.role) + ')\nYou can also see this in the portal.', mailJob = null;
+  if (emails.length) mailJob = { list: scope === 'individual' ? [emails[0]] : emails, subject: subj, body: mailBody, individual: scope === 'individual', replyTo: EMAIL_RE.test(String(user.email || '')) ? user.email : '' };
   logAudit_(user.id, user.regNumber, 'SEND_MESSAGE', scope + (scope === 'individual' ? ':' + String(target) : ''), subj + ' -> ' + recips.length + ' recipient(s)');
-  return { ok: true, sent: recips.length, emailed: emailed };
+  return { ok: true, sent: recips.length, emailed: 0, _mail: mailJob };
 }
 var ROLE_NAMES_ = { Examiner: 'Examiner', SuperAdmin: 'Super Admin', Student: 'Student', PG_Coordinator: 'PG Coordinator', HoD: 'Head of Department', Staff: 'Staff', Submission_Inspector: 'Submission Inspector' };
-function api_sendDirectMessage() { return L_(api_sendDirectMessage_l, arguments); }
+function api_sendDirectMessage() { return finishBulkMail_(L_(api_sendDirectMessage_l, arguments)); }
 
 /* =========================== 15d. SUPERVISOR TOOLS & REQUESTS =========================== */
 function supLabel_(id) { var st = id && findById_('Staff', id); return st ? st.fullName + (st.email ? ' <' + st.email + '>' : '') : 'None'; }
@@ -5501,9 +5940,9 @@ function autoBackup() { backupCore_(); }
 function api_backupNow(token) { var user = requireUser_(token); assertRole_(user, ['PG_Coordinator'], 'Only the PG Coordinator can back up.'); logAudit_(user.id, user.regNumber, 'BACKUP', 'Spreadsheet', 'Manual'); return { url: backupCore_() }; }
 /** Run once: weekly HoD digest (Mon 7am), daily user digest (5pm), nightly backup (2am, 30 kept). */
 function installDigestTriggers() {
-  ScriptApp.newTrigger('sendWeeklyDigest').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(7).create();
-  ScriptApp.newTrigger('sendDailyDigest').timeBased().everyDays(1).atHour(17).create();
-  ScriptApp.newTrigger('autoBackup').timeBased().everyDays(1).atHour(2).create();
+  ensureTrigger_('sendWeeklyDigest', function (b) { b.onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(7); });
+  ensureTrigger_('sendDailyDigest', function (b) { b.everyDays(1).atHour(17); });
+  ensureTrigger_('autoBackup', function (b) { b.everyDays(1).atHour(2); });
 }
 
 
@@ -5627,6 +6066,57 @@ function sendStalledNudges() {
   });
 }
 
+/** Examiners who have not yet submitted their assessment: one reminder when the due date is near (EXAMINER_DUE_SOON_DAYS, default 3),
+ *  then a reminder every EXAMINER_REMIND_DAYS (default 7) once it is overdue. On Mondays the PG Coordinator and HoD also get the
+ *  list of overdue assessments. Only active appointments (status "Assigned") are reminded; scored, declined, revoked and
+ *  unapproved ones are skipped. */
+function sendExaminerReminders() {
+  var every = parseInt(getSetting_('EXAMINER_REMIND_DAYS', '7'), 10); if (!(every > 0)) every = 7;
+  var soon = parseInt(getSetting_('EXAMINER_DUE_SOON_DAYS', '3'), 10); if (!(soon >= 0)) soon = 3;
+  var tz = Session.getScriptTimeZone(), todayKey = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd'), t0 = Date.now(), sent = 0, overdueList = [];
+  var dayNo = function (key) { var p = String(key).slice(0, 10).split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 864e5); };
+  readTable_('Examiners').forEach(function (x) {
+    if (String(x.status) !== 'Assigned' || String(x.submittedAt || '').trim() || !/^\d{4}-\d{2}-\d{2}/.test(String(x.dueDate || ''))) return;
+    var left = dayNo(x.dueDate) - dayNo(todayKey), overdue = left < 0;
+    if (overdue) { var stu0 = studentByReg_(x.regNumber); overdueList.push('- ' + (stu0 ? fullNameOf_(stu0) + ' (' + x.regNumber + ')' : x.regNumber) + ' \u2014 ' + x.type + ' examiner ' + x.examinerName + ', ' + (-left) + ' day(s) overdue'); }
+    if (!overdue && left > soon) return;
+    if (x.lastRemindedAt && daysSince_(x.lastRemindedAt) < (overdue ? every : Math.max(every, soon + 1))) return;
+    if (!EMAIL_RE.test(String(x.email || '')) || sent >= 40 || Date.now() - t0 > 240000) return;
+    var stu = studentByReg_(x.regNumber);
+    try {
+      sendPortalMail_({ to: x.email, subject: (overdue ? 'Overdue: ' : 'Reminder: ') + 'examiner assessment for ' + x.regNumber,
+        body: 'Dear ' + x.examinerName + ',\n\n' + (overdue ? 'Your assessment as ' + x.type + ' examiner' + (stu ? ' for ' + fullNameOf_(stu) + ' (' + x.regNumber + ')' : ' for ' + x.regNumber) + ' was due on ' + String(x.dueDate).slice(0, 10) + ' and has not yet been received.'
+          : 'This is a friendly reminder that your assessment as ' + x.type + ' examiner' + (stu ? ' for ' + fullNameOf_(stu) + ' (' + x.regNumber + ')' : ' for ' + x.regNumber) + ' is due on ' + String(x.dueDate).slice(0, 10) + (left === 0 ? ' (today)' : ' (in ' + left + ' day(s))') + '.') +
+          '\n\nPlease sign in to the postgraduate portal' + (x.examLogin ? ' with your examiner login ID (' + x.examLogin + ')' : '') + ', complete the assessment form and submit your report. If you cannot complete it, please tell the PG Coordinator as soon as possible.\n\nThank you.' });
+      updateRow_('Examiners', x.id, { lastRemindedAt: nowIso_() }); sent++;
+    } catch (e) { Logger.log('examiner reminder ' + x.regNumber + ': ' + e); }
+  });
+  if (overdueList.length && Utilities.formatDate(new Date(), tz, 'u') === '1') {
+    var seen = {};
+    filterWhere_('Users', function (u) { return (u.role === 'HoD' || u.role === 'PG_Coordinator') && toBool_(u.active) && String(u.status) === 'Approved'; }).forEach(function (u) {
+      addNote_(u.regNumber, overdueList.length + ' examiner assessment(s) are overdue. See Overview & Reports \u2192 Examiner & Defence Summary.');
+      var key = String(u.email || '').toLowerCase(); if (!EMAIL_RE.test(key) || seen[key]) return; seen[key] = 1;
+      try { sendPortalMail_({ to: u.email, subject: 'Overdue examiner assessments (' + overdueList.length + ')', body: 'These examiner assessments are past their due date:\n\n' + overdueList.slice(0, 60).join('\n') + '\n\nExaminers with a valid email address have been reminded automatically.' }); } catch (e) { Logger.log('overdue examiner summary: ' + e); }
+    });
+  }
+  Logger.log('Examiner reminders sent: ' + sent + '; overdue: ' + overdueList.length);
+}
+/** Weekly (Monday): each supervisor receives one message listing their students with no progress for 90+ days. */
+function sendStalledSupervisorDigest() {
+  var perStaff = {}, t0 = Date.now();
+  readTable_('Students').forEach(function (stu) {
+    if (!isStalled_(stu)) return;
+    var u = userByRegExact_(stu.regNumber); if (!u || String(u.status) !== 'Approved' || !toBool_(u.active)) return;
+    supervisorIdsFor_(stu).forEach(function (sid) { (perStaff[sid] = perStaff[sid] || []).push('- ' + fullNameOf_(stu) + ' (' + stu.regNumber + '), stage ' + stu.currentStage + ', no progress for about ' + daysSince_(stu.updatedAt || stu.createdAt) + ' days'); });
+  });
+  Object.keys(perStaff).forEach(function (sid) {
+    if (Date.now() - t0 > 240000) return;
+    var st = findById_('Staff', sid), su = staffUserFor_(sid);
+    if (su) addNote_(su.regNumber, perStaff[sid].length + ' of your students have had no progress for 90+ days.');
+    if (st && EMAIL_RE.test(String(st.email || ''))) { try { sendPortalMail_({ to: st.email, subject: 'Students with no recent progress (' + perStaff[sid].length + ')', body: 'Dear ' + st.fullName + ',\n\nThese students you supervise have had no recorded progress for 90 days or more:\n\n' + perStaff[sid].join('\n') + '\n\nPlease arrange a meeting, or log the progress in the portal (My Students).' }); } catch (e) { Logger.log('stalled digest: ' + e); } }
+  });
+}
+
 /** Daily e-mail to the PG Coordinator and HoD: submissions waiting too long for review, plus seminars in the
  *  next 7 days. Silent when there is nothing to report. Bell notifications are left alone (they would repeat daily). */
 function sendCoordinatorReminders() {
@@ -5656,7 +6146,7 @@ function api_getNavCounts(token) {
   var user = requireUser_(token), c = {}, subs = readTable_('Submissions');
   var open = function (st) { return st === 'Submitted' || st === 'Under Review'; };
   if (user.role === 'Student') {
-    c.inbox = readTable_('Inquiries').filter(function (q) { return String(q.regNumber) === String(user.regNumber) && q.status === 'Answered'; }).length;
+    c.inbox = readTable_('Inquiries').filter(function (q) { return String(q.regNumber) === String(user.regNumber) && inquiryUnreadForStudent_(q); }).length;
     c.submissions = subs.filter(function (x) { return String(x.regNumber) === String(user.regNumber) && ['Rejected', 'Changes Requested'].indexOf(String(x.status)) > -1; }).length;
   } else if (user.role === 'PG_Coordinator' || user.role === 'HoD') {
     var reqs = readTable_('Requests').filter(function (r) { return r.status === 'Pending'; });
@@ -5794,6 +6284,7 @@ function archiveOldRecords() {
 var PORTAL_TRIGGERS = [
   { fn: 'sendDeadlineReminders', every: 'day', hour: 8 }, { fn: 'sendSupervisorReminders', every: 'day', hour: 9 }, { fn: 'sendStalledNudges', every: 'day', hour: 10 }, { fn: 'sendSupervisionReminders', every: 'day', hour: 11 }, { fn: 'syncStaffEmails', every: 'day', hour: 6 },
   { fn: 'sendCoordinatorReminders', every: 'day', hour: 12 },
+  { fn: 'sendExaminerReminders', every: 'day', hour: 13 }, { fn: 'sendStalledSupervisorDigest', every: 'week', day: 'MONDAY', hour: 9 },
   { fn: 'sendDailyDigest', every: 'day', hour: 17 }, { fn: 'sendWeeklyDigest', every: 'week', day: 'MONDAY', hour: 7 }, { fn: 'sendTimeLimitAlerts', every: 'week', day: 'MONDAY', hour: 8 },
   { fn: 'autoBackup', every: 'day', hour: 2 }, { fn: 'archiveOldRecords', every: 'month', hour: 3 }, { fn: 'checkPendingSubmissions', every: 'minutes', n: 10 }
 ];
@@ -6074,14 +6565,6 @@ function api_getFileAccess(token, fileId) {
     ok = true;
   }
   if (!ok) {
-    var q = findWhere_('Inquiries', function (x) { return textMentionsFile_(x.thread, id); });
-    if (q) { inquiryFor_(user, q.id); ok = true; }   // throws when the ticket is not yours to read
-  }
-  if (!ok) {
-    var m = findWhere_('Messages', function (x) { return textMentionsFile_(x.text, id); });
-    if (m) { threadStudent_(user, m.regNumber); ok = true; }
-  }
-  if (!ok) {
     var st = findWhere_('Students', function (x) { return String(x.passportFileId) === id; });
     if (st) {
       var may = user.role === 'Student' ? String(st.regNumber) === String(user.regNumber)
@@ -6111,6 +6594,16 @@ function api_getFileAccess(token, fileId) {
     }
   }
   if (!ok && downloadForFileId_(id)) ok = true;   // official templates are available to every signed-in portal user
+  // Last, because a thread's text is written by the requester: anyone could paste a file ID into their own inquiry or message.
+  // Passports, admission letters and examiner reports are therefore decided above, before this text can matter.
+  if (!ok) {
+    var q = findWhere_('Inquiries', function (x) { return textMentionsFile_(x.thread, id); });
+    if (q) { inquiryFor_(user, q.id); ok = true; }   // throws when the ticket is not yours to read
+  }
+  if (!ok) {
+    var m = findWhere_('Messages', function (x) { return textMentionsFile_(x.text, id); });
+    if (m) { threadStudent_(user, m.regNumber); ok = true; }
+  }
   if (!ok) throw new Error('File not found.');
   var file = DriveApp.getFileById(id);
   if (user.email) grantFileRole_(id, user.email, role);
@@ -6680,7 +7173,25 @@ function api_studentFormatCheck(token, subId) {
   var cache = CacheService.getScriptCache(), ck = 'sfc_' + user.regNumber;
   if (cache.get(ck)) throw new Error('Please wait a few seconds before running the check again.');
   cache.put(ck, '1', 15);
-  return studentFormatView_(processCompliance_(sub, true));
+  var chk = processCompliance_(sub, true), v = studentFormatView_(chk); v.trend = trendOf_(findById_('Submissions', sub.id)); return v;
+}
+/** Pre-submission check: the student uploads a Word file, gets the full findings privately, and the file is deleted straight
+ *  afterwards. No submission, draft or notification is created. Word (.docx) only: PDF layout cannot be read on the server. */
+function api_precheckFile(token, type, url) {
+  var user = requireUser_(token); assertRole_(user, ['Student'], 'Only students can use the pre-check.');
+  type = String(type || '');
+  if (COMPLIANCE_TYPES.indexOf(type) === -1) throw new Error('The format check applies to proposals, progress reports, theses and final corrections.');
+  var ids = fileIdsFromUrls_(url); if (ids.length !== 1) throw new Error('Upload one Word file to check.');
+  var f = DriveApp.getFileById(ids[0]), prefix = String(user.regNumber).replace(/[\/\\]/g, '-') + '_';
+  if (f.getName().indexOf(prefix) !== 0) throw new Error('That file does not belong to you.');
+  try {
+    var mime = f.getMimeType();
+    if (mime !== DOCX_MIME && mime !== 'application/vnd.google-apps.document') throw new Error('The pre-check reads Word (.docx) files. For a PDF, save it as a draft in New Submission and use \u201CCheck my formatting\u201D there.');
+    var cache = CacheService.getScriptCache(), ck = 'pre_' + user.regNumber;
+    if (cache.get(ck)) throw new Error('Please wait a few seconds before checking another file.');
+    cache.put(ck, '1', 10);
+    return studentFormatView_(runComplianceFor_({ type: type, regNumber: user.regNumber, driveFileUrls: f.getUrl() }));
+  } finally { try { f.setTrashed(true); } catch (e) { Logger.log('precheck cleanup: ' + e); } }
 }
 /** Streams a PDF to the browser in 3 MB pieces (base64) so pdf.js can analyse it there. */
 function api_pdfChunk(token, subId, fileId, offset) {
@@ -6724,9 +7235,10 @@ function api_savePdfCheck(token, subId, payloadJson, fileId) {
   res.issues = res.issues.slice(0, 70);
   res.status = res.issues.some(function (i) { return i.severity === 'high' || i.severity === 'medium'; }) ? 'Flagged' : 'Pass';
   var before = parseCompliance_(sub.compliance);
-  updateRow_('Submissions', sub.id, { compliance: JSON.stringify(res) });
+  updateRow_('Submissions', sub.id, { compliance: JSON.stringify(res), formatHistory: nextFormatHistory_(sub, res, before) });
   if (user.role !== 'Student' && String(sub.status) !== 'Draft' && res.status === 'Flagged' && (!before || before.status !== 'Flagged')) { try { notifyInspectorsOfFlags_(sub, res); } catch (e) { Logger.log('notify flags: ' + e); } }
-  return user.role === 'Student' ? studentFormatView_(res) : res;
+  if (user.role === 'Student') { var sv = studentFormatView_(res); sv.trend = trendOf_(findById_('Submissions', sub.id)); return sv; }
+  return res;
 }
 
 function notifyInspectorsOfFlags_(sub, res) {
@@ -6736,10 +7248,67 @@ function notifyInspectorsOfFlags_(sub, res) {
   else filterWhere_('Users', function (u) { return u.role === 'Submission_Inspector' && toBool_(u.active); }).forEach(function (u) { targets[String(u.regNumber)] = 1; });
   Object.keys(targets).forEach(function (reg) { addNote_(reg, 'Format check flagged ' + n + ' issue(s): ' + (stu ? fullNameOf_(stu) : sub.regNumber) + ' \u2014 ' + sub.type); });
 }
+/* ================= FORMAT-CHECK HISTORY (version comparison) + SUPERVISOR CHANGE HISTORY ================= */
+function fmtNorm_(s) { return String(s).toLowerCase().replace(/\d+(\.\d+)?/g, '#').replace(/\s+/g, ' ').trim(); }
+function fmtItems_(res) {
+  return (res.issues || []).filter(function (i) { return i.severity === 'high' || i.severity === 'medium'; }).slice(0, 30)
+    .map(function (i) { return (i.category || 'Other') + ': ' + String(i.message || '').replace(/\s+/g, ' ').slice(0, 100); });
+}
+function fmtEntry_(sub, res, at) {
+  var issues = res.issues || [];
+  return { at: at || res.checkedAt || nowIso_(), status: res.status, high: issues.filter(function (i) { return i.severity === 'high'; }).length,
+    medium: issues.filter(function (i) { return i.severity === 'medium'; }).length, items: fmtItems_(res), file: String(sub.driveFileUrls || '').slice(-40) };
+}
+function fmtHistOf_(sub) { try { var a = JSON.parse(String(sub.formatHistory || '[]')); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+/** Returns the JSON text of the history after recording this result. Checks that gave no verdict are skipped, repeats with no change only refresh the date. */
+function nextFormatHistory_(sub, res, before) {
+  var hist = fmtHistOf_(sub);
+  if (!hist.length && before && (before.status === 'Pass' || before.status === 'Flagged')) hist.push(fmtEntry_(sub, before, before.checkedAt));   // seed with the check that existed before this feature
+  if (!res || (res.status !== 'Pass' && res.status !== 'Flagged')) return hist.length ? JSON.stringify(hist) : '';
+  var e = fmtEntry_(sub, res, nowIso_()), last = hist[hist.length - 1];
+  if (last && last.status === e.status && last.high === e.high && last.medium === e.medium && last.file === e.file && JSON.stringify(last.items) === JSON.stringify(e.items)) last.at = e.at; else hist.push(e);
+  hist = hist.slice(-6); var txt = JSON.stringify(hist);
+  while (txt.length > 45000 && hist.length > 1) { hist.shift(); txt = JSON.stringify(hist); }
+  return txt;
+}
+function fmtCompare_(hist) {
+  if (!hist || hist.length < 2) return null;
+  var prev = hist[hist.length - 2], cur = hist[hist.length - 1], pn = {}, cn = {};
+  prev.items.forEach(function (t) { pn[fmtNorm_(t)] = 1; }); cur.items.forEach(function (t) { cn[fmtNorm_(t)] = 1; });
+  return { from: prev.at, to: cur.at, prev: { high: prev.high, medium: prev.medium, status: prev.status }, cur: { high: cur.high, medium: cur.medium, status: cur.status },
+    resolved: prev.items.filter(function (t) { return !cn[fmtNorm_(t)]; }), remaining: cur.items.filter(function (t) { return pn[fmtNorm_(t)]; }), added: cur.items.filter(function (t) { return !pn[fmtNorm_(t)]; }) };
+}
+function trendOf_(sub) {
+  var c = sub ? fmtCompare_(fmtHistOf_(sub)) : null; if (!c) return null;
+  return { at: c.from, resolved: c.resolved.length, remaining: c.remaining.length, added: c.added.length, resolvedItems: c.resolved.slice(0, 5) };
+}
+function api_getFormatHistory(token, subId) {
+  var user = requireUser_(token), sub = findById_('Submissions', subId);
+  if (!sub) throw new Error('Submission not found.');
+  if (!canSeeSubmission_(user, sub)) throw new Error('You cannot view this submission.');
+  var hist = fmtHistOf_(sub);
+  return { type: sub.type, entries: hist.map(function (e) { return { at: e.at, status: e.status, high: e.high, medium: e.medium }; }), compare: fmtCompare_(hist) };
+}
+
+var SUP_ROLES_ = ['Main supervisor', 'Co-supervisor', 'Second co-supervisor'];
+function supHistoryAdd_(reg, role, fromId, fromName, toId, toName, reason, by) {
+  try { appendRow_('SupervisorHistory', { regNumber: reg, role: role, fromId: fromId || '', fromName: fromName || '', toId: toId || '', toName: toName || '', reason: reason || '', changedBy: by || '', changedAt: nowIso_() }); }
+  catch (e) { Logger.log('supervisor history: ' + e); }
+}
+function staffNameOf_(id) { var st = id ? findById_('Staff', id) : null; return st ? String(st.fullName || '') : ''; }
+function api_getSupervisorHistory(token, reg) {
+  var user = requireUser_(token); assertRole_(user, ['Staff', 'PG_Coordinator', 'HoD'], 'You cannot view supervision history.');
+  var stu = threadStudent_(user, reg);
+  var items = readTable_('SupervisorHistory').filter(function (r) { return String(r.regNumber) === String(stu.regNumber); }).map(stripRow_)
+    .sort(function (a, b) { return String(a.changedAt).localeCompare(String(b.changedAt)); });
+  return { regNumber: stu.regNumber, studentName: fullNameOf_(stu), programme: stu.programme || '', items: items,
+    current: { main: staffNameOf_(stu.mainSupervisorId), co: staffNameOf_(stu.coSupervisorId), co2: staffNameOf_(co2IdFor_(stu)) } };
+}
+
 function processCompliance_(sub, silent) {
   var before = parseCompliance_(sub.compliance), res = runComplianceFor_(sub);
   if (res.status === 'Not checked' && before && before.source === 'pdf' && before.version >= FORMAT_CHECK_VERSION) return before;   // keep the in-browser PDF analysis
-  updateRow_('Submissions', sub.id, { compliance: JSON.stringify(res) });
+  updateRow_('Submissions', sub.id, { compliance: JSON.stringify(res), formatHistory: nextFormatHistory_(sub, res, before) });
   if (!silent && String(sub.status) !== 'Draft' && res.status === 'Flagged' && (!before || before.status !== 'Flagged')) { try { notifyInspectorsOfFlags_(sub, res); } catch (e) { Logger.log('notify flags: ' + e); } }
   return res;
 }
@@ -6793,7 +7362,15 @@ function doGet(e) {
   return tpl.evaluate()
     .setTitle(titles[name] || CFG.APP_NAME)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    .setXFrameOptionsMode(embed ? HtmlService.XFrameOptionsMode.ALLOWALL : HtmlService.XFrameOptionsMode.DEFAULT);
+    .setXFrameOptionsMode(embedAllowed_(embed) ? HtmlService.XFrameOptionsMode.ALLOWALL : HtmlService.XFrameOptionsMode.DEFAULT);
+}
+
+/** Apps Script cannot name the sites allowed to frame a page (it is all or nothing), so framing is allowed only when the request asks for it
+ *  (?embed=1) — that includes the static site's /login/ and /register/ wrappers, which must stay framable or Firefox shows its
+ *  "cannot open this page" error. EMBED_ENABLED = no switches all framing off. */
+function embedAllowed_(embed) {
+  if (!embed) return false;
+  return String(PropertiesService.getScriptProperties().getProperty('EMBED_ENABLED') || 'yes').toLowerCase() !== 'no';
 }
 
 /** Allowed public page names: '', home, about, programmes, register, contact, login. */
@@ -6861,7 +7438,7 @@ function publicEnquiryJsonp_(p) {
   var cb = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/.test(String((p && p.callback) || '')) ? String(p.callback) : '';
   var payload;
   try {
-    payload = api_publicEnquiry(p.name, p.email, p.message);
+    payload = api_publicEnquiry(p.name, p.email, p.message, p.token);
   } catch (err) {
     payload = { ok: false, error: String((err && err.message) || err) };
   }
@@ -6933,9 +7510,25 @@ function checkUploadKind_(type, ext) {
   }
 }
 /** Pasted links must be real, readable Drive files with the format required by the catalogue. */
-function assertUploadLinkKind_(type, url) {
+/** A pasted Drive link is opened and shared with supervisors by the portal's own authority, so the file must really be the student's:
+ *  its name starts with their registration number (every file the portal stored for them does), or the Google account that owns it
+ *  is the student's registered email. Every Drive link in the text is checked, not only the first. */
+function assertDriveFileBelongsTo_(f, user) {
+  var reg = String((user && user.regNumber) || '').replace(/[\/\\]/g, '-'), name = '', owner = '';
+  try { name = String(f.getName() || ''); } catch (e) {}
+  if (reg && name.toLowerCase().indexOf((reg + '_').toLowerCase()) === 0) return;
+  try { var o = f.getOwner(); owner = o ? String(o.getEmail() || '').toLowerCase() : ''; } catch (e2) {}
+  var mine = String((user && user.email) || '').trim().toLowerCase();
+  if (owner && mine && owner === mine) return;
+  throw new Error('That Drive file does not belong to you. Upload the file here instead, or paste a link to a file owned by the Google account that matches your registered email address.');
+}
+function assertUploadLinkKind_(type, url, user) {
   var id = parseDriveFileId_(url);
   if (!id) throw new Error('Paste a Google Drive file link (drive.google.com or docs.google.com).');
+  if (user) fileIdsFromUrls_(url).forEach(function (fid) {
+    var ff; try { ff = DriveApp.getFileById(fid); } catch (err0) { throw new Error('The Drive link could not be opened by the portal. Upload the file here instead.'); }
+    assertDriveFileBelongsTo_(ff, user);
+  });
   var f, name, mime;
   try { f = DriveApp.getFileById(id); name = f.getName(); mime = String(f.getMimeType() || ''); }
   catch (err) { throw new Error('The Drive link could not be opened by the portal. Upload the file here instead.'); }
@@ -8093,7 +8686,7 @@ function migrateSurnamesToUppercase_(dryRun) {
 /* ---- One-off migration: re-apply the Title field rules to titles already in the sheet ----
  * The Title field is stored with toTitleText_(): curly apostrophes straightened, runs of spaces collapsed, ends trimmed,
  * every word capitalised (small words such as "of", "and", "the" stay lowercase unless first or after a colon),
- * and words with 2+ capitals (ZnO, XRD, DNA, PhD) left alone. Titles entered before that rule existed may be
+ * listed acronyms (FCT, NNPC, HIV, pH, NaCl ...), mixed-case words (ZnO, PhD) and words with a capital and a digit (CO2) kept as they are. Titles entered before that rule existed may be
  * ALL CAPS, all lowercase or irregularly spaced. Run previewThesisTitles() first and read the log (View > Logs),
  * then run applyThesisTitles(). Only the title text changes: titleStatus, who confirmed it and the dates are untouched,
  * so Confirmed titles stay Confirmed. Title Approval requests keep the same wording as the student's record. */
@@ -8104,11 +8697,11 @@ function migrateThesisTitles_(dryRun) {
   students.forEach(function (s) {
     var oldT = String(s.thesisTitle === undefined || s.thesisTitle === null ? '' : s.thesisTitle);
     if (!oldT.trim()) return;
-    // toTitleText_ leaves words with 2+ capitals alone, so an ALL-CAPS title would not change. Lowercase it first,
-    // then flag it: acronyms (XRD, ZnO) lose their capitals and need a manual look.
+    // toTitleText_ converts an ALL-CAPS title itself: only listed acronyms, words with a digit and bracketed words keep their capitals.
+    // An unlisted acronym outside brackets (e.g. NIWA) becomes Niwa, so flag those titles for a manual look.
     var allCaps = /[A-Z]/.test(oldT) && !/[a-z]/.test(oldT);
-    var newT = toTitleText_(allCaps ? oldT.toLowerCase() : oldT);
-    if (allCaps) skipped.push(s.regNumber + ': was ALL CAPS - check acronyms/chemical symbols in "' + newT + '"');
+    var newT = toTitleText_(oldT);
+    if (allCaps) skipped.push(s.regNumber + ': was ALL CAPS - check for acronyms that are not on the list in "' + newT + '"');
     if (newT === oldT) return;
     if (newT.length > 400) { skipped.push(s.regNumber + ': title is over 400 characters - left as is'); return; }
     plan.push({ student: s, reg: s.regNumber, oldT: oldT, newT: newT });
